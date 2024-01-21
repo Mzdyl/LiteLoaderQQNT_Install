@@ -51,18 +51,25 @@ def patch_pe_file(file_path):
 
 def main():
     try:
-        # 修补PE文件
-        print("请输入QQ安装路径，默认为C:\\Program Files\\Tencent\\QQNT")
-        file_path = input()
+        # 检测是否在 GitHub Actions 中运行
+        github_actions = os.getenv("GITHUB_ACTIONS", False)
+
+        # 在 GitHub Actions 中运行时，不需要用户输入路径，使用默认路径
+        if github_actions:
+            file_path = os.path.abspath("C:\\Program Files\\Tencent\\QQNT")
+        else:
+            # 不在 GitHub Actions 中运行时，允许用户输入路径
+            print("请输入 QQ 安装路径，默认为 C:\\Program Files\\Tencent\\QQNT")
+            file_path = input()
 
         # 如果用户没有输入路径，默认使用默认路径
         if not file_path:
             file_path = r"C:\Program Files\Tencent\QQNT"
-       
+
         # 修补PE文件
         qq_exe_path = os.path.join(file_path, "QQ.exe")
         patch_pe_file(qq_exe_path)
-        
+
         # 获取Windows下的临时目录
         temp_dir = tempfile.gettempdir()
         print(f"临时目录：{temp_dir}")
@@ -75,7 +82,7 @@ def main():
 
         # 解压文件
         shutil.unpack_archive(zip_path, os.path.join(temp_dir, "LiteLoader"))
-        
+
         # 移动到安装目录
         print("拉取完成，正在安装LiteLoader...")
 
@@ -98,7 +105,7 @@ def main():
             content = f.read()
             f.seek(0, 0)
             f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n" + content)
-        
+
 
         print("安装完成！脚本将在3秒后退出...")
 
@@ -122,4 +129,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+

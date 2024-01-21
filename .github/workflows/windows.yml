@@ -1,0 +1,38 @@
+name: Install and Test QQ on Windows
+
+on:
+  push:
+    paths:
+      - 'install_windows.py'
+  workflow_dispatch:
+
+jobs:
+  install_and_test:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Download and Install QQ Software
+      run: |
+        # Download QQ software
+        wget https://dldir1.qq.com/qqfile/qq/QQNT/81d676ff/QQ9.9.7.20979_x64.exe -O QQInstaller.exe
+        # Install QQ silently
+        Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
+
+    - name: Run QQ with logging
+      run: |
+        start "C:\Program Files\Tencent\QQNT\QQ" --enable-logging
+
+    - name: Check output
+      run: |
+        # Wait for a moment to let QQ start and generate logs
+        Start-Sleep -Seconds 5
+        # Check if LiteLoader is found in the logs
+        if (Get-Content "C:\Program Files\Tencent\QQNT\QQ\logs\lite.log" | Select-String -Pattern "[LiteLoader]") {
+          echo "LiteLoader found in logs. Test passed."
+        } else {
+          echo "LiteLoader not found in logs. Test failed."
+          exit 1
+        }
