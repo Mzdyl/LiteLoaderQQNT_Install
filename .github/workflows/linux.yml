@@ -1,4 +1,4 @@
-name: Install and Test Linux
+name: Install and Test LL on Linux
 
 on:
   push:
@@ -13,6 +13,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
 
     - name: Download and Install QQ Software
       run: |
