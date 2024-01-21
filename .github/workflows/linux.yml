@@ -28,9 +28,12 @@ jobs:
         chmod +x install_linux.sh
         ./install_linux.sh
 
-    - name: Check output
+    - name: Check output and directory existence
       run: |
-        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]"; then
-          echo "LiteLoader not found in output. Test failed."
+        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]" || [ ! -d "/opt/QQ/resources/app/LiteLoader/plugins" ]; then
+          echo "LiteLoader not found in output or /opt/QQ/resources/app/LiteLoader/plugins directory does not exist. Test failed."
           exit 1
+        else
+          echo "LiteLoader found in output and /opt/QQ/resources/app/LiteLoader/plugins directory exists. Test succeeded."
         fi
+
