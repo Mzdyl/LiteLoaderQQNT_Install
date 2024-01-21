@@ -1,5 +1,24 @@
-echo "请输入您的密码以提升权限："
-sudo -v
+#!/bin/bash
+
+if [ "$GITHUB_ACTIONS" == "true" ]; then
+    echo "Detected GitHub Actions environment. Setting default values for non-interactive mode."
+    # 设置在 GitHub Actions 环境中的默认值
+    custompluginsDir="$HOME/.config/LiteLoader-Plugins"
+    modify_env_choice="y"
+else
+    # 如果不在 GitHub Actions 环境中，继续使用用户输入
+    echo "请输入您的密码以提升权限："
+    sudo -v
+
+    read -p "是否通过环境变量修改插件目录 (y/N): " modify_env_choice
+
+    if [ "$modify_env_choice" = "y" ] || [ "$modify_env_choice" = "Y" ]; then
+        read -p "请输入LiteLoader插件目录（默认为$HOME/.config/LiteLoader-Plugins）: " custompluginsDir
+        custompluginsDir=${custompluginsDir:-"$HOME/.config/LiteLoader-Plugins"}
+        echo "插件目录: $custompluginsDir"
+    fi
+
+fi
 
 echo "正在拉取最新版本的仓库..."
 cd /tmp
@@ -9,6 +28,7 @@ git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
 # 移动到安装目录
 echo "拉取完成，正在安装LiteLoader..."
 sudo cp -f LiteLoader/src/preload.js /opt/QQ/resources/app/application/preload.js
+
 # 如果目标目录存在且不为空，则先备份处理
 if [ -e "/opt/QQ/resources/app/LiteLoader" ]; then
     # 删除上次的备份
@@ -18,6 +38,7 @@ if [ -e "/opt/QQ/resources/app/LiteLoader" ]; then
     mv "/opt/QQ/resources/app/LiteLoader" "/opt/QQ/resources/app/LiteLoader_bak"
     echo "已将原LiteLoader目录备份为LiteLoader_bak"
 fi
+
 # 移动LiteLoader
 sudo mv -f LiteLoader /opt/QQ/resources/app
 
@@ -33,8 +54,7 @@ if [ -d "/opt/QQ/resources/app/LiteLoader_bak/data" ]; then
     echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
 fi
 
-read -p "是否通过环境变量修改插件目录 (y/N): " modify_env_choice
-    if [ "$modify_env_choice" = "y" ] || [ "$modify_env_choice" = "Y" ]; then
+if [ "$modify_env_choice" = "y" ] || [ "$modify_env_choice" = "Y" ]; then
     # 自定义插件，默认为~/.config/LiteLoader-Plugins
     read -p "请输入LiteLoader插件目录（默认为$HOME/.config/LiteLoader-Plugins）: " custompluginsDir
     pluginsDir=${custompluginsDir:-"$HOME/.config/LiteLoader-Plugins"}
@@ -66,7 +86,6 @@ read -p "是否通过环境变量修改插件目录 (y/N): " modify_env_choice
 fi
 
 source $config_file
-
 
 # 进入安装目录
 cd /opt/QQ/resources/app/app_launcher
