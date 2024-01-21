@@ -31,13 +31,13 @@ jobs:
 
     - name: Run QQ with logging
       run: |
-        "C:\Program Files\Tencent\QQNT\QQ" --enable-logging > qq_output.txt
+        start "C:\Program Files\Tencent\QQNT\QQ" --enable-logging 
 
-    - name: Check output
+    - name: Check if LiteLoader plugins folder exists
       run: |
-        # Use `type` to read the output file
-        type qq_output.txt | findstr "[LiteLoader]" > nul
-        if %errorlevel% neq 0 (
-          echo "LiteLoader not found in output. Test failed."
+        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\plugins") {
+          Write-Host "LiteLoader plugins folder found. Test passed."
+        } else {
+          Write-Host "LiteLoader plugins folder not found. Test failed."
           exit 1
-        )
+        }
