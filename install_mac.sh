@@ -66,12 +66,10 @@ if grep -q "require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/Lite
     echo "index.json 已包含相同的修改，无需再次修改。"
 else
     # 如果不存在，则进行修改
-    if ! grep -q "require('/Users" index.js; then
-        sudo sed -i '' "1i\\
+    sudo sed -i '' "1i\\
 require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader');\
 " index.js
-        echo "已修补 index.json。"
-    fi
+    echo "已修补 index.json。"
 fi
 
 echo "安装完成！脚本将在3秒后退出..."
