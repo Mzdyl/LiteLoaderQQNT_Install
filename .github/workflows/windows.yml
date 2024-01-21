@@ -20,6 +20,14 @@ jobs:
         Invoke-WebRequest -Uri 'https://dldir1.qq.com/qqfile/qq/QQNT/81d676ff/QQ9.9.7.20979_x64.exe' -OutFile QQInstaller.exe
         # Install QQ silently
         Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9  # 指定 Python 3 版本
+
+    - name: Run install_windows.py
+      run: |
+        python3 install_windows.py
 
     - name: Run QQ with logging
       run: |
@@ -29,10 +37,19 @@ jobs:
       run: |
         # Wait for a moment to let QQ start and generate logs
         Start-Sleep -Seconds 5
-        # Check if LiteLoader is found in the logs
-        if (Get-Content "C:\Program Files\Tencent\QQNT\QQ\logs\lite.log" | Select-String -Pattern "[LiteLoader]") {
-          echo "LiteLoader found in logs. Test passed."
+        # Get the process information for QQ
+        $qqProcess = Get-Process -Name QQ -ErrorAction SilentlyContinue
+        # Check if the process is running
+        if ($qqProcess -ne $null) {
+          # Check if LiteLoader is found in the process output
+          $output = $qqProcess.MainModule.FileVersionInfo.InternalName
+          if ($output -match "LiteLoader") {
+            echo "LiteLoader found in process output. Test passed."
+          } else {
+            echo "LiteLoader not found in process output. Test failed."
+            exit 1
+          }
         } else {
-          echo "LiteLoader not found in logs. Test failed."
+          echo "QQ process not found. Test failed."
           exit 1
         }
