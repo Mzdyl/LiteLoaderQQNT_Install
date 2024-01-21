@@ -1,0 +1,33 @@
+name: Install and Test Linux
+
+on:
+  push:
+    paths:
+      - 'install_linux.sh'
+  workflow_dispatch:
+
+jobs:
+  install_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Download and Install QQ Software
+      run: |
+        wget https://dldir1.qq.com/qqfile/qq/QQNT/c64ca459/linuxqq_3.2.5-20979_amd64.deb
+        sudo dpkg -i linuxqq_3.2.5-20979_amd64.deb
+        sudo apt-get install -f
+
+    - name: Run install_linux.sh
+      run: |
+        chmod +x install_linux.sh
+        ./install_linux.sh
+
+    - name: Check output
+      run: |
+        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]"; then
+          echo "LiteLoader not found in output. Test failed."
+          exit 1
+        fi
