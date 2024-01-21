@@ -72,9 +72,9 @@ if grep -q "require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/Lite
     echo "index.json 已包含相同的修改，无需再次修改。"
 else
     # 如果不存在，则进行修改
-    sudo sed -i '' "1i\\
+    sudo sed -i '' -e "1i\\
 require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader');\
-" index.js
+" -e '$a\' index.js
     echo "已修补 index.json。"
 fi
 
