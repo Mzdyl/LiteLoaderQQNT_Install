@@ -31,25 +31,13 @@ jobs:
 
     - name: Run QQ with logging
       run: |
-        start "C:\Program Files\Tencent\QQNT\QQ" --enable-logging
+        "C:\Program Files\Tencent\QQNT\QQ" --enable-logging > qq_output.txt
 
     - name: Check output
       run: |
-        # Wait for a moment to let QQ start and generate logs
-        Start-Sleep -Seconds 5
-        # Get the process information for QQ
-        $qqProcess = Get-Process -Name QQ -ErrorAction SilentlyContinue
-        # Check if the process is running
-        if ($qqProcess -ne $null) {
-          # Check if LiteLoader is found in the process output
-          $output = $qqProcess.MainModule.FileVersionInfo.InternalName
-          if ($output -match "LiteLoader") {
-            echo "LiteLoader found in process output. Test passed."
-          } else {
-            echo "LiteLoader not found in process output. Test failed."
-            exit 1
-          }
-        } else {
-          echo "QQ process not found. Test failed."
+        # Use `type` to read the output file
+        type qq_output.txt | findstr "[LiteLoader]" > nul
+        if %errorlevel% neq 0 (
+          echo "LiteLoader not found in output. Test failed."
           exit 1
-        }
+        )
