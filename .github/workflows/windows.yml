@@ -1,4 +1,4 @@
-name: Install and Test QQ on Windows
+name: Install and Test LL on Windows
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
     - name: Download and Install QQ Software
       run: |
         # Download QQ software
-        wget https://dldir1.qq.com/qqfile/qq/QQNT/81d676ff/QQ9.9.7.20979_x64.exe -O QQInstaller.exe
+        Invoke-WebRequest -Uri 'https://dldir1.qq.com/qqfile/qq/QQNT/81d676ff/QQ9.9.7.20979_x64.exe' -OutFile QQInstaller.exe
         # Install QQ silently
         Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
 
