@@ -8,46 +8,43 @@ git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
 
 # 移动到安装目录
 echo "拉取完成，正在安装LiteLoader..."
-sudo cp -f LiteLoader/src/preload.js /opt/QQ/resources/app/application/preload.js
+sudo cp -f LiteLoader/src/preload.js /Applications/QQ.app/Contents/Resources/app/application/preload.js
+
 # 如果目标目录存在且不为空，则先备份处理
-if [ -e "/opt/QQ/resources/app/LiteLoader" ]; then
+if [ -e "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader" ]; then
     # 删除上次的备份
-    rm -rf "/opt/QQ/resources/app/LiteLoader_bak"
+    rm -rf "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak"
 
     # 将已存在的目录重命名为LiteLoader_bak
-    mv "/opt/QQ/resources/app/LiteLoader" "/opt/QQ/resources/app/LiteLoader_bak"
+    mv "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader" "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak"
     echo "已将原LiteLoader目录备份为LiteLoader_bak"
 fi
+
+
 # 移动LiteLoader
-sudo mv -f LiteLoader /opt/QQ/resources/app
+mv -f LiteLoader $HOME/Library/Containers/com.tencent.qq/Data/Documents/
 
 # 如果LiteLoader_bak中存在plugins文件夹，则复制到新的LiteLoader目录
-if [ -d "/opt/QQ/resources/app/LiteLoader_bak/plugins" ]; then
-    sudo cp -r "/opt/QQ/resources/app/LiteLoader_bak/plugins" "/opt/QQ/resources/app/LiteLoader/"
-    echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
+if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/plugins" ]; then
+    cp -r "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/plugins" "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/"
+    echo "已将 LiteLoader_bak 中旧插件Plugins复制到新的 LiteLoader 目录"
 fi
 
 # 如果LiteLoader_bak中存在data文件夹，则复制到新的LiteLoader目录
-if [ -d "/opt/QQ/resources/app/LiteLoader_bak/data" ]; then
-    sudo cp -r "/opt/QQ/resources/app/LiteLoader_bak/data" "/opt/QQ/resources/app/LiteLoader/"
-    echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
+if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/data" ]; then
+    cp -r "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/data" "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/"
+    echo "已将 LiteLoader_bak 中旧数据文件data复制到新的 LiteLoader 目录"
 fi
 
 read -p "是否通过环境变量修改插件目录 (y/N): " modify_env_choice
-    if [ "$modify_env_choice" = "y" ] || [ "$modify_env_choice" = "Y" ]; then
+if [ "$modify_env_choice" = "y" ] || [ "$modify_env_choice" = "Y" ]; then
     # 自定义插件，默认为~/.config/LiteLoader-Plugins
     read -p "请输入LiteLoader插件目录（默认为$HOME/.config/LiteLoader-Plugins）: " custompluginsDir
     pluginsDir=${custompluginsDir:-"$HOME/.config/LiteLoader-Plugins"}
     echo "插件目录: $pluginsDir"
-
-    # 检测当前 shell 类型
-    if [ -n "$ZSH_VERSION" ]; then
-        # 当前 shell 为 Zsh
-        config_file="$HOME/.zshrc"
-    else
-        config_file="$HOME/.bashrc"
-    fi
-
+    
+    config_file="/etc/launchd.conf"
+    
     # 检查是否已存在LITELOADERQQNT_PROFILE
     if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
         read -p "LITELOADERQQNT_PROFILE 已存在，是否要修改？ (y/n): " modify_choice
@@ -65,22 +62,21 @@ read -p "是否通过环境变量修改插件目录 (y/N): " modify_env_choice
     fi
 fi
 
-source $config_file
-
+launchctl setenv LITELOADERQQNT_PROFILE $pluginsDir
 
 # 进入安装目录
-cd /opt/QQ/resources/app/app_launcher
+cd /Applications/QQ.app/Contents/Resources/app/app_launcher
 
 # 修改index.json
 echo "正在修补index.json..."
 
 # 检查是否已存在相同的修改
-if grep -q "require('/opt/QQ/resources/app/LiteLoader');" index.js; then
+if grep -q "require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader');" index.js; then
     echo "index.json 已包含相同的修改，无需再次修改。"
 else
     # 如果不存在，则进行修改
     sudo sed -i '' "1i\\
-require('/opt/QQ/resources/app/LiteLoader');\
+require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader');\
 " index.js
     echo "已修补 index.json。"
 fi

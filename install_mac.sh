@@ -24,12 +24,18 @@ fi
 # 移动LiteLoader
 mv -f LiteLoader $HOME/Library/Containers/com.tencent.qq/Data/Documents/
 
-# 如果LiteLoader_bak中存在plugins和data文件夹，则复制到新的LiteLoader目录
-if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/data" ]; then
+# 如果LiteLoader_bak中存在plugins文件夹，则复制到新的LiteLoader目录
+if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/plugins" ]; then
     cp -r "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/plugins" "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/"
-    cp -r "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/data" "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/"
-    echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
+    echo "已将 LiteLoader_bak 中旧插件Plugins复制到新的 LiteLoader 目录"
 fi
+
+# 如果LiteLoader_bak中存在data文件夹，则复制到新的LiteLoader目录
+if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/data" ]; then
+    cp -r "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/data" "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/"
+    echo "已将 LiteLoader_bak 中旧数据文件data复制到新的 LiteLoader 目录"
+fi
+
 
 # 是否为插件目录创建软连接
 read -p "是否为插件目录创建软连接方便安装插件 (y/N): " create_symlink
