@@ -102,10 +102,27 @@ def main():
         print(f"Moving to: {os.path.join(file_path, 'resources', 'app')}")
 
         # 移除目标路径及其内容
-        shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main'), ignore_errors=True)
+        shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), ignore_errors=True)
+
+        # 重命名目标路径
+        os.rename(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main'), os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'))
 
         # 使用 shutil.move 移动文件
         shutil.move(os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main'), os.path.join(file_path, 'resources', 'app'))
+
+        # 复制 LiteLoader_bak 中的插件到新的 LiteLoader 目录
+        old_plugins_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak', 'plugins')
+        new_plugins_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')
+        if os.path.exists(old_plugins_path):
+            shutil.copytree(old_plugins_path, os.path.join(new_plugins_path, "plugins"), dirs_exist_ok=True)
+            print("已将 LiteLoader_bak 中旧插件 Plugins 复制到新的 LiteLoader 目录")
+
+        # 复制 LiteLoader_bak 中的数据文件到新的 LiteLoader 目录
+        old_data_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak', 'data')
+        new_data_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')
+        if os.path.exists(old_data_path):
+            shutil.copytree(old_data_path, os.path.join(new_data_path, "data"), dirs_exist_ok=True)
+            print("已将 LiteLoader_bak 中旧数据文件 data 复制到新的 LiteLoader 目录")
 
         # 动态生成目标目录
         app_launcher_path = os.path.join(file_path, "resources", "app", "app_launcher")
