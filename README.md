@@ -14,7 +14,9 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 windows 下使用 python 运行对应脚本即可(可能需要管理员权限)
 
 目前对全新安装做了适配，升级安装等情况均做了适配
+
 目前使用 GitHub Action 自动化验证脚本效果
+
 如仍有其他问题或者 bug 欢迎友好反馈
 
 

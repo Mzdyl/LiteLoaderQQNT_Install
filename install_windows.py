@@ -6,6 +6,8 @@ import struct
 import tempfile
 import urllib.request
 import sys
+import tkinter as tk
+from tkinter import filedialog
 
 # 设置标准输出编码为UTF-8
 sys.stdout.reconfigure(encoding='utf-8')
@@ -53,6 +55,12 @@ def patch_pe_file(file_path):
         print(f"An error occurred: {e}")
         input("Press Enter to exit.")
 
+def get_file_path():
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askdirectory(title="选择 QQ 安装路径")
+    return file_path
+
 def main():
     try:
         # 检测是否在 GitHub Actions 中运行
@@ -64,8 +72,8 @@ def main():
         else:
             # 不在 GitHub Actions 中运行时，允许用户输入路径
             print("请输入 QQ 安装路径，默认为 C:\\Program Files\\Tencent\\QQNT")
-            file_path = input()
-
+            file_path = get_file_path()
+        
         # 如果用户没有输入路径，默认使用默认路径
         if not file_path:
             file_path = r"C:\Program Files\Tencent\QQNT"
