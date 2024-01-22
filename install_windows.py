@@ -76,7 +76,14 @@ def main():
             qq_exe_path = get_qq_exe_path()
             file_path = os.path.dirname(qq_exe_path)
         # 移除上次备份文件
-        os.remove(qq_exe_path+".bak")
+        # 检查备份文件是否存在
+        bak_file_path = qq_exe_path + ".bak"
+        if os.path.exists(bak_file_path):
+            os.remove(bak_file_path)
+            print(f"已删除备份文件: {bak_file_path}")
+        else:
+            print("备份文件不存在，无需删除。")
+
 
         # 修补PE文件
         patch_pe_file(qq_exe_path)
