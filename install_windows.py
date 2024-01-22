@@ -111,8 +111,16 @@ def main():
         # 移除目标路径及其内容
         shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), ignore_errors=True)
 
-        # 重命名目标路径
-        os.rename(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main'), os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'))
+        # 检查目标目录是否存在
+        source_dir = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')
+        destination_dir = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak')
+
+        if os.path.exists(source_dir):
+            # 重命名目录
+            os.rename(source_dir, destination_dir)
+            print(f"已将旧版重命名为: {destination_dir}")
+        else:
+            print(f" {source_dir} 不存在，全新安装。")
 
         # 使用 shutil.move 移动文件
         shutil.move(os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main'), os.path.join(file_path, 'resources', 'app'))
