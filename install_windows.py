@@ -55,10 +55,10 @@ def patch_pe_file(file_path):
         print(f"An error occurred: {e}")
         input("Press Enter to exit.")
 
-def get_file_path():
+def get_qq_exe_path():
     root = tk.Tk()
     root.withdraw()
-    file_path = filedialog.askdirectory(title="选择 QQ 安装路径")
+    file_path = filedialog.askopenfilename(title="选择 QQ.exe 文件", filetypes=[("Executable files", "*.exe")])
     return file_path
 
 def main():
@@ -69,17 +69,16 @@ def main():
         # 在 GitHub Actions 中运行时，不需要用户输入路径，使用默认路径
         if github_actions:
             file_path = os.path.abspath("C:\\Program Files\\Tencent\\QQNT")
+            qq_exe_path = os.path.join(file_path, "QQ.exe")
         else:
             # 不在 GitHub Actions 中运行时，允许用户输入路径
-            print("请输入 QQ 安装路径，默认为 C:\\Program Files\\Tencent\\QQNT")
-            file_path = get_file_path()
-        
-        # 如果用户没有输入路径，默认使用默认路径
-        if not file_path:
-            file_path = r"C:\Program Files\Tencent\QQNT"
+            print("请选择 QQ.exe 文件，默认路径为 C:\\Program Files\\Tencent\\QQNT\\QQ.exe")
+            qq_exe_path = get_qq_exe_path()
+            file_path = os.path.dirname(qq_exe_path)
+        # 移除上次备份文件
+        os.remove(qq_exe_path+".bak")
 
         # 修补PE文件
-        qq_exe_path = os.path.join(file_path, "QQ.exe")
         patch_pe_file(qq_exe_path)
 
         # 获取Windows下的临时目录
@@ -102,7 +101,11 @@ def main():
         print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader','LiteLoaderQQNT-main')}")
         print(f"Moving to: {os.path.join(file_path, 'resources', 'app')}")
 
-        shutil.move(os.path.join(temp_dir, "LiteLoader", "LiteLoaderQQNT-main"), os.path.join(file_path, "resources", "app"))
+        # 移除目标路径及其内容
+        shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main'), ignore_errors=True)
+
+        # 使用 shutil.move 移动文件
+        shutil.move(os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main'), os.path.join(file_path, 'resources', 'app'))
 
         # 动态生成目标目录
         app_launcher_path = os.path.join(file_path, "resources", "app", "app_launcher")
@@ -121,15 +124,15 @@ def main():
 
         print("安装完成！脚本将在3秒后退出...")
 
-        # 清理临时文件
-        shutil.rmtree(temp_dir)
+        # # 清理临时文件
+        # shutil.rmtree(temp_dir)
 
-        # 错误处理
-        try:
-            subprocess.run(["echo", "test"], check=True, shell=True)
-        except subprocess.CalledProcessError:
-            print("发生错误，安装失败")
-            exit(1)
+        # # 错误处理
+        # try:
+        #     subprocess.run(["echo", "test"], check=True, shell=True)
+        # except subprocess.CalledProcessError:
+        #     print("发生错误，安装失败")
+        #     exit(1)
 
         # 等待3秒后退出
         time.sleep(3)
