@@ -177,7 +177,7 @@ def main():
             f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n" + content)
 
 
-        print("安装完成！脚本将在3秒后退出...")
+        print("安装完成！")
 
         # # 清理临时文件
         # shutil.rmtree(temp_dir)
@@ -189,9 +189,7 @@ def main():
         #     print("发生错误，安装失败")
         #     exit(1)
 
-        # 等待3秒后退出
-        time.sleep(3)
-        exit(0)
+
 
     except Exception as e:
         print(f"An error occurred: {e}")
