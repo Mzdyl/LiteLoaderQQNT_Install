@@ -1,11 +1,11 @@
 import os
-import subprocess
+import sys
 import time
+import winreg
 import shutil
 import struct
 import tempfile
 import urllib.request
-import sys
 import tkinter as tk
 from tkinter import filedialog
 
@@ -61,21 +61,43 @@ def get_qq_exe_path():
     file_path = filedialog.askopenfilename(title="选择 QQ.exe 文件", filetypes=[("Executable files", "*.exe")])
     return file_path
 
+def read_registry_key(hive, subkey, value_name):
+    try:
+        # 打开指定的注册表项
+        key = winreg.OpenKey(hive, subkey)
+
+        # 读取注册表项中指定名称的值
+        value, _ = winreg.QueryValueEx(key, value_name)
+
+        # 关闭注册表项
+        winreg.CloseKey(key)
+
+        return value
+    except Exception as e:
+        print(f"Error reading registry key: {e}")
+        return None
+
+
+
 def main():
     try:
-        # 检测是否在 GitHub Actions 中运行
-        github_actions = os.getenv("GITHUB_ACTIONS", False)
+        # 定义注册表路径和键名
+        registry_hive = winreg.HKEY_LOCAL_MACHINE
+        registry_subkey = r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\QQ"
+        registry_value_name = "UninstallString"
 
-        # 在 GitHub Actions 中运行时，不需要用户输入路径，使用默认路径
-        if github_actions:
-            file_path = os.path.abspath("C:\\Program Files\\Tencent\\QQNT")
-            qq_exe_path = os.path.join(file_path, "QQ.exe")
+        # 读取 UninstallString 信息
+        uninstall_string = read_registry_key(registry_hive, registry_subkey, registry_value_name)
+        qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
+
+        if uninstall_string is not None:
+            print(f"QQ 的安装目录为: {qq_exe_path}")
         else:
-            # 不在 GitHub Actions 中运行时，允许用户输入路径
-            print("请选择 QQ.exe 文件，默认路径为 C:\\Program Files\\Tencent\\QQNT\\QQ.exe")
+            print("无法读取 QQ 的安装目录，请手动选择.")
             qq_exe_path = get_qq_exe_path()
-            file_path = os.path.dirname(qq_exe_path)
-        # 移除上次备份文件
+
+        file_path = os.path.dirname(qq_exe_path)
+
         # 检查备份文件是否存在
         bak_file_path = qq_exe_path + ".bak"
         if os.path.exists(bak_file_path):
@@ -83,6 +105,7 @@ def main():
             print(f"已删除备份文件: {bak_file_path}")
         else:
             print("备份文件不存在，无需删除。")
+
 
 
         # 修补PE文件
