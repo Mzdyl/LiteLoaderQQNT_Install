@@ -107,7 +107,7 @@ def main():
         if target_line in content:
             print("检测到安装过旧版，执行复原")
             content = content.replace(target_line, replacement_line)
-            with open(file_path, 'w') as file:
+            with open(package_file_path, 'w') as file:
                 file.write(content)
             print(f"成功替换目标行: {target_line} -> {replacement_line}")
         else:
@@ -198,13 +198,14 @@ def main():
         urllib.request.urlretrieve(store_zip_url, store_zip_path)
 
         # 解压文件
-        shutil.unpack_archive(zip_path, os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store"))
-
-        print(f"Moving from: {os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-main')}")
+        shutil.unpack_archive(store_zip_path, os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store"))
+        existing_destination_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins', 'LiteLoaderQQNT-Plugin-Plugin-Store-master')
+        print(f"Moving from: {os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-master')}")
         print(f"Moving to: {os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins')}")
-
-        # 移除目标路径及其内容
-        shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), ignore_errors=True)
+        if not os.path.exists(existing_destination_path):
+            shutil.move(os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-master'), os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins'))
+        else :
+            print("检测到已安装插件商店，不做重新安装")
 
         # # 清理临时文件
         # shutil.rmtree(temp_dir)
