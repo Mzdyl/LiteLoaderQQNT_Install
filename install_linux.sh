@@ -90,18 +90,18 @@ source $config_file
 # 进入安装目录
 cd /opt/QQ/resources/app/app_launcher
 
-# 修改index.json
-echo "正在修补index.json..."
+# 修改index.js
+echo "正在修补index.js..."
 
 # 检查是否已存在相同的修改
 if grep -q "require('/opt/QQ/resources/app/LiteLoader');" index.js; then
-    echo "index.json 已包含相同的修改，无需再次修改。"
+    echo "index.js 已包含相同的修改，无需再次修改。"
 else
     # 如果不存在，则进行修改
     sudo sed -i '' -e "1i\\
 require('/opt/QQ/resources/app/LiteLoader');\
 " -e '$a\' index.js
-    echo "已修补 index.json。"
+    echo "已修补 index.js。"
 fi
 
 echo "安装完成！脚本将在3秒后退出..."
