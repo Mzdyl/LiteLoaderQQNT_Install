@@ -181,8 +181,8 @@ def main():
         # 进入安装目录
         os.chdir(app_launcher_path)
 
-        # 修改index.json
-        print("正在修补index.json...")
+        # 修改index.js
+        print("正在修补index.js...")
         index_path = os.path.join(app_launcher_path, "index.js")
         with open(index_path, "r+") as f:
             content = f.read()
