@@ -1,7 +1,17 @@
 # LiteLoaderQQNT_Install
 针对 LiteLoaderQQNT 的安装脚本
 
+## 安装方法
+
 mac/linux 终端运行对应脚本即可
+
+windows 运行对应 exe  即可
+
+LiteLoaderQQNT 更新版本一样可以使用 脚本/exe 升级，不会影响已安装的插件（但会默认启用所有已安装的插件）
+
+window 平台 专门添加 老版本升级检测 ， 自动安装插件商店，自动读取 QQ 路径实现全自动安装 等功能
+
+##针对仓库内其他文件的附加说明
 
 install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 
@@ -9,13 +19,11 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 
 普通用户还请使用 install_mac.sh
 
+## 常见问题
+
 **macOS 遇到 Operation not permitted 请检查是否给予 终端 完全磁盘访问权限 或者 允许 终端想访问其他App的数据。**
 
-windows 下使用 python 运行对应脚本即可(可能需要管理员权限)
-
-目前对全新安装做了适配，升级安装等情况均做了适配
-
-目前使用 GitHub Action 自动化验证脚本效果
+软件目前使用 GitHub Action 自动化验证脚本效果
 
 如仍有其他问题或者 bug 欢迎友好反馈
 
