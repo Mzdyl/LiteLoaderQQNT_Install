@@ -189,8 +189,22 @@ def main():
             f.seek(0, 0)
             f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n" + content)
 
+        print("LiteLoaderQQNT安装完成！接下来进行插件商店安装")
 
-        print("安装完成！")
+        # 使用urllib下载最新版本的仓库
+        print("正在拉取最新版本的插件商店...")
+        store_zip_url = "https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store/archive/master.zip"
+        store_zip_path = os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store.zip")
+        urllib.request.urlretrieve(store_zip_url, store_zip_path)
+
+        # 解压文件
+        shutil.unpack_archive(zip_path, os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store"))
+
+        print(f"Moving from: {os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-main')}")
+        print(f"Moving to: {os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins')}")
+
+        # 移除目标路径及其内容
+        shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), ignore_errors=True)
 
         # # 清理临时文件
         # shutil.rmtree(temp_dir)
