@@ -98,6 +98,21 @@ def main():
 
         file_path = os.path.dirname(qq_exe_path)
 
+        # 检测是否安装过旧版 Liteloader
+        package_file_path = os.path.join(file_path, 'resources', 'app', 'package.json')
+        replacement_line = '"main": "./app_launcher/index.js"'
+        target_line = '"main": "./LiteLoader"'
+        with open(package_file_path, 'r') as file:
+            content = file.read()
+        if target_line in content:
+            print("检测到安装过旧版，执行复原")
+            content = content.replace(target_line, replacement_line)
+            with open(file_path, 'w') as file:
+                file.write(content)
+            print(f"成功替换目标行: {target_line} -> {replacement_line}")
+        else:
+            print(f"未安装过旧版，全新安装")
+
         # 检查备份文件是否存在
         bak_file_path = qq_exe_path + ".bak"
         if os.path.exists(bak_file_path):
@@ -105,8 +120,6 @@ def main():
             print(f"已删除备份文件: {bak_file_path}")
         else:
             print("备份文件不存在，无需删除。")
-
-
 
         # 修补PE文件
         patch_pe_file(qq_exe_path)
