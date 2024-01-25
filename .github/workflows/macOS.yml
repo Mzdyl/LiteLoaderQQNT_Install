@@ -1,0 +1,41 @@
+name: Install and Test LL on macOS
+
+on:
+  push:
+    paths:
+      - 'install_mac.sh'
+  workflow_dispatch:
+
+jobs:
+  install_and_test:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      
+    - name: Download and Install QQ Software
+      run: |
+        curl -LO https://dldir1.qq.com/qqfile/qq/QQNT/28615eb6/QQ_v6.9.25.20979.dmg
+        hdiutil attach QQ_v6.9.25.20979.dmg
+        cp -R /Volumes/QQ/QQ.app /Applications
+        hdiutil detach /Volumes/QQ
+
+    - name: Run install_mac.sh
+      run: |
+        chmod +x install_mac.sh
+        ./install_mac.sh
+        
+    - name: Run QQ on macOS
+      run: |
+        /Applications/QQ.app/Contents/MacOS/QQ | grep -q "[LiteLoader]" || { echo "LiteLoader not found. Test failed."; exit 1; }
+                        
+    - name: Check if LiteLoader plugins folder exists
+      run: |
+        USER_HOME="$HOME"
+        if [ -d "$USER_HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins" ]; then
+          echo "LiteLoader plugins folder found. Test passed."
+        else
+          echo "LiteLoader plugins folder not found. Test failed."
+          exit 1
+        fi
