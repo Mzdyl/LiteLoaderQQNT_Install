@@ -30,17 +30,17 @@ jobs:
 
     - name: Check output and directory existence
       run: |
-        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]" || [ ! -d "/opt/QQ/resources/app/LiteLoader/plugins" ]; then
-          echo "LiteLoader not found in output or /opt/QQ/resources/app/LiteLoader/plugins directory does not exist. Test failed."
+        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]" || [ ! -d "/opt/LiteLoader/plugins" ]; then
+          echo "LiteLoader not found in output or /opt/LiteLoader/plugins directory does not exist. Test failed."
           exit 1
         else
-          echo "LiteLoader found in output and /opt/QQ/resources/app/LiteLoader/plugins directory exists. Test succeeded."
+          echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
         fi
 
     - name: Check LiteLoader Store
       run: |
         # 检查 LiteLoader 插件是否存在
-        if [ -d "/opt/QQ/resources/app/LiteLoader/plugins/pluginStore" ]; then
+        if [ -d "/opt/LiteLoader/plugins/pluginStore" ]; then
           echo "LiteLoader pluginStore folder exists. Test succeeded."
         else
           echo "LiteLoader pluginStore folder does not exist. Test failed."
