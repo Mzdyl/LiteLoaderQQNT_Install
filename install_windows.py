@@ -219,9 +219,14 @@ def main():
         # except subprocess.CalledProcessError:
         #     print("发生错误，安装失败")
         #     exit(1)
-        print("安装完毕，按 任意键 退出...")
-        input("如有问题请截图安装界面反馈")
 
+
+        # 检测是否在 GitHub Actions 中运行
+        github_actions = os.getenv("GITHUB_ACTIONS", False)
+
+        if not github_actions:
+            print("安装完毕，按 任意键 退出...")
+            input("如有问题请截图安装界面反馈")
 
 
     except Exception as e:
