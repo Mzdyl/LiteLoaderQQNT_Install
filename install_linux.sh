@@ -1,6 +1,6 @@
 if [ "$GITHUB_ACTIONS" == "true" ]; then
     echo "Detected GitHub Actions environment. Setting default values for non-interactive mode."
-    pluginsDir = "/opt/QQ/resources/app/LiteLoader/plugins"
+    pluginsDir="/opt/LiteLoader/plugins"
 else
     # 如果不在 GitHub Actions 环境中，继续使用用户输入
     echo "请输入您的密码以提升权限："
@@ -26,7 +26,8 @@ else
             read -p "LITELOADERQQNT_PROFILE 已存在，是否要修改？ (y/N): " modify_choice
             if [ "$modify_choice" = "y" ] || [ "$modify_choice" = "Y" ]; then
                 # 如果用户同意修改，则替换原有的行
-                sed -i '' 's|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE="'$pluginsDir'"|' "$config_file"
+                sudo sed -i 's|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE="'$pluginsDir'"|' "$config_file"
+
                 echo "LITELOADERQQNT_PROFILE 已修改为: $pluginsDir"
             else
                 echo "未修改 LITELOADERQQNT_PROFILE。"
@@ -38,6 +39,8 @@ else
         fi
 
         source $config_file
+    else
+        pluginsDir='/opt/LiteLoader/plugins'
     fi
 
 fi
@@ -52,27 +55,27 @@ echo "拉取完成，正在安装LiteLoader..."
 sudo cp -f LiteLoader/src/preload.js /opt/QQ/resources/app/application/preload.js
 
 # 如果目标目录存在且不为空，则先备份处理
-if [ -e "/opt/QQ/resources/app/LiteLoader" ]; then
+if [ -e "/opt/LiteLoader" ]; then
     # 删除上次的备份
-    rm -rf "/opt/QQ/resources/app/LiteLoader_bak"
+    sudo rm -rf "/opt/LiteLoader_bak"
 
     # 将已存在的目录重命名为LiteLoader_bak
-    mv "/opt/QQ/resources/app/LiteLoader" "/opt/QQ/resources/app/LiteLoader_bak"
+    sudo mv "/opt/LiteLoader" "/opt/LiteLoader_bak"
     echo "已将原LiteLoader目录备份为LiteLoader_bak"
 fi
 
 # 移动LiteLoader
-sudo mv -f LiteLoader /opt/QQ/resources/app
+sudo mv -f LiteLoader /opt
 
 # 如果LiteLoader_bak中存在plugins文件夹，则复制到新的LiteLoader目录
-if [ -d "/opt/QQ/resources/app/LiteLoader_bak/plugins" ]; then
-    sudo cp -r "/opt/QQ/resources/app/LiteLoader_bak/plugins" "/opt/QQ/resources/app/LiteLoader/"
+if [ -d "/opt/LiteLoader_bak/plugins" ]; then
+    sudo cp -r "/opt/LiteLoader_bak/plugins" "/opt/LiteLoader/"
     echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
 fi
 
 # 如果LiteLoader_bak中存在data文件夹，则复制到新的LiteLoader目录
-if [ -d "/opt/QQ/resources/app/LiteLoader_bak/data" ]; then
-    sudo cp -r "/opt/QQ/resources/app/LiteLoader_bak/data" "/opt/QQ/resources/app/LiteLoader/"
+if [ -d "/opt/LiteLoader_bak/data" ]; then
+    sudo cp -r "/opt/LiteLoader_bak/data" "/opt/LiteLoader/"
     echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
 fi
 
@@ -83,12 +86,12 @@ cd /opt/QQ/resources/app/app_launcher
 echo "正在修补index.js..."
 
 # 检查是否已存在相同的修改
-if grep -q "require('/opt/QQ/resources/app/LiteLoader');" index.js; then
+if grep -q "require('/opt/LiteLoader');" index.js; then
     echo "index.js 已包含相同的修改，无需再次修改。"
 else
     # 如果不存在，则进行修改
     sudo sed -i '' -e "1i\\
-require('/opt/QQ/resources/app/LiteLoader');\
+require('/opt/LiteLoader');\
 " -e '$a\' index.js
     echo "已修补 index.js。"
 fi
@@ -109,10 +112,10 @@ if [ -e "$pluginsDir" ]; then
         fi
     fi
 else
-    mkdir -p "$pluginsDir"
+    sudo mkdir -p "$pluginsDir"
     echo "正在拉取最新版本的插件商店..."
     cd "$pluginsDir" || exit 1
-    git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+    sudo git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
     if [ $? -eq 0 ]; then
         echo "插件商店安装成功"
     else
