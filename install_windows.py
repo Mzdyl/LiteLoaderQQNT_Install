@@ -200,9 +200,12 @@ def main():
         # 解压文件
         shutil.unpack_archive(store_zip_path, os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store"))
         existing_destination_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins', 'LiteLoaderQQNT-Plugin-Plugin-Store-master')
-        print(f"Moving from: {os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-master')}")
-        print(f"Moving to: {os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins')}")
+
         if not os.path.exists(existing_destination_path):
+            # 创建目标文件夹
+            os.makedirs(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins'), exist_ok=True)
+            print(f"Moving from: {os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-master')}")
+            print(f"Moving to: {existing_destination_path}")
             shutil.move(os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-master'), os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins'))
         else :
             print("检测到已安装插件商店，不做重新安装")
@@ -216,6 +219,8 @@ def main():
         # except subprocess.CalledProcessError:
         #     print("发生错误，安装失败")
         #     exit(1)
+        print("安装完毕，按 任意键 退出...")
+        input("如有问题请截图安装界面反馈")
 
 
 

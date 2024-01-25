@@ -34,6 +34,7 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 
 
 特别鸣谢：
+
 [LiteLoaderQQNT](https://github.com/LiteLoaderQQNT/LiteLoaderQQNT)
 
 windows脚本借用[QQNTFileVerifyPatch](https://github.com/LiteLoaderQQNT/QQNTFileVerifyPatch)项目代码实现修补

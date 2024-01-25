@@ -56,3 +56,12 @@ jobs:
           Write-Host "LiteLoader plugins folder not found. Test failed."
           exit 1
         }
+         
+    - name: Check if LiteLoader plugin manifest.json exists
+      run: |
+        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT_bak\plugins\LiteLoaderQQNT-Plugin-Plugin-Store-master\manifest.json") {
+          Write-Host "LiteLoader plugin manifest.json found. Test passed."
+        } else {
+          Write-Host "LiteLoader plugin manifest.json not found. Test failed."
+          exit 1
+        }
