@@ -14,8 +14,8 @@ else
 
     if [ "$modify_env_choice" = "y" ] || [ "$modify_env_choice" = "Y" ]; then
         read -p "请输入LiteLoader插件目录（默认为$HOME/.config/LiteLoader-Plugins）: " custompluginsDir
-        custompluginsDir=${custompluginsDir:-"$HOME/.config/LiteLoader-Plugins"}
-        echo "插件目录: $custompluginsDir"
+        pluginsDir=${custompluginsDir:-"$HOME/.config/LiteLoader-Plugins"}
+        echo "插件目录: $pluginsDir"
     fi
 
 fi
@@ -54,35 +54,28 @@ if [ -d "/opt/QQ/resources/app/LiteLoader_bak/data" ]; then
     echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
 fi
 
-if [ "$modify_env_choice" = "y" ] || [ "$modify_env_choice" = "Y" ]; then
-    # 自定义插件，默认为~/.config/LiteLoader-Plugins
-    read -p "请输入LiteLoader插件目录（默认为$HOME/.config/LiteLoader-Plugins）: " custompluginsDir
-    pluginsDir=${custompluginsDir:-"$HOME/.config/LiteLoader-Plugins"}
-    echo "插件目录: $pluginsDir"
+# 检测当前 shell 类型
+if [ -n "$ZSH_VERSION" ] || [ "$(ps -p $$ -o comm=)" = "zsh" ]; then
+    # 当前 shell 为 Zsh
+    config_file="$HOME/.zshrc"
+else
+    config_file="$HOME/.bashrc"
+fi
 
-    # 检测当前 shell 类型
-    if [ -n "$ZSH_VERSION" ]; then
-        # 当前 shell 为 Zsh
-        config_file="$HOME/.zshrc"
+# 检查是否已存在LITELOADERQQNT_PROFILE
+if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
+    read -p "LITELOADERQQNT_PROFILE 已存在，是否要修改？ (y/N): " modify_choice
+    if [ "$modify_choice" = "y" ] || [ "$modify_choice" = "Y" ]; then
+        # 如果用户同意修改，则替换原有的行
+        sed -i '' 's|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE="'$pluginsDir'"|' "$config_file"
+        echo "LITELOADERQQNT_PROFILE 已修改为: $pluginsDir"
     else
-        config_file="$HOME/.bashrc"
+        echo "未修改 LITELOADERQQNT_PROFILE。"
     fi
-
-    # 检查是否已存在LITELOADERQQNT_PROFILE
-    if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
-        read -p "LITELOADERQQNT_PROFILE 已存在，是否要修改？ (y/n): " modify_choice
-        if [ "$modify_choice" = "y" ] || [ "$modify_choice" = "Y" ]; then
-            # 如果用户同意修改，则替换原有的行
-            sed -i '' 's|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE="'$pluginsDir'"|' "$config_file"
-            echo "LITELOADERQQNT_PROFILE 已修改为: $pluginsDir"
-        else
-            echo "未修改 LITELOADERQQNT_PROFILE。"
-        fi
-    else
-        # 如果不存在，则添加新的行
-        echo 'export LITELOADERQQNT_PROFILE="'$pluginsDir'"' >> "$config_file"
-        echo "已添加 LITELOADERQQNT_PROFILE: $pluginsDir"
-    fi
+else
+    # 如果不存在，则添加新的行
+    echo 'export LITELOADERQQNT_PROFILE="'$pluginsDir'"' >> "$config_file"
+    echo "已添加 LITELOADERQQNT_PROFILE: $pluginsDir"
 fi
 
 source $config_file
@@ -102,6 +95,33 @@ else
 require('/opt/QQ/resources/app/LiteLoader');\
 " -e '$a\' index.js
     echo "已修补 index.js。"
+fi
+
+pluginStoreFolder="$pluginsDir/pluginStore"
+
+if [ -e "$pluginsDir" ]; then
+    if [ -e "$pluginsDir/LiteLoaderQQNT-Plugin-Plugin-Store/" ] || [ -e "$pluginStoreFolder" ]; then
+        echo "插件商店已存在"
+    else
+        echo "正在拉取最新版本的插件商店..."
+        cd "$pluginsDir" || exit 1
+        git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+        if [ $? -eq 0 ]; then
+            echo "插件商店安装成功"
+        else
+            echo "插件商店安装失败"
+        fi
+    fi
+else
+    mkdir -p "$pluginsDir"
+    echo "正在拉取最新版本的插件商店..."
+    cd "$pluginsDir" || exit 1
+    git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+    if [ $? -eq 0 ]; then
+        echo "插件商店安装成功"
+    else
+        echo "插件商店安装失败"
+    fi
 fi
 
 echo "安装完成！脚本将在3秒后退出..."

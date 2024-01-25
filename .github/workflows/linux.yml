@@ -37,3 +37,13 @@ jobs:
           echo "LiteLoader found in output and /opt/QQ/resources/app/LiteLoader/plugins directory exists. Test succeeded."
         fi
 
+    - name: Check LiteLoader Store
+      run: |
+        # 检查 LiteLoader 插件是否存在
+        if [ -d "/opt/QQ/resources/app/LiteLoader/plugins/pluginStore" ]; then
+          echo "LiteLoader pluginStore folder exists. Test succeeded."
+        else
+          echo "LiteLoader pluginStore folder does not exist. Test failed."
+          exit 1
+        fi
+
