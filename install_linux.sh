@@ -1,5 +1,6 @@
 if [ "$GITHUB_ACTIONS" == "true" ]; then
     echo "Detected GitHub Actions environment. Setting default values for non-interactive mode."
+    pluginsDir = "/opt/QQ/resources/app/LiteLoader/plugins"
 else
     # 如果不在 GitHub Actions 环境中，继续使用用户输入
     echo "请输入您的密码以提升权限："
