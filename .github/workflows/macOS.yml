@@ -28,7 +28,6 @@ jobs:
         
     - name: Run QQ on macOS, wait, and check LiteLoader
       run: |
-        USER_HOME="$HOME"
         /Applications/QQ.app/Contents/MacOS/QQ &  # 启动 QQ，放入后台
         sleep 3  # 等待 3 秒
 
@@ -36,7 +35,7 @@ jobs:
         pkill QQ
 
         # 检查 LiteLoader 插件是否存在
-        if [ -d "$USER_HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins" ]; then
+        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins" ]; then
           echo "LiteLoader plugins folder exists. Test succeeded."
         else
           echo "LiteLoader plugins folder does not exist. Test failed."
@@ -46,7 +45,7 @@ jobs:
     - name: Check LiteLoader Store
       run: |
         # 检查 LiteLoader 插件是否存在
-        if [ -d "$USER_HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/pluginStore" ]; then
+        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/pluginStore" ]; then
           echo "LiteLoader pluginStore folder exists. Test succeeded."
         else
           echo "LiteLoader pluginStore folder does not exist. Test failed."
