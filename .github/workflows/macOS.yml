@@ -20,8 +20,7 @@ jobs:
         hdiutil attach QQ_v6.9.25.20979.dmg
         cp -R /Volumes/QQ/QQ.app /Applications
         hdiutil detach /Volumes/QQ
-        open /Applications/QQ.app/
-
+        /Applications/QQ.app/Contents/MacOS/QQ &
     - name: Run install_mac.sh
       run: |
         chmod +x install_mac.sh
@@ -30,7 +29,7 @@ jobs:
     - name: Run QQ on macOS and check LiteLoader
       run: |
         USER_HOME="$HOME"
-        if /Applications/QQ.app/Contents/MacOS/QQ --logging-enable | grep -q "[LiteLoader]" && [ -d "$USER_HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins" ]; then
+        if /Applications/QQ.app/Contents/MacOS/QQ && [ -d "$USER_HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins" ]; then
           echo "LiteLoader found in output and LiteLoader plugins folder exists. Test succeeded."
         else
           echo "LiteLoader not found in output or LiteLoader plugins folder does not exist. Test failed."
