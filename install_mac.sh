@@ -86,7 +86,8 @@ git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pl
 if [ -e "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/LiteLoaderQQNT-Plugin-Plugin-Store/" ] || [ -e "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/pluginStore/" ]; then
     echo "已存在插件商店"
 else
-    mv -f pluginStore $HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins
+    mkdir -p $HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/
+    mv -f pluginStore $HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/pluginStore
     echo "插件商店，安装完成！"
 fi
 
