@@ -78,6 +78,19 @@ require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader');\
     echo "已修补 index.js。"
 fi
 
+echo "正在拉取最新版本的插件商店..."
+cd /tmp
+rm -rf pluginStore
+git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+
+if [ -e "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/LiteLoaderQQNT-Plugin-Plugin-Store/" ] || [ -e "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/pluginStore/" ]; then
+    echo "已存在插件商店"
+else
+    mv -f pluginStore $HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins
+    echo "插件商店，安装完成！"
+fi
+
+
 echo "安装完成！脚本将在3秒后退出..."
 
 # 清理临时文件
