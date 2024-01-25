@@ -78,17 +78,32 @@ require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader');\
     echo "已修补 index.js。"
 fi
 
-echo "正在拉取最新版本的插件商店..."
-cd /tmp
-rm -rf pluginStore
-git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+targetFolder="$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins"
+pluginStoreFolder="$targetFolder/pluginStore"
 
-if [ -e "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/LiteLoaderQQNT-Plugin-Plugin-Store/" ] || [ -e "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/pluginStore/" ]; then
-    echo "已存在插件商店"
+if [ -e "$targetFolder" ]; then
+    if [ -e "$targetFolder/LiteLoaderQQNT-Plugin-Plugin-Store/" ] || [ -e "$pluginStoreFolder" ]; then
+        echo "插件商店已存在"
+    else
+        echo "正在拉取最新版本的插件商店..."
+        cd "$targetFolder" || exit 1
+        git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+        if [ $? -eq 0 ]; then
+            echo "插件商店安装成功"
+        else
+            echo "插件商店安装失败"
+        fi
+    fi
 else
-    mkdir -p $HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/
-    mv -f pluginStore $HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/pluginStore
-    echo "插件商店，安装完成！"
+    mkdir -p "$targetFolder"
+    echo "正在拉取最新版本的插件商店..."
+    cd "$targetFolder" || exit 1
+    git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+    if [ $? -eq 0 ]; then
+        echo "插件商店安装成功"
+    else
+        echo "插件商店安装失败"
+    fi
 fi
 
 
