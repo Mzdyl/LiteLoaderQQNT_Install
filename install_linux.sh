@@ -1,10 +1,5 @@
-#!/bin/bash
-
 if [ "$GITHUB_ACTIONS" == "true" ]; then
     echo "Detected GitHub Actions environment. Setting default values for non-interactive mode."
-    # 设置在 GitHub Actions 环境中的默认值
-    custompluginsDir="$HOME/.config/LiteLoader-Plugins"
-    modify_env_choice="y"
 else
     # 如果不在 GitHub Actions 环境中，继续使用用户输入
     echo "请输入您的密码以提升权限："
@@ -16,6 +11,32 @@ else
         read -p "请输入LiteLoader插件目录（默认为$HOME/.config/LiteLoader-Plugins）: " custompluginsDir
         pluginsDir=${custompluginsDir:-"$HOME/.config/LiteLoader-Plugins"}
         echo "插件目录: $pluginsDir"
+
+        # 检测当前 shell 类型
+        if [ -n "$ZSH_VERSION" ] || [ "$(ps -p $$ -o comm=)" = "zsh" ]; then
+            # 当前 shell 为 Zsh
+            config_file="$HOME/.zshrc"
+        else
+            config_file="$HOME/.bashrc"
+        fi
+
+        # 检查是否已存在LITELOADERQQNT_PROFILE
+        if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
+            read -p "LITELOADERQQNT_PROFILE 已存在，是否要修改？ (y/N): " modify_choice
+            if [ "$modify_choice" = "y" ] || [ "$modify_choice" = "Y" ]; then
+                # 如果用户同意修改，则替换原有的行
+                sed -i '' 's|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE="'$pluginsDir'"|' "$config_file"
+                echo "LITELOADERQQNT_PROFILE 已修改为: $pluginsDir"
+            else
+                echo "未修改 LITELOADERQQNT_PROFILE。"
+            fi
+        else
+            # 如果不存在，则添加新的行
+            echo 'export LITELOADERQQNT_PROFILE="'$pluginsDir'"' >> "$config_file"
+            echo "已添加 LITELOADERQQNT_PROFILE: $pluginsDir"
+        fi
+
+        source $config_file
     fi
 
 fi
@@ -53,32 +74,6 @@ if [ -d "/opt/QQ/resources/app/LiteLoader_bak/data" ]; then
     sudo cp -r "/opt/QQ/resources/app/LiteLoader_bak/data" "/opt/QQ/resources/app/LiteLoader/"
     echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
 fi
-
-# 检测当前 shell 类型
-if [ -n "$ZSH_VERSION" ] || [ "$(ps -p $$ -o comm=)" = "zsh" ]; then
-    # 当前 shell 为 Zsh
-    config_file="$HOME/.zshrc"
-else
-    config_file="$HOME/.bashrc"
-fi
-
-# 检查是否已存在LITELOADERQQNT_PROFILE
-if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
-    read -p "LITELOADERQQNT_PROFILE 已存在，是否要修改？ (y/N): " modify_choice
-    if [ "$modify_choice" = "y" ] || [ "$modify_choice" = "Y" ]; then
-        # 如果用户同意修改，则替换原有的行
-        sed -i '' 's|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE="'$pluginsDir'"|' "$config_file"
-        echo "LITELOADERQQNT_PROFILE 已修改为: $pluginsDir"
-    else
-        echo "未修改 LITELOADERQQNT_PROFILE。"
-    fi
-else
-    # 如果不存在，则添加新的行
-    echo 'export LITELOADERQQNT_PROFILE="'$pluginsDir'"' >> "$config_file"
-    echo "已添加 LITELOADERQQNT_PROFILE: $pluginsDir"
-fi
-
-source $config_file
 
 # 进入安装目录
 cd /opt/QQ/resources/app/app_launcher
