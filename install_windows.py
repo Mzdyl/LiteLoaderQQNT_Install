@@ -199,14 +199,22 @@ def main():
 
         # 解压文件
         shutil.unpack_archive(store_zip_path, os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store"))
-        existing_destination_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins', 'LiteLoaderQQNT-Plugin-Plugin-Store-master')
 
-        if not os.path.exists(existing_destination_path):
+        # 获取环境变量，如果不存在则设置默认值
+        plugin_path = os.getenv('LITELOADERQQNT_PROFILE', default=os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins'))
+
+        existing_destination_path1 = os.path.join(plugin_path, 'LiteLoaderQQNT-Plugin-Plugin-Store-master')
+        existing_destination_path2 = os.path.join(plugin_path, 'pluginStore')
+
+        # 打印或使用 plugin_path 变量
+        print(f"你的插件路径是 {plugin_path}")
+
+        if not os.path.exists(existing_destination_path1) and not os.path.exists(existing_destination_path2):
             # 创建目标文件夹
             os.makedirs(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins'), exist_ok=True)
             print(f"Moving from: {os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-master')}")
-            print(f"Moving to: {existing_destination_path}")
-            shutil.move(os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-master'), os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins'))
+            print(f"Moving to: {existing_destination_path2}")
+            shutil.move(os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-master'), plugin_path)
         else :
             print("检测到已安装插件商店，不做重新安装")
 
