@@ -184,7 +184,7 @@ def main():
         # 修改index.js
         print("正在修补index.js...")
         index_path = os.path.join(app_launcher_path, "index.js")
-        with open(index_path, "r+") as f:
+        with open(index_path, "r+",  encoding='utf-8') as f:
             content = f.read()
             f.seek(0, 0)
             f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n" + content)
