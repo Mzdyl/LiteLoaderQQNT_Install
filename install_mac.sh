@@ -1,3 +1,10 @@
+# 检查是否为 root 用户
+if [ "$(id -u)" -eq 0 ]; then
+    echo "错误：禁止以 root 用户执行此脚本。"
+    echo "请使用普通用户执行"
+    exit 1
+fi
+
 echo "请输入您的密码以提升权限："
 sudo -v
 
