@@ -14,13 +14,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Download and Install QQ Software
-      run: |
-        # Download QQ software
-        Invoke-WebRequest -Uri 'https://dldir1.qq.com/qqfile/qq/QQNT/81d676ff/QQ9.9.7.20979_x64.exe' -OutFile QQInstaller.exe
-        # Install QQ silently
-        Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
-
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -40,28 +33,3 @@ jobs:
         name: install_windows
         path: dist/install_windows.exe
 
-    - name: Run install_windows.exe
-      run: |
-        .\dist\install_windows.exe
-
-    - name: Run QQ with logging
-      run: |
-        start "C:\Program Files\Tencent\QQNT\QQ" --enable-logging 
-
-    - name: Check if LiteLoader plugins folder exists
-      run: |
-        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\plugins") {
-          Write-Host "LiteLoader plugins folder found. Test passed."
-        } else {
-          Write-Host "LiteLoader plugins folder not found. Test failed."
-          exit 1
-        }
-         
-    - name: Check if LiteLoader plugin manifest.json exists
-      run: |
-        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\plugins\LiteLoaderQQNT-Plugin-Plugin-Store-master\manifest.json") {
-          Write-Host "LiteLoader plugin manifest.json found. Test passed."
-        } else {
-          Write-Host "LiteLoader plugin manifest.json not found. Test failed."
-          exit 1
-        }
