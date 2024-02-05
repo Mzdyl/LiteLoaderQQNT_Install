@@ -200,8 +200,12 @@ def main():
         # 解压文件
         shutil.unpack_archive(store_zip_path, os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store"))
 
-        # 获取环境变量，如果不存在则设置默认值
-        plugin_path = os.getenv('LITELOADERQQNT_PROFILE', default=os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins'))
+        # 获取LITELOADERQQNT_PROFILE环境变量的值
+        lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
+
+        # 如果环境变量不存在，则使用默认路径
+        default_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins')
+        plugin_path = os.path.join(lite_loader_profile, 'plugins') if lite_loader_profile else default_path
 
         existing_destination_path1 = os.path.join(plugin_path, 'LiteLoaderQQNT-Plugin-Plugin-Store-master')
         existing_destination_path2 = os.path.join(plugin_path, 'pluginStore')
