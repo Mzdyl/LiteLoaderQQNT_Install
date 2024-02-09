@@ -37,6 +37,8 @@ if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/p
     echo "PS:由于macOS限制，对Sandbox目录操作预计耗时数分钟左右"
     cp -r "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/plugins" "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/"
     echo "已将 LiteLoader_bak 中旧插件Plugins复制到新的 LiteLoader 目录"
+    cp "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader_bak/config.json" "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/"
+    echo "已将 LiteLoader_bak 中旧 config.json 复制到新的 LiteLoader 目录"
 fi
 
 # 如果LiteLoader_bak中存在data文件夹，则复制到新的LiteLoader目录
