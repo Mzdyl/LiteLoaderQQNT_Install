@@ -167,17 +167,16 @@ def main():
         if os.path.exists(old_plugins_path):
             shutil.copytree(old_plugins_path, os.path.join(new_liteloader_path, "plugins"), dirs_exist_ok=True)
             print("已将 LiteLoader_bak 中旧插件 Plugins 复制到新的 LiteLoader 目录")
+            # 复制 LiteLoader_bak 中的 config.json 文件到新的 LiteLoader 目录
+            old_config_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak')
+            shutil.move(old_config_path, os.path.join(new_liteloader_path, 'config.json'))
+            print("已将 LiteLoader_bak 中旧 congig.json 复制到新的 LiteLoader 目录")
 
         # 复制 LiteLoader_bak 中的数据文件到新的 LiteLoader 目录
         old_data_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak', 'data')
         if os.path.exists(old_data_path):
             shutil.copytree(old_data_path, os.path.join(new_liteloader_path, "data"), dirs_exist_ok=True)
             print("已将 LiteLoader_bak 中旧数据文件 data 复制到新的 LiteLoader 目录")
-
-        # 复制 LiteLoader_bak 中的 config.json 文件到新的 LiteLoader 目录
-        old_config_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak')
-        shutil.move(old_config_path, os.path.join(new_liteloader_path, 'config.json'))
-        print("已将 LiteLoader_bak 中旧 congig.json 复制到新的 LiteLoader 目录")
 
 
         # 动态生成目标目录
