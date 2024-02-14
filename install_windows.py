@@ -9,6 +9,9 @@ import urllib.request
 import tkinter as tk
 from tkinter import filedialog
 
+# 当前版本号
+current_version = "1.6"
+
 # 设置标准输出编码为UTF-8
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -76,7 +79,6 @@ def read_registry_key(hive, subkey, value_name):
     except Exception as e:
         print(f"Error reading registry key: {e}")
         return None
-
 
 
 def main():
@@ -250,5 +252,23 @@ def main():
         input("Press Enter to exit.")
 
 if __name__ == "__main__":
+    # 自动更新功能
+    version_url = "https://raw.githubusercontent.com/Mzdyl/LiteLoaderQQNT_Install/main/version.txt"
+    try:
+        with urllib.request.urlopen(version_url) as response:
+            remote_version = response.read().decode('utf-8').strip()
+
+        if remote_version > current_version:
+            print(f"发现新版本 {remote_version}！")
+            download_url = (f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{remote_version}/install_windows.exe")
+            urllib.request.urlretrieve(download_url, f"install_windows-{remote_version}.zip")
+            print("版本号已更新。")
+            print("请重新运行脚本。")
+            sys.exit(0)
+        else:
+            print("当前已是最新版本，开始安装。")
+    except Exception as e:
+        print(f"检查更新阶段发生错误: {e}")
+
     main()
 
