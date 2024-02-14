@@ -90,9 +90,9 @@ def main():
 
         # 读取 UninstallString 信息
         uninstall_string = read_registry_key(registry_hive, registry_subkey, registry_value_name)
-        qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
 
-        if os.path.exists(qq_exe_path) :
+        if os.path.exists(uninstall_string) :
+            qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
             print(f"QQNT 的安装目录为: {qq_exe_path}")
         else:
             print("无法读取 QQNT 的安装目录，请手动选择.")
