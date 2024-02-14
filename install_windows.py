@@ -39,9 +39,8 @@ def scan_and_replace(buffer, pattern, replacement):
 def patch_pe_file(file_path):
     try:
         save_path = file_path + ".bak"
-        print(f"PE File Path: {file_path}")
         os.rename(file_path, save_path)
-        print(f"Backup At: {save_path}")
+        print(f"已将原版备份在 : {save_path}")
 
         pe_file = read_file(save_path)
 
@@ -53,10 +52,10 @@ def patch_pe_file(file_path):
         with open(file_path, 'wb') as output_file:
             output_file.write(pe_file)
 
-        print("Patched!")
+        print("修补成功!")
     except Exception as e:
-        print(f"An error occurred: {e}")
-        input("Press Enter to exit.")
+        print(f"发生错误: {e}")
+        input("按 任意键 退出。")
 
 def get_qq_exe_path():
     root = tk.Tk()
@@ -77,7 +76,7 @@ def read_registry_key(hive, subkey, value_name):
 
         return value
     except Exception as e:
-        print(f"Error reading registry key: {e}")
+        print(f"注册表读取失败: {e}")
         return None
 
 
@@ -248,8 +247,8 @@ def main():
 
 
     except Exception as e:
-        print(f"An error occurred: {e}")
-        input("Press Enter to exit.")
+        print(f"发生错误: {e}")
+        input("按 任意键 退出。")
 
 if __name__ == "__main__":
     # 自动更新功能
@@ -261,7 +260,7 @@ if __name__ == "__main__":
         if remote_version > current_version:
             print(f"发现新版本 {remote_version}！")
             download_url = (f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{remote_version}/install_windows.exe")
-            urllib.request.urlretrieve(download_url, f"install_windows-{remote_version}.zip")
+            urllib.request.urlretrieve(download_url, f"install_windows-{remote_version}.exe")
             print("版本号已更新。")
             print("请重新运行脚本。")
             sys.exit(0)
