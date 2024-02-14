@@ -91,9 +91,9 @@ def main():
         qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
 
         if uninstall_string is not None:
-            print(f"QQ 的安装目录为: {qq_exe_path}")
+            print(f"QQNT 的安装目录为: {qq_exe_path}")
         else:
-            print("无法读取 QQ 的安装目录，请手动选择.")
+            print("无法读取 QQNT 的安装目录，请手动选择.")
             qq_exe_path = get_qq_exe_path()
 
         file_path = os.path.dirname(qq_exe_path)
@@ -129,7 +129,7 @@ def main():
         print(f"临时目录：{temp_dir}")
 
         # 使用urllib下载最新版本的仓库
-        print("正在拉取最新版本的仓库...")
+        print("正在拉取最新版本的仓库…")
         zip_url = "https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/master.zip"
         zip_path = os.path.join(temp_dir, "LiteLoader.zip")
         urllib.request.urlretrieve(zip_url, zip_path)
@@ -138,7 +138,7 @@ def main():
         shutil.unpack_archive(zip_path, os.path.join(temp_dir, "LiteLoader"))
 
         # 移动到安装目录
-        print("拉取完成，正在安装LiteLoader...")
+        print("拉取完成，正在安装 LiteLoaderQQNT")
 
         # 打印调试信息
         print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader','LiteLoaderQQNT-main')}")
@@ -186,17 +186,17 @@ def main():
         os.chdir(app_launcher_path)
 
         # 修改index.js
-        print("正在修补index.js...")
+        print("正在修补 index.js…")
         index_path = os.path.join(app_launcher_path, "index.js")
         with open(index_path, "r+",  encoding='utf-8') as f:
             content = f.read()
             f.seek(0, 0)
             f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n" + content)
 
-        print("LiteLoaderQQNT安装完成！接下来进行插件商店安装")
+        print("LiteLoaderQQNT 安装完成！接下来进行插件商店安装")
 
         # 使用urllib下载最新版本的仓库
-        print("正在拉取最新版本的插件商店...")
+        print("正在拉取最新版本的插件商店…")
         store_zip_url = "https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store/archive/master.zip"
         store_zip_path = os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store.zip")
         urllib.request.urlretrieve(store_zip_url, store_zip_path)
@@ -224,7 +224,7 @@ def main():
             print(f"Moving to: {existing_destination_path2}")
             shutil.move(os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store','LiteLoaderQQNT-Plugin-Plugin-Store-master'), plugin_path)
         else :
-            print("检测到已安装插件商店，不做重新安装")
+            print("检测到已安装插件商店，不再重新安装")
 
         # # 清理临时文件
         # shutil.rmtree(temp_dir)
@@ -241,7 +241,7 @@ def main():
         github_actions = os.getenv("GITHUB_ACTIONS", False)
 
         if not github_actions:
-            print("安装完毕，按 任意键 退出...")
+            print("安装完毕，按 回车键 退出…")
             input("如有问题请截图安装界面反馈")
 
 
