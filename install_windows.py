@@ -151,11 +151,8 @@ def can_connect_to_github():
 
 def download_file(url, filename, proxy_url=None):
     if not can_connect_to_github() and proxy_url:
-        proxies = {
-            "http": proxy_url,
-            "https": proxy_url,
-        }
-        response = requests.get(url, proxies=proxies)
+        proxy_url = proxy_url + url  # 将代理地址和要下载的文件 URL 拼接在一起
+        response = requests.get(proxy_url)
     else:
         response = requests.get(url)
 
