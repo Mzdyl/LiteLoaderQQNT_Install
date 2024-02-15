@@ -10,7 +10,7 @@ import tkinter as tk
 from tkinter import filedialog
 
 # 当前版本号
-current_version = "1.6"
+current_version = "1.7"
 
 # 存储反代服务器的URL
 PROXY_URL = 'https://mirror.ghproxy.com/'
