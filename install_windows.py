@@ -93,18 +93,17 @@ def read_registry_key(hive, subkey, value_name):
 
 
 def check_for_updates():
-
-    # 获取最新版本号
-    response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest")
-    latest_release = response.json()
-    tag_name = latest_release['tag_name']
-
-    # 构建最新版本文件地址
-    version_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/version.txt"
-
-    print(version_url)
-
     try:
+        # 获取最新版本号
+        response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest")
+        latest_release = response.json()
+        tag_name = latest_release['tag_name']
+    
+        # 构建最新版本文件地址
+        version_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/version.txt"
+    
+        print(version_url)
+
         with urllib.request.urlopen(version_url) as response:
             remote_version = response.read().decode('utf-8').strip()
 
