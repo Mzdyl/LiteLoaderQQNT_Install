@@ -8,6 +8,8 @@ import tempfile
 import urllib.request
 import tkinter as tk
 from tkinter import filedialog
+from rich.console import Console
+from rich.markdown import Markdown
 
 # 当前版本号
 current_version = "1.7"
@@ -98,9 +100,13 @@ def check_for_updates():
         response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest")
         latest_release = response.json()
         tag_name = latest_release['tag_name']
-
+        body = latest_release['body']
         if tag_name > current_version:
             print(f"发现新版本 {tag_name}！")
+            print(f"更新日志：\n ")
+            console = Console()
+            markdown = Markdown(body)
+            console.print(markdown)
             download_url = (
                 f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe")
             urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
