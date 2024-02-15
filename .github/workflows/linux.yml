@@ -20,7 +20,7 @@ jobs:
     - name: Download and Install QQ Software
       run: |
         wget https://dldir1.qq.com/qqfile/qq/QQNT/852276c1/linuxqq_3.2.5-21453_amd64.deb
-        sudo dpkg -i linuxqq_3.2.5-20979_amd64.deb
+        sudo dpkg -i linuxqq_3.2.5-21453_amd64.deb
         sudo apt-get install -f
 
     - name: Run install_linux.sh
