@@ -98,20 +98,12 @@ def check_for_updates():
         response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest")
         latest_release = response.json()
         tag_name = latest_release['tag_name']
-    
-        # 构建最新版本文件地址
-        version_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/version.txt"
-    
-        print(version_url)
 
-        with urllib.request.urlopen(version_url) as response:
-            remote_version = response.read().decode('utf-8').strip()
-
-        if remote_version > current_version:
-            print(f"发现新版本 {remote_version}！")
+        if tag_name > current_version:
+            print(f"发现新版本 {tag_name}！")
             download_url = (
-                f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{remote_version}/install_windows.exe")
-            urllib.request.urlretrieve(download_url, f"install_windows-{remote_version}.exe")
+                f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe")
+            urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
             print("版本号已更新。")
             print("请重新运行脚本。")
             sys.exit(0)
