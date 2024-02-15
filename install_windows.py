@@ -228,6 +228,8 @@ def download_and_install_plugin_store(file_path):
         shutil.move(
             os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store', 'LiteLoaderQQNT-Plugin-Plugin-Store-master'),
             plugin_path)
+        # 重命名移动后的目录
+        os.rename(os.path.join(plugin_path, 'LiteLoaderQQNT-Plugin-Plugin-Store-master'), os.path.join(plugin_path, 'pluginStore'))
     else:
         print("检测到已安装插件商店，不再重新安装")
 
