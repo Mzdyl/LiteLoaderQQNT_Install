@@ -12,11 +12,11 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       
     - name: Download and Install QQ Software
       run: |
-        curl -LO https://dldir1.qq.com/qqfile/qq/QQNT/28615eb6/QQ_v6.9.25.20979.dmg
+        curl -LO https://dldir1.qq.com/qqfile/qq/QQNT/05e3ad8d/QQ_v6.9.29.21484.dmg
         hdiutil attach QQ_v6.9.25.20979.dmg
         cp -R /Volumes/QQ/QQ.app /Applications
         hdiutil detach /Volumes/QQ

@@ -12,19 +12,24 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Download and Install QQ Software
       run: |
         # Download QQ software
-        Invoke-WebRequest -Uri 'https://dldir1.qq.com/qqfile/qq/QQNT/81d676ff/QQ9.9.7.20979_x64.exe' -OutFile QQInstaller.exe
+        Invoke-WebRequest -Uri 'https://dldir1.qq.com/qqfile/qq/QQNT/897bf087/QQ9.9.7.21484_x64.exe' -OutFile QQInstaller.exe
         # Install QQ silently
         Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: 3.9  # 指定 Python 3 版本
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
 
     - name: Install pyinstaller
       run: |
@@ -35,7 +40,7 @@ jobs:
         pyinstaller --onefile install_windows.py
 
     - name: Upload install_windows.exe
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: install_windows
         path: dist/install_windows.exe

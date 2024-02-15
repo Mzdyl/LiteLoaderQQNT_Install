@@ -12,14 +12,14 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Install dependencies
       run: sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
 
     - name: Download and Install QQ Software
       run: |
-        wget https://dldir1.qq.com/qqfile/qq/QQNT/c64ca459/linuxqq_3.2.5-20979_amd64.deb
+        wget https://dldir1.qq.com/qqfile/qq/QQNT/852276c1/linuxqq_3.2.5-21453_amd64.deb
         sudo dpkg -i linuxqq_3.2.5-20979_amd64.deb
         sudo apt-get install -f
 
