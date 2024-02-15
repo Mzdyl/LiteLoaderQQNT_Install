@@ -3,6 +3,7 @@ import sys
 import winreg
 import shutil
 import struct
+import requests
 import tempfile
 import urllib.request
 import tkinter as tk
@@ -10,6 +11,9 @@ from tkinter import filedialog
 
 # 当前版本号
 current_version = "1.6"
+
+# 存储反代服务器的URL
+PROXY_URL = 'https://mirror.ghproxy.com/'
 
 # 设置标准输出编码为UTF-8
 sys.stdout.reconfigure(encoding='utf-8')
@@ -127,6 +131,28 @@ def get_qq_path():
     return qq_exe_path
 
 
+def can_connect_to_github():
+    try:
+        response = requests.get('https://github.com', timeout=5)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+
+
+def download_file(url, filename, proxy_url=None):
+    if not can_connect_to_github() and proxy_url:
+        proxies = {
+            "http": proxy_url,
+            "https": proxy_url,
+        }
+        response = requests.get(url, proxies=proxies)
+    else:
+        response = requests.get(url)
+
+    with open(filename, 'wb') as file:
+        file.write(response.content)
+
+
 def download_and_install_liteloader(file_path):
     # 获取Windows下的临时目录
     temp_dir = tempfile.gettempdir()
@@ -136,7 +162,7 @@ def download_and_install_liteloader(file_path):
     print("正在拉取最新版本的仓库…")
     zip_url = "https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/master.zip"
     zip_path = os.path.join(temp_dir, "LiteLoader.zip")
-    urllib.request.urlretrieve(zip_url, zip_path)
+    download_file(zip_url, zip_path, PROXY_URL)
 
     # 解压文件
     shutil.unpack_archive(zip_path, os.path.join(temp_dir, "LiteLoader"))
@@ -176,8 +202,7 @@ def download_and_install_plugin_store(file_path):
     print("正在拉取最新版本的插件商店…")
     store_zip_url = "https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store/archive/master.zip"
     store_zip_path = os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store.zip")
-    urllib.request.urlretrieve(store_zip_url, store_zip_path)
-
+    download_file(store_zip_url, store_zip_path, PROXY_URL)
     # 解压文件
     shutil.unpack_archive(store_zip_path, os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store"))
 
@@ -242,7 +267,7 @@ def copy_old_files(file_path):
         old_config_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak')
         # 复制 LiteLoader_bak 中的 config.json 文件到新的 LiteLoader 目录
         shutil.move(old_config_path, os.path.join(new_liteloader_path, 'config.json'))
-        print("已将 LiteLoader_bak 中旧 congig.json 复制到新的 LiteLoader 目录")
+        print("已将 LiteLoader_bak 中旧 config.json 复制到新的 LiteLoader 目录")
     # 复制 LiteLoader_bak 中的数据文件到新的 LiteLoader 目录
     old_data_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak', 'data')
     if os.path.exists(old_data_path):
