@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 
 # 当前版本号
-current_version = "1.7"
+current_version = "1.8"
 
 # 存储反代服务器的URL
 PROXY_URL = 'https://mirror.ghproxy.com/'
@@ -96,7 +96,7 @@ def read_registry_key(hive, subkey, value_name):
 def check_for_updates():
     try:
         # 获取最新版本号
-        response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest")
+        response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest", timeout=3)
         latest_release = response.json()
         tag_name = latest_release['tag_name']
         body = latest_release['body']
@@ -149,9 +149,9 @@ def can_connect_to_github():
 def download_file(url, filename, proxy_url=None):
     if not can_connect_to_github() and proxy_url:
         proxy_url = proxy_url + url  # 将代理地址和要下载的文件 URL 拼接在一起
-        response = requests.get(proxy_url)
+        response = requests.get(proxy_url, timeout=10)
     else:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
 
     with open(filename, 'wb') as file:
         file.write(response.content)
