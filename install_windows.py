@@ -5,7 +5,6 @@ import shutil
 import struct
 import requests
 import tempfile
-import urllib.request
 import tkinter as tk
 from tkinter import filedialog
 from rich.console import Console
@@ -109,7 +108,8 @@ def check_for_updates():
             console.print(markdown)
             download_url = (
                 f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe")
-            urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
+            # urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
+            download_file(download_url, f"install_windows-{tag_name}.exe", PROXY_URL)
             print("版本号已更新。")
             print("请重新运行脚本。")
             sys.exit(0)
