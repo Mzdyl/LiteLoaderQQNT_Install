@@ -5,12 +5,13 @@ import shutil
 import struct
 import requests
 import tempfile
-import urllib.request
 import tkinter as tk
 from tkinter import filedialog
+from rich.console import Console
+from rich.markdown import Markdown
 
 # 当前版本号
-current_version = "1.7"
+current_version = "1.8"
 
 # 存储反代服务器的URL
 PROXY_URL = 'https://mirror.ghproxy.com/'
@@ -93,26 +94,22 @@ def read_registry_key(hive, subkey, value_name):
 
 
 def check_for_updates():
-
-    # 获取最新版本号
-    response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest")
-    latest_release = response.json()
-    tag_name = latest_release['tag_name']
-
-    # 构建最新版本文件地址
-    version_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/version.txt"
-
-    print(version_url)
-
     try:
-        with urllib.request.urlopen(version_url) as response:
-            remote_version = response.read().decode('utf-8').strip()
-
-        if remote_version > current_version:
-            print(f"发现新版本 {remote_version}！")
+        # 获取最新版本号
+        response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest", timeout=3)
+        latest_release = response.json()
+        tag_name = latest_release['tag_name']
+        body = latest_release['body']
+        if tag_name > current_version:
+            print(f"发现新版本 {tag_name}！")
+            print(f"更新日志：\n ")
+            console = Console()
+            markdown = Markdown(body)
+            console.print(markdown)
             download_url = (
-                f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{remote_version}/install_windows.exe")
-            urllib.request.urlretrieve(download_url, f"install_windows-{remote_version}.exe")
+                f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe")
+            # urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
+            download_file(download_url, f"install_windows-{tag_name}.exe", PROXY_URL)
             print("版本号已更新。")
             print("请重新运行脚本。")
             sys.exit(0)
@@ -152,9 +149,9 @@ def can_connect_to_github():
 def download_file(url, filename, proxy_url=None):
     if not can_connect_to_github() and proxy_url:
         proxy_url = proxy_url + url  # 将代理地址和要下载的文件 URL 拼接在一起
-        response = requests.get(proxy_url)
+        response = requests.get(proxy_url, timeout=10)
     else:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
 
     with open(filename, 'wb') as file:
         file.write(response.content)
@@ -228,7 +225,7 @@ def download_and_install_plugin_store(file_path):
 
     if not os.path.exists(existing_destination_path1) and not os.path.exists(existing_destination_path2):
         # 创建目标文件夹
-        os.makedirs(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins'), exist_ok=True)
+        os.makedirs(plugin_path, exist_ok=True)
         print(
             f"Moving from: {os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store', 'LiteLoaderQQNT-Plugin-Plugin-Store-master')}")
         print(f"Moving to: {existing_destination_path2}")
