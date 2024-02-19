@@ -225,7 +225,7 @@ def download_and_install_plugin_store(file_path):
 
     if not os.path.exists(existing_destination_path1) and not os.path.exists(existing_destination_path2):
         # 创建目标文件夹
-        os.makedirs(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins'), exist_ok=True)
+        os.makedirs(plugin_path, exist_ok=True)
         print(
             f"Moving from: {os.path.join(temp_dir, 'LiteLoaderQQNT-Plugin-Plugin-Store', 'LiteLoaderQQNT-Plugin-Plugin-Store-master')}")
         print(f"Moving to: {existing_destination_path2}")
