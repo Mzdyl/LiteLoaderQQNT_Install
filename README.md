@@ -1,20 +1,21 @@
 # LiteLoaderQQNT_Install
 针对 [LiteLoaderQQNT](https://liteloaderqqnt.github.io) 的安装脚本
 
+同时安装 eee 大佬编写的[插件商店](https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store/releases)
+
 ## 安装方法
 
 windows 运行对应 exe  即可
 
 mac/linux 终端运行对应脚本即可
 
-**window 平台 专门添加 老版本升级检测 ， 自动安装插件商店，自动读取 QQ 路径实现全自动安装 等功能**
+## 版本支持
 
+理论支持 QQNT 桌面端 全架构 全版本
 
 ## 升级更新
 
 若 LiteLoaderQQNT 更新版本一样可以使用 脚本/exe 升级
-
-不会影响已安装的插件（但会默认启用所有已安装的插件）
 
 ## 针对仓库内其他文件的附加说明
 
@@ -26,11 +27,19 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 
 ## 常见问题
 
+**Windows 用户请确保使用 已管理员身份运行。**
+
 **macOS 遇到 Operation not permitted 请检查是否给予 终端 完全磁盘访问权限 或者 允许 终端想访问其他App的数据。**
+
+**LiteLoaderQQNT 安装后无法使用插件请自行检测原因或加群交流，本脚本仅负责安装，同时步骤完全遵循官网指南**
+
+**如有[报毒](https://github.com/Mzdyl/LiteLoaderQQNT_Install/issues/20)请自行判断，本代码完全开源，同时发布的exe均由 GitHub Actions 通过 pyinstaller 构建，代码公开可以自行审查**
 
 软件目前使用 GitHub Action 自动化验证脚本效果
 
 如仍有其他问题或者 bug 欢迎友好反馈
+
+**反馈群 : [Telegram](https://t.me/+EKoVlfEI7Ow4MzJl)**
 
 
 特别鸣谢：
