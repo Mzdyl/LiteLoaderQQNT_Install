@@ -31,11 +31,6 @@ FIX_X86 = bytes(
     [0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xB8, 0x01, 0x00, 0x00, 0x00])
 
 
-def read_file(file_path):
-    with open(file_path, 'rb') as file:
-        return bytearray(file.read())
-
-
 def scan_and_replace(buffer, pattern, replacement):
     index = 0
     while index < len(buffer):
@@ -53,7 +48,8 @@ def patch_pe_file(file_path):
         os.rename(file_path, save_path)
         print(f"已将原版备份在 : {save_path}")
 
-        pe_file = read_file(save_path)
+        with open(save_path, 'rb') as file:
+            pe_file = bytearray(file.read())
 
         if struct.calcsize("P") * 8 == 64:
             scan_and_replace(pe_file, SIG_X64, FIX_X64)
@@ -284,13 +280,15 @@ def copy_old_files(file_path):
 def patch_index_js(file_path):
     app_launcher_path = os.path.join(file_path, "resources", "app", "app_launcher")
     os.chdir(app_launcher_path)
-    print("正在修补 index.js…")
+    print("开始修补 index.js…")
     index_path = os.path.join(app_launcher_path, "index.js")
-    with open(index_path, "r+", encoding='utf-8') as f:
-        content = f.read()
-        f.seek(0, 0)
-        f.write(
-            f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n" + content)
+    # 备份原文件
+    print("已将旧版文件备份为 index.js.bak ")
+    bak_index_path = index_path + ".bak"
+    shutil.copyfile(index_path, bak_index_path)
+    with open(index_path, "w", encoding='utf-8') as f:
+        f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n")
+        f.write("require('./launcher.node').load('external_index', module);")
 
 
 def main():
@@ -299,7 +297,10 @@ def main():
         qq_exe_path = get_qq_path()
         file_path = os.path.dirname(qq_exe_path)
         prepare_for_installation(qq_exe_path)
-        patch_pe_file(qq_exe_path)
+        if os.path.exists(os.path.join(qq_exe_path,'dbghelp.dll')):
+            print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")
+        else:
+            patch_pe_file(qq_exe_path)
         download_and_install_liteloader(file_path)
         copy_old_files(file_path)
         patch_index_js(file_path)
@@ -307,13 +308,6 @@ def main():
         download_and_install_plugin_store(file_path)
         # # 清理临时文件
         # shutil.rmtree(temp_dir)
-
-        # # 错误处理
-        # try:
-        #     subprocess.run(["echo", "test"], check=True, shell=True)
-        # except subprocess.CalledProcessError:
-        #     print("发生错误，安装失败")
-        #     exit(1)
 
         # 检测是否在 GitHub Actions 中运行
         github_actions = os.getenv("GITHUB_ACTIONS", False)
