@@ -297,8 +297,10 @@ def main():
         qq_exe_path = get_qq_path()
         file_path = os.path.dirname(qq_exe_path)
         prepare_for_installation(qq_exe_path)
-        if os.path.exists(os.path.join(qq_exe_path,''))
-        patch_pe_file(qq_exe_path)
+        if os.path.exists(os.path.join(qq_exe_path,'dbghelp.dll')):
+            print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")
+        else:
+            patch_pe_file(qq_exe_path)
         download_and_install_liteloader(file_path)
         copy_old_files(file_path)
         patch_index_js(file_path)
