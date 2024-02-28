@@ -31,11 +31,6 @@ FIX_X86 = bytes(
     [0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xB8, 0x01, 0x00, 0x00, 0x00])
 
 
-def read_file(file_path):
-    with open(file_path, 'rb') as file:
-        return bytearray(file.read())
-
-
 def scan_and_replace(buffer, pattern, replacement):
     index = 0
     while index < len(buffer):
@@ -53,7 +48,8 @@ def patch_pe_file(file_path):
         os.rename(file_path, save_path)
         print(f"已将原版备份在 : {save_path}")
 
-        pe_file = read_file(save_path)
+        with open(save_path, 'rb') as file:
+            pe_file = bytearray(file.read())
 
         if struct.calcsize("P") * 8 == 64:
             scan_and_replace(pe_file, SIG_X64, FIX_X64)
@@ -301,6 +297,7 @@ def main():
         qq_exe_path = get_qq_path()
         file_path = os.path.dirname(qq_exe_path)
         prepare_for_installation(qq_exe_path)
+        if os.path.exists(os.path.join(qq_exe_path,''))
         patch_pe_file(qq_exe_path)
         download_and_install_liteloader(file_path)
         copy_old_files(file_path)
