@@ -309,13 +309,6 @@ def main():
         # # 清理临时文件
         # shutil.rmtree(temp_dir)
 
-        # # 错误处理
-        # try:
-        #     subprocess.run(["echo", "test"], check=True, shell=True)
-        # except subprocess.CalledProcessError:
-        #     print("发生错误，安装失败")
-        #     exit(1)
-
         # 检测是否在 GitHub Actions 中运行
         github_actions = os.getenv("GITHUB_ACTIONS", False)
 
