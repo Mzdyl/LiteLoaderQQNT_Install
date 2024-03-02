@@ -9,6 +9,10 @@ windows 运行对应 exe  即可
 
 mac/linux 终端运行对应脚本即可
 
+### 测试版
+
+Win 用户可以通过 [Github Action](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions) 下载最新测试版本
+
 ## 版本支持
 
 理论支持 QQNT 桌面端 全架构 全版本
