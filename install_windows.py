@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 
 # 当前版本号
-current_version = "1.8"
+current_version = "1.9"
 
 # 存储反代服务器的URL
 PROXY_URL = 'https://mirror.ghproxy.com/'
@@ -164,31 +164,25 @@ def download_and_install_liteloader(file_path):
     zip_path = os.path.join(temp_dir, "LiteLoader.zip")
     download_file(zip_url, zip_path, PROXY_URL)
 
-    # 解压文件
     shutil.unpack_archive(zip_path, os.path.join(temp_dir, "LiteLoader"))
 
-    # 移动到安装目录
     print("拉取完成，正在安装 LiteLoaderQQNT")
 
-    # 打印调试信息
     print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main')}")
     print(f"Moving to: {os.path.join(file_path, 'resources', 'app')}")
 
     # 移除目标路径及其内容
     shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), ignore_errors=True)
 
-    # 检查目标目录是否存在
     source_dir = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')
     destination_dir = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak')
 
     if os.path.exists(source_dir):
-        # 重命名目录
         os.rename(source_dir, destination_dir)
         print(f"已将旧版重命名为: {destination_dir}")
     else:
         print(f" {source_dir} 不存在，全新安装。")
 
-    # 使用 shutil.move 移动文件
     shutil.move(os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main'),
                 os.path.join(file_path, 'resources', 'app'))
 
@@ -198,12 +192,11 @@ def download_and_install_plugin_store(file_path):
     temp_dir = tempfile.gettempdir()
     print(f"临时目录：{temp_dir}")
 
-    # 使用urllib下载最新版本的仓库
     print("正在拉取最新版本的插件商店…")
     store_zip_url = "https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store/archive/master.zip"
     store_zip_path = os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store.zip")
     download_file(store_zip_url, store_zip_path, PROXY_URL)
-    # 解压文件
+
     shutil.unpack_archive(store_zip_path, os.path.join(temp_dir, "LiteLoaderQQNT-Plugin-Plugin-Store"))
 
     # 获取LITELOADERQQNT_PROFILE环境变量的值
@@ -243,11 +236,12 @@ def prepare_for_installation(qq_exe_path):
     with open(package_file_path, 'r') as file:
         content = file.read()
     if target_line in content:
-        print("检测到安装过旧版，执行复原")
+        print("检测到安装过旧版，执行复原 package.json")
         content = content.replace(target_line, replacement_line)
         with open(package_file_path, 'w') as file:
             file.write(content)
         print(f"成功替换目标行: {target_line} -> {replacement_line}")
+        print("请根据需求自行删除 LiteloaderQQNT 0.x 版本本体以及 LITELOADERQQNT_PROFILE 环境变量以及对应目录")
     else:
         print(f"未安装过旧版，全新安装")
 
