@@ -1,5 +1,6 @@
 import os
 import sys
+import ctypes
 import winreg
 import shutil
 import struct
@@ -288,6 +289,8 @@ def patch_index_js(file_path):
 def main():
     try:
         check_for_updates()
+        if not ctypes.windll.shell32.IsUserAnAdmin():
+            print("推荐使用管理员运行")
         qq_exe_path = get_qq_path()
         file_path = os.path.dirname(qq_exe_path)
         prepare_for_installation(qq_exe_path)
