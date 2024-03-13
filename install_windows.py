@@ -98,7 +98,7 @@ def check_for_updates():
         tag_name = latest_release['tag_name']
         body = latest_release['body']
         if tag_name > current_version:
-            print(f"发现新版本 {tag_name}！")
+            print(f"发现新版本 {tag_name}！开始更新")
             print(f"更新日志：\n ")
             console = Console()
             markdown = Markdown(body)
@@ -107,8 +107,8 @@ def check_for_updates():
                 f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe")
             # urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
             download_file(download_url, f"install_windows-{tag_name}.exe", PROXY_URL)
-            print("版本号已更新。")
-            print("请重新运行脚本。")
+            print("版本已更新，请重新运行最新脚本。")
+            input("按任意键退出")
             sys.exit(0)
         else:
             print("当前已是最新版本，开始安装。")
