@@ -132,7 +132,7 @@ else
     fi
 fi
 
-chmod -R 0777 /opt/LiteLoader
+sudo chmod -R 0777 /opt/LiteLoader
 
 echo "安装完成！脚本将在3秒后退出..."
 
