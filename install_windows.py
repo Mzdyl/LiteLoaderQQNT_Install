@@ -1,18 +1,21 @@
 import os
 import sys
 import ctypes
+import time
 import winreg
 import shutil
 import struct
+import psutil
 import requests
 import tempfile
+import subprocess
 import tkinter as tk
 from tkinter import filedialog
 from rich.console import Console
 from rich.markdown import Markdown
 
 # 当前版本号
-current_version = "1.9"
+current_version = "1.10"
 
 # 存储反代服务器的URL
 PROXY_URL = 'https://mirror.ghproxy.com/'
@@ -98,7 +101,7 @@ def check_for_updates():
         tag_name = latest_release['tag_name']
         body = latest_release['body']
         if tag_name > current_version:
-            print(f"发现新版本 {tag_name}！")
+            print(f"发现新版本 {tag_name}！开始更新")
             print(f"更新日志：\n ")
             console = Console()
             markdown = Markdown(body)
@@ -107,8 +110,8 @@ def check_for_updates():
                 f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe")
             # urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
             download_file(download_url, f"install_windows-{tag_name}.exe", PROXY_URL)
-            print("版本号已更新。")
-            print("请重新运行脚本。")
+            print("版本已更新，请重新运行最新脚本。")
+            input("按任意键退出")
             sys.exit(0)
         else:
             print("当前已是最新版本，开始安装。")
@@ -124,13 +127,16 @@ def get_qq_path():
 
     # 读取 UninstallString 信息
     uninstall_string = read_registry_key(registry_hive, registry_subkey, registry_value_name)
-
-    if os.path.exists(uninstall_string):
-        qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
-        print(f"QQNT 的安装目录为: {qq_exe_path}")
-    else:
-        print("无法读取 QQNT 的安装目录，请手动选择.")
+    if uninstall_string is None:
+        print('无法通过注册表读取 QQNT 的安装目录，请手动选择')
         qq_exe_path = get_qq_exe_path()
+    else:
+        if os.path.exists(uninstall_string):
+            qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
+            print(f"QQNT 的安装目录为: {qq_exe_path}")
+        else:
+            print("系统 QQNT 的安装路径不存在，请手动选择.")
+            qq_exe_path = get_qq_exe_path()
 
     return qq_exe_path
 
@@ -212,6 +218,10 @@ def download_and_install_plugin_store(file_path):
 
     # 打印或使用 plugin_path 变量
     print(f"你的插件路径是 {plugin_path}")
+    print("赋予插件目录和插件数据目录完全控制权(解决部分插件权限问题)")
+    change_folder_permissions(plugin_path, 'everyone', 'F')
+    plugin_data_dir = os.path.join(os.path.dirname(plugin_path), "data")
+    change_folder_permissions(plugin_data_dir, 'everyone', 'F')
 
     if not os.path.exists(existing_destination_path1) and not os.path.exists(existing_destination_path2):
         # 创建目标文件夹
@@ -286,15 +296,39 @@ def patch_index_js(file_path):
         f.write("require('./launcher.node').load('external_index', module);")
 
 
+def check_and_kill_qq(process_name):
+    try:
+        for proc in psutil.process_iter():
+            # 检查进程是否与指定的名称匹配
+            if proc.name() == process_name:
+                print(f"找到进程 {process_name}，将于3秒后尝试关闭...")
+                time.sleep(3)
+                proc.kill()
+                print(f"进程 {process_name} 已关闭。")
+
+    except Exception as e:
+        print(f"关闭进程 {process_name} 时出错: {e}")
+
+
+def change_folder_permissions(folder_path, user, permissions):
+    try:
+        cmd = ['icacls', folder_path, '/grant', f'{user}:{permissions}', '/t']
+        subprocess.run(cmd, check=True)
+        print(f"成功修改文件夹 {folder_path} 的权限。")
+    except subprocess.CalledProcessError as e:
+        print(f"修改文件夹权限时出错: {e}")
+
+
 def main():
     try:
         check_for_updates()
         if not ctypes.windll.shell32.IsUserAnAdmin():
             print("推荐使用管理员运行")
+        check_and_kill_qq("qq.exe")
         qq_exe_path = get_qq_path()
         file_path = os.path.dirname(qq_exe_path)
         prepare_for_installation(qq_exe_path)
-        if os.path.exists(os.path.join(qq_exe_path,'dbghelp.dll')):
+        if os.path.exists(os.path.join(qq_exe_path, 'dbghelp.dll')):
             print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")
         else:
             patch_pe_file(qq_exe_path)
@@ -320,3 +354,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
