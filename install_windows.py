@@ -8,13 +8,14 @@ import struct
 import psutil
 import requests
 import tempfile
+import subprocess
 import tkinter as tk
 from tkinter import filedialog
 from rich.console import Console
 from rich.markdown import Markdown
 
 # 当前版本号
-current_version = "1.9"
+current_version = "1.10"
 
 # 存储反代服务器的URL
 PROXY_URL = 'https://mirror.ghproxy.com/'
@@ -217,6 +218,10 @@ def download_and_install_plugin_store(file_path):
 
     # 打印或使用 plugin_path 变量
     print(f"你的插件路径是 {plugin_path}")
+    print("赋予插件目录和插件数据目录完全控制权(解决部分插件权限问题)")
+    change_folder_permissions(plugin_path, 'everyone', 'F')
+    plugin_data_dir = os.path.join(os.path.dirname(plugin_path), "data")
+    change_folder_permissions(plugin_data_dir, 'everyone', 'F')
 
     if not os.path.exists(existing_destination_path1) and not os.path.exists(existing_destination_path2):
         # 创建目标文件夹
@@ -305,6 +310,15 @@ def check_and_kill_qq(process_name):
         print(f"关闭进程 {process_name} 时出错: {e}")
 
 
+def change_folder_permissions(folder_path, user, permissions):
+    try:
+        cmd = ['icacls', folder_path, '/grant', f'{user}:{permissions}', '/t']
+        subprocess.run(cmd, check=True)
+        print(f"成功修改文件夹 {folder_path} 的权限。")
+    except subprocess.CalledProcessError as e:
+        print(f"修改文件夹权限时出错: {e}")
+
+
 def main():
     try:
         check_for_updates()
@@ -314,7 +328,7 @@ def main():
         qq_exe_path = get_qq_path()
         file_path = os.path.dirname(qq_exe_path)
         prepare_for_installation(qq_exe_path)
-        if os.path.exists(os.path.join(qq_exe_path,'dbghelp.dll')):
+        if os.path.exists(os.path.join(qq_exe_path, 'dbghelp.dll')):
             print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")
         else:
             patch_pe_file(qq_exe_path)
