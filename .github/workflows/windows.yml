@@ -31,6 +31,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests
         pip install rich
+        pip install psutil
 
     - name: Install pyinstaller
       run: |

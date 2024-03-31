@@ -1,9 +1,11 @@
 import os
 import sys
 import ctypes
+import time
 import winreg
 import shutil
 import struct
+import psutil
 import requests
 import tempfile
 import tkinter as tk
@@ -289,11 +291,26 @@ def patch_index_js(file_path):
         f.write("require('./launcher.node').load('external_index', module);")
 
 
+def check_and_kill_qq(process_name):
+    try:
+        for proc in psutil.process_iter():
+            # 检查进程是否与指定的名称匹配
+            if proc.name() == process_name:
+                print(f"找到进程 {process_name}，将于3秒后尝试关闭...")
+                time.sleep(3)
+                proc.kill()
+                print(f"进程 {process_name} 已关闭。")
+
+    except Exception as e:
+        print(f"关闭进程 {process_name} 时出错: {e}")
+
+
 def main():
     try:
         check_for_updates()
         if not ctypes.windll.shell32.IsUserAnAdmin():
             print("推荐使用管理员运行")
+        check_and_kill_qq("qq.exe")
         qq_exe_path = get_qq_path()
         file_path = os.path.dirname(qq_exe_path)
         prepare_for_installation(qq_exe_path)
