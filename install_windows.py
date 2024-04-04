@@ -330,7 +330,7 @@ def check_and_kill_qq(process_name):
 def change_folder_permissions(folder_path, user, permissions):
     try:
         cmd = ['icacls', folder_path, '/grant', f'{user}:{permissions}', '/t']
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
         print(f"成功修改文件夹 {folder_path} 的权限。")
     except subprocess.CalledProcessError as e:
         print(f"修改文件夹权限时出错: {e}")
