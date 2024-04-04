@@ -92,6 +92,23 @@ def read_registry_key(hive, subkey, value_name):
         print(f"注册表读取失败: {e}")
         return None
 
+def compare_versions(version1, version2):
+    v1_parts = [int(part) for part in version1.split('.')]
+    v2_parts = [int(part) for part in version2.split('.')]
+
+    # 对比版本号的每个部分
+    for i in range(max(len(v1_parts), len(v2_parts))):
+        v1_part = v1_parts[i] if i < len(v1_parts) else 0
+        v2_part = v2_parts[i] if i < len(v2_parts) else 0
+
+        if v1_part < v2_part:
+            return False
+        elif v1_part > v2_part:
+            return True
+
+    return False  # 两个版本号相等
+
+
 
 def check_for_updates():
     try:
@@ -100,8 +117,8 @@ def check_for_updates():
         latest_release = response.json()
         tag_name = latest_release['tag_name']
         body = latest_release['body']
-        if tag_name > current_version:
-            print(f"发现新版本 {tag_name}！开始更新")
+        if compare_versions(tag_name, current_version):
+            print(f"发现新版本 {tag_name}！开始自动更新")
             print(f"更新日志：\n ")
             console = Console()
             markdown = Markdown(body)
@@ -324,7 +341,7 @@ def main():
         check_for_updates()
         if not ctypes.windll.shell32.IsUserAnAdmin():
             print("推荐使用管理员运行")
-        check_and_kill_qq("qq.exe")
+        check_and_kill_qq("QQ.exe")
         qq_exe_path = get_qq_path()
         file_path = os.path.dirname(qq_exe_path)
         prepare_for_installation(qq_exe_path)
