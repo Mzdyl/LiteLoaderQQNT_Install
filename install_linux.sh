@@ -5,6 +5,12 @@ if [ "$(id -u)" -eq 0 ]; then
     exit 1
 fi
 
+# 检查网络连接选择镜像站
+function can_connect_to_internet() {
+	ping -c 1 -W 5 github.com &> /dev/null
+	return $?  # 返回 0 表示成功，非零表示失败
+}
+
 if [ "$GITHUB_ACTIONS" == "true" ]; then
     echo "Detected GitHub Actions environment. Setting default values for non-interactive mode."
     pluginsDir="/opt/LiteLoader/plugins"
@@ -38,6 +44,7 @@ else
                 echo "LITELOADERQQNT_PROFILE 已修改为: $pluginsDir"
             else
                 echo "未修改 LITELOADERQQNT_PROFILE。"
+                pluginsDir=$config_file
             fi
         else
             # 如果不存在，则添加新的行
@@ -52,10 +59,17 @@ else
 
 fi
 
-echo "正在拉取最新版本的仓库..."
 cd /tmp
 rm -rf LiteLoader
-git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
+# 判断网络连接
+if can_connect_to_internet; then
+    echo "正在拉取最新版本的Github仓库"
+    git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
+else
+    echo "正在拉取最新版本的GitLink仓库"
+    git clone https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git LiteLoader
+fi
+
 
 # 移动到安装目录
 echo "拉取完成，正在安装LiteLoader..."
@@ -113,7 +127,14 @@ if [ -e "$pluginsDir" ]; then
     else
         echo "正在拉取最新版本的插件商店..."
         cd "$pluginsDir" || exit 1
-        git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+        # 判断网络连接
+        if can_connect_to_internet; then
+            echo "正在拉取最新版本的Github仓库"
+            git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+        else
+            echo "正在拉取最新版本的GitLink仓库"
+            git clone https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT-Plugin-Plugin-Store.git pluginStore
+        fi
         if [ $? -eq 0 ]; then
             echo "插件商店安装成功"
         else
@@ -124,7 +145,13 @@ else
     sudo mkdir -p "$pluginsDir"
     echo "正在拉取最新版本的插件商店..."
     cd "$pluginsDir" || exit 1
-    sudo git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+    if can_connect_to_internet; then
+        echo "正在拉取最新版本的Github仓库"
+        sudo git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+    else
+        echo "正在拉取最新版本的GitLink仓库"
+        sudo git clone https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT-Plugin-Plugin-Store.git pluginStore
+    fi
     if [ $? -eq 0 ]; then
         echo "插件商店安装成功"
     else
