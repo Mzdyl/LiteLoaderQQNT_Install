@@ -289,9 +289,6 @@ def copy_old_files(file_path):
         shutil.copytree(old_plugins_path, os.path.join(new_liteloader_path, "plugins"), dirs_exist_ok=True)
         print("已将 LiteLoader_bak 中旧插件 Plugins 复制到新的 LiteLoader 目录")
         old_config_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak')
-        # 复制 LiteLoader_bak 中的 config.json 文件到新的 LiteLoader 目录
-        shutil.copy(os.path.join(old_config_path, 'config.json'), os.path.join(new_liteloader_path, 'config.json'))
-        print("已将 LiteLoader_bak 中旧 config.json 复制到新的 LiteLoader 目录")
     # 复制 LiteLoader_bak 中的数据文件到新的 LiteLoader 目录
     old_data_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak', 'data')
     if os.path.exists(old_data_path):

@@ -92,8 +92,6 @@ sudo mv -f LiteLoader /opt
 if [ -d "/opt/LiteLoader_bak/plugins" ]; then
     sudo cp -r "/opt/LiteLoader_bak/plugins" "/opt/LiteLoader/"
     echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
-    sudo cp "/opt/LiteLoader_bak/config.json" "/opt/LiteLoader/"
-    echo "已将 LiteLoader_bak 中旧 config.json 复制到新的 LiteLoader 目录"
 fi
 
 # 如果LiteLoader_bak中存在data文件夹，则复制到新的LiteLoader目录
