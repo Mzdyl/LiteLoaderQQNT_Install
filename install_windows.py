@@ -9,6 +9,7 @@ import psutil
 import requests
 import tempfile
 import subprocess
+import stat
 import tkinter as tk
 from tkinter import filedialog
 from rich.console import Console
@@ -195,6 +196,16 @@ def download_and_install_liteloader(file_path):
     print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main')}")
     print(f"Moving to: {os.path.join(file_path, 'resources', 'app')}")
 
+    # 遍历LiteLoaderQQNT_bak目录下的所有目录和文件，更改为可写权限
+    for root, dirs, files in os.walk(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), topdown=False):
+        # 更改文件权限
+        for name in files:
+            path = os.path.join(root, name)
+            os.chmod(path, stat.S_IWRITE)
+        # 更改目录权限
+        for name in dirs:
+            path = os.path.join(root, name)
+            os.chmod(path, stat.S_IWRITE)
     # 移除目标路径及其内容
     shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), ignore_errors=True)
 
@@ -368,4 +379,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
