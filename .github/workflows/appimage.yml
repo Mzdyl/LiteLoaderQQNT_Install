@@ -1,0 +1,49 @@
+name: Install and Test LL on Linux
+
+on:
+  push:
+    paths:
+      - 'repack_appimage.sh'
+  workflow_dispatch:
+
+jobs:
+  install_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libfuse2
+
+    - name: Download QQ Software
+      run: |
+        wget https://dldir1.qq.com/qqfile/qq/QQNT/852276c1/linuxqq_3.2.5-21453_x86_64.AppImage
+        mv linuxqq_3.2.5-21453_x86_64.AppImage QQ.AppImage
+        wget --no-check-certificate --content-disposition https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
+
+    - name: Run repack_appimage.sh
+      run: |
+        chmod +x repack_appimage.sh
+        ./repack_appimage.sh
+
+    - name: Check output and directory existence
+      run: |
+        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]" || [ ! -d "/opt/LiteLoader/plugins" ]; then
+          echo "LiteLoader not found in output or /opt/LiteLoader/plugins directory does not exist. Test failed."
+          exit 1
+        else
+          echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
+        fi
+
+    - name: Check LiteLoader Store
+      run: |
+        # 检查 LiteLoader 插件是否存在
+        if [ -d "/opt/LiteLoader/plugins/pluginStore" ]; then
+          echo "LiteLoader pluginStore folder exists. Test succeeded."
+        else
+          echo "LiteLoader pluginStore folder does not exist. Test failed."
+          exit 1
+        fi
+
