@@ -27,6 +27,7 @@ jobs:
       run: |
         chmod +x repack_appimage.sh
         ./repack_appimage.sh
+        ls
 
     - name: Check output and directory existence
       run: |
