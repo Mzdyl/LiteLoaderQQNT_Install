@@ -75,6 +75,10 @@ fi
 chmod -R 0777 $install_dir
 
 cd "$target_dir/.."
+mkdir /opt/QQ
+mkdir /opt/QQ/resources
+mkdir /opt/QQ/resources/app
+touch /opt/QQ/resources/app/512x512.png
 ARCH=x86_64 ./appimagetool-x86_64.AppImage -vgn $target_dir
 
 echo "安装完成！脚本将自动退出..."
