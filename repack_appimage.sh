@@ -77,7 +77,7 @@ chmod -R 0777 $install_dir
 cd "$target_dir/.."
 ./appimagetool-x86_64.AppImage -vgn $target_dir
 
-echo "安装完成！脚本将在3秒后退出..."
+echo "安装完成！脚本将自动退出..."
 
 # 清理临时文件
 rm -rf /tmp/LiteLoader
