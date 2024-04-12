@@ -75,7 +75,7 @@ fi
 chmod -R 0777 $install_dir
 
 cd "$target_dir/.."
-./appimagetool-x86_64.AppImage -vgn $target_dir
+ARCH=x86_64 ./appimagetool-x86_64.AppImage -vgn $target_dir
 
 echo "安装完成！脚本将自动退出..."
 
