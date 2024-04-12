@@ -22,6 +22,7 @@ jobs:
         wget https://dldir1.qq.com/qqfile/qq/QQNT/852276c1/linuxqq_3.2.5-21453_x86_64.AppImage
         mv linuxqq_3.2.5-21453_x86_64.AppImage QQ.AppImage
         wget --no-check-certificate --content-disposition https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
+        chmod +x appimagetool-x86_64.AppImage
 
     - name: Run repack_appimage.sh
       run: |

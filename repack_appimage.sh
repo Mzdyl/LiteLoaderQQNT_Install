@@ -88,7 +88,7 @@ else
     rm -r $target_dir
 fi
 
-# 错误处理
+# 错误处理.
 if [ $? -ne 0 ]; then
     echo "发生错误，安装失败"
     exit 1
