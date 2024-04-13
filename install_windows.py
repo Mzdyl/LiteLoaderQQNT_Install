@@ -360,8 +360,10 @@ def main():
         download_and_install_liteloader(file_path)
         copy_old_files(file_path)
         patch_index_js(file_path)
-        print("LiteLoaderQQNT 安装完成！接下来进行插件商店安装")
-        download_and_install_plugin_store(file_path)
+#       print("LiteLoaderQQNT 安装完成！接下来进行插件商店安装")
+        print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
+        
+#       download_and_install_plugin_store(file_path)
         # # 清理临时文件
         # shutil.rmtree(temp_dir)
 
@@ -379,3 +381,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

@@ -87,33 +87,37 @@ require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader');\
     echo "已修补 index.js。"
 fi
 
-targetFolder="$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins"
-pluginStoreFolder="$targetFolder/pluginStore"
+echo "LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束"
 
-if [ -e "$targetFolder" ]; then
-    if [ -e "$targetFolder/LiteLoaderQQNT-Plugin-Plugin-Store/" ] || [ -e "$pluginStoreFolder" ]; then
-        echo "插件商店已存在"
-    else
-        echo "正在拉取最新版本的插件商店..."
-        cd "$targetFolder" || exit 1
-        git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
-        if [ $? -eq 0 ]; then
-            echo "插件商店安装成功"
-        else
-            echo "插件商店安装失败"
-        fi
-    fi
-else
-    mkdir -p "$targetFolder"
-    echo "正在拉取最新版本的插件商店..."
-    cd "$targetFolder" || exit 1
-    git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
-    if [ $? -eq 0 ]; then
-        echo "插件商店安装成功"
-    else
-        echo "插件商店安装失败"
-    fi
-fi
+
+#
+#targetFolder="$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins"
+#pluginStoreFolder="$targetFolder/pluginStore"
+#
+#if [ -e "$targetFolder" ]; then
+#   if [ -e "$targetFolder/LiteLoaderQQNT-Plugin-Plugin-Store/" ] || [ -e "$pluginStoreFolder" ]; then
+#       echo "插件商店已存在"
+#   else
+#       echo "正在拉取最新版本的插件商店..."
+#       cd "$targetFolder" || exit 1
+#       git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+#       if [ $? -eq 0 ]; then
+#           echo "插件商店安装成功"
+#       else
+#           echo "插件商店安装失败"
+#       fi
+#   fi
+#else
+#   mkdir -p "$targetFolder"
+#   echo "正在拉取最新版本的插件商店..."
+#   cd "$targetFolder" || exit 1
+#   git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
+#   if [ $? -eq 0 ]; then
+#       echo "插件商店安装成功"
+#   else
+#       echo "插件商店安装失败"
+#   fi
+#fi
 
 
 echo "安装完成！脚本将在3秒后退出..."
