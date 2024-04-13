@@ -52,7 +52,7 @@ chmod -R 0777 $install_dir
 
 cd "$target_dir/.."
 echo "正在重打包"
-mksquashfs squashfs-root tmp.squashfs -root-owned -noappend
+mksquashfs squashfs-root tmp.squashfs -root-owned -noappend >/dev/null
 cat runtime-x86_64 >> QQ.AppImage
 cat tmp.squashfs >> QQ.AppImage
 chmod a+x QQ.AppImage
