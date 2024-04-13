@@ -1,10 +1,9 @@
-name: Install and Test LL on Linux
+name: Create and Test AppImage
 
 on:
   push:
     paths:
       - 'repack_appimage.sh'
-      - '.github/workflows/appimage.yml'
   workflow_dispatch:
 
 jobs:
@@ -16,10 +15,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install dependencies
-      run: sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 squashfs-tools
-
-    - name: Set fuse
-      run: sudo apt install -y libfuse2
+      run: sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 squashfs-tools libfuse2
 
     - name: Download QQ Software
       run: |

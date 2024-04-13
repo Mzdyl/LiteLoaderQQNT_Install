@@ -1,14 +1,14 @@
 
-echo "标记可执行"
+echo "处理原AppImage"
 chmod +x QQ.AppImage.old
-echo "自解压"
 ./QQ.AppImage.old --appimage-extract >/dev/null
+
 cd squashfs-root
 target_dir=$PWD
 install_dir="$target_dir/resources/app/app_launcher"
 config_file="$target_dir/AppRun"
-plugin_dir="\$HOME/.config/QQ/LiteLoader/plugins"
-echo "当前关键变量 target_dir:$target_dir"
+plugin_dir="\$HOME/.config/QQ/LiteLoader"
+echo "当前target_dir:$target_dir"
 
 # 检查是否已存在LITELOADERQQNT_PROFILE
 if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
@@ -19,8 +19,8 @@ else
     echo "已添加 LITELOADERQQNT_PROFILE: $plugin_dir"
 fi
 
-echo "正在拉取最新版本的仓库..."
 cd /tmp
+echo "正在拉取最新版本的仓库..."
 rm -rf LiteLoader
 git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
 
@@ -51,21 +51,18 @@ fi
 chmod -R 0777 $install_dir
 
 cd "$target_dir/.."
+echo "正在重打包"
 mksquashfs squashfs-root tmp.squashfs -root-owned -noappend
 cat runtime-x86_64 >> QQ.AppImage
 cat tmp.squashfs >> QQ.AppImage
 chmod a+x QQ.AppImage
+echo "注意，插件与配置文件将放在 $plugin_dir"
 
-echo "安装完成！脚本将自动退出..."
-
+echo "清理临时文件"
 # 清理临时文件
 rm -rf /tmp/LiteLoader
 rm -rf tmp.squashfs
-if [ "$GITHUB_ACTIONS" == "true" ]; then
-    echo "Do not clear $target_dir"
-else
-    rm -r $target_dir
-fi
+rm -r $target_dir
 
 # 错误处理.
 if [ $? -ne 0 ]; then
