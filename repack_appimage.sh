@@ -1,21 +1,22 @@
 
 echo "标记可执行"
-chmod +x QQ.AppImage
+chmod +x QQ.AppImage.old
 echo "自解压"
-./QQ.AppImage --appimage-extract >/dev/null
+./QQ.AppImage.old --appimage-extract >/dev/null
 cd squashfs-root
 target_dir=$PWD
 install_dir="$target_dir/resources/app/app_launcher"
 config_file="$target_dir/AppRun"
+plugin_dir="\$HOME/.config/QQ/LiteLoader/plugins"
 echo "当前关键变量 target_dir:$target_dir"
 
 # 检查是否已存在LITELOADERQQNT_PROFILE
 if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
-    sed -i 's|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE="'$install_dir/LiteLoader/plugins'"|' "$config_file"
+    sed -i 's|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE="'$plugin_dir'"|' "$config_file"
 else
     # 如果不存在，则添加新的行
-    echo 'export LITELOADERQQNT_PROFILE="'$install_dir/LiteLoader/plugins'"' >> "$config_file"
-    echo "已添加 LITELOADERQQNT_PROFILE: $install_dir/LiteLoader/plugins"
+    echo 'export LITELOADERQQNT_PROFILE="'$plugin_dir'"' >> "$config_file"
+    echo "已添加 LITELOADERQQNT_PROFILE: $plugin_dir"
 fi
 
 echo "正在拉取最新版本的仓库..."
@@ -41,20 +42,6 @@ fi
 # 移动LiteLoader
 mv -f LiteLoader "$install_dir/LiteLoader"
 
-# 如果LiteLoader_bak中存在plugins文件夹，则复制到新的LiteLoader目录
-if [ -d "$tmp_bak_dir/plugins" ]; then
-    cp -r "$tmp_bak_dir/plugins" "$install_dir/LiteLoader/plugins"
-    echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
-    cp "$tmp_bak_dir/config.json" "$install_dir/LiteLoader/plugins"
-    echo "已将 LiteLoader_bak 中旧 config.json 复制到新的 LiteLoader 目录"
-fi
-
-# 如果LiteLoader_bak中存在data文件夹，则复制到新的LiteLoader目录
-if [ -d "$tmp_bak_dir/data" ]; then
-    cp -r "$tmp_bak_dir/data" "$install_dir/LiteLoader/"
-    echo "已将 LiteLoader_bak 中旧数据复制到新的 LiteLoader 目录"
-fi
-
 # 进入安装目录
 cd "$install_dir"
 
@@ -75,16 +62,16 @@ fi
 chmod -R 0777 $install_dir
 
 cd "$target_dir/.."
-mkdir /opt/QQ
-mkdir /opt/QQ/resources
-mkdir /opt/QQ/resources/app
-touch /opt/QQ/resources/app/512x512.png
-ARCH=x86_64 ./appimagetool-x86_64.AppImage -vgn $target_dir
+mksquashfs squashfs-root tmp.squashfs -root-owned -noappend
+cat runtime-x86_64 >> QQ.AppImage
+cat tmp.squashfs >> QQ.AppImage
+chmod a+x QQ.AppImage
 
 echo "安装完成！脚本将自动退出..."
 
 # 清理临时文件
 rm -rf /tmp/LiteLoader
+rm -rf tmp.squashfs
 rm -rf $tmp_bak_dir
 if [ "$GITHUB_ACTIONS" == "true" ]; then
     echo "Do not clear $target_dir"
