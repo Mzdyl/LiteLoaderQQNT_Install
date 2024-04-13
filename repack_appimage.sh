@@ -28,17 +28,6 @@ git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
 echo "拉取完成，正在安装LiteLoader..."
 cp -f LiteLoader/src/preload.js $target_dir/resources/app/application/preload.js
 
-tmp_bak_dir="/tmp/LiteLoader_bak"
-# 如果目标目录存在且不为空，则先备份处理
-if [ -e "$install_dir/LiteLoader" ]; then
-    # 删除上次的备份
-    rm -rf "$tmp_bak_dir"
-
-    # 将已存在的目录重命名为LiteLoader_bak
-    mv "$install_dir/LiteLoader" $tmp_bak_dir
-    echo "已将原LiteLoader目录暂时移动为LiteLoader_bak"
-fi
-
 # 移动LiteLoader
 mv -f LiteLoader "$install_dir/LiteLoader"
 
@@ -72,7 +61,6 @@ echo "安装完成！脚本将自动退出..."
 # 清理临时文件
 rm -rf /tmp/LiteLoader
 rm -rf tmp.squashfs
-rm -rf $tmp_bak_dir
 if [ "$GITHUB_ACTIONS" == "true" ]; then
     echo "Do not clear $target_dir"
 else

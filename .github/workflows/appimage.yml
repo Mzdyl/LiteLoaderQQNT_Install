@@ -17,6 +17,9 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 squashfs-tools
 
+    - name: Set fuse
+      run: sudo apt install -y fuse2
+
     - name: Download QQ Software
       run: |
         wget https://dldir1.qq.com/qqfile/qq/QQNT/852276c1/linuxqq_3.2.5-21453_x86_64.AppImage
