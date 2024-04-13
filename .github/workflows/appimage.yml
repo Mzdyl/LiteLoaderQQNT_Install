@@ -19,8 +19,8 @@ jobs:
 
     - name: Download QQ Software
       run: |
-        wget https://dldir1.qq.com/qqfile/qq/QQNT/852276c1/linuxqq_3.2.5-21453_x86_64.AppImage
-        mv linuxqq_3.2.5-21453_x86_64.AppImage QQ.AppImage.old
+        wget https://dldir1.qq.com/qqfile/qq/QQNT/Linux/QQ_3.2.6_240322_x86_64_01.AppImage
+        mv QQ_3.2.6_240322_x86_64_01.AppImage QQ.AppImage.old
         wget --no-check-certificate --content-disposition https://github.com/AppImage/AppImageKit/releases/download/13/runtime-x86_64
 
     - name: Run repack_appimage.sh
