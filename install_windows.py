@@ -16,7 +16,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 
 # 当前版本号
-current_version = "1.10"
+current_version = "1.11"
 
 # 存储反代服务器的URL
 PROXY_URL = 'https://mirror.ghproxy.com/'
