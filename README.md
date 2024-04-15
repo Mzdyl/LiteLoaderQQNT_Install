@@ -60,8 +60,14 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 
 **反馈群 : [Telegram](https://t.me/+EKoVlfEI7Ow4MzJl)**
 
+## TODO List
 
-特别鸣谢：
+- [ ] [repack_appimage.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/repack_appimage.sh) 添加选择QQ.AppImage路径功能
+- [ ] [install_mac.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_mac.sh) 研究如何快速复制 plugins 和 data 文件夹
+- [ ] [install_linux.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_linux.sh) 更通用环境变量设置以及特殊shell的适配
+- [ ] [.github/workflows ](https://github.com/Mzdyl/LiteLoaderQQNT_Install/tree/main/.github/workflows) 更新QQ安装包版本
+
+## 特别鸣谢：
 
 [LiteLoaderQQNT](https://github.com/LiteLoaderQQNT/LiteLoaderQQNT)
 
