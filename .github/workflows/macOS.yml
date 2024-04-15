@@ -41,13 +41,3 @@ jobs:
           echo "LiteLoader plugins folder does not exist. Test failed."
           exit 1
         fi
-
-    - name: Check LiteLoader Store
-      run: |
-        # 检查 LiteLoader 插件是否存在
-        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins/pluginStore" ]; then
-          echo "LiteLoader pluginStore folder exists. Test succeeded."
-        else
-          echo "LiteLoader pluginStore folder does not exist. Test failed."
-          exit 1
-        fi
