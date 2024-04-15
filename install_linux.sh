@@ -122,49 +122,9 @@ require('/opt/LiteLoader');\
     echo "已修补 index.js。"
 fi
 
-echo "LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束"
+echo "LiteLoaderQQNT 安装完成！插件商店作者不维护删库了。"
 
-#
-#pluginStoreFolder="$pluginsDir/pluginStore"
-#
-#if [ -e "$pluginsDir" ]; then
-#   if [ -e "$pluginsDir/LiteLoaderQQNT-Plugin-Plugin-Store/" ] || [ -e "$pluginStoreFolder" ]; then
-#       echo "插件商店已存在"
-#   else
-#       echo "正在拉取最新版本的插件商店..."
-#       cd "$pluginsDir" || exit 1
-#       # 判断网络连接
-#       if can_connect_to_internet; then
-#           echo "正在拉取最新版本的Github仓库"
-#           git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
-#       else
-#           echo "正在拉取最新版本的GitLink仓库"
-#           git clone https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT-Plugin-Plugin-Store.git pluginStore
-#       fi
-#       if [ $? -eq 0 ]; then
-#           echo "插件商店安装成功"
-#       else
-#           echo "插件商店安装失败"
-#       fi
-#   fi
-#else
-#   sudo mkdir -p "$pluginsDir"
-#   echo "正在拉取最新版本的插件商店..."
-#   cd "$pluginsDir" || exit 1
-#   if can_connect_to_internet; then
-#       echo "正在拉取最新版本的Github仓库"
-#       sudo git clone https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store pluginStore
-#   else
-#       echo "正在拉取最新版本的GitLink仓库"
-#       sudo git clone https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT-Plugin-Plugin-Store.git pluginStore
-#   fi
-#   if [ $? -eq 0 ]; then
-#       echo "插件商店安装成功"
-#   else
-#       echo "插件商店安装失败"
-#   fi
-#fi
-
+echo "修改LiteLoader文件夹权限(可能解决部分错误)"
 sudo chmod -R 0777 /opt/LiteLoader
 
 echo "安装完成！脚本将在3秒后退出..."
