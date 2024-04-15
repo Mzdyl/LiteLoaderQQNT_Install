@@ -1,3 +1,4 @@
+#!/bin/bash 
 # 检查是否为 root 用户
 if [ "$(id -u)" -eq 0 ]; then
     echo "错误：禁止以 root 用户执行此脚本。"
@@ -27,12 +28,16 @@ else
         echo "插件目录: $pluginsDir"
 
         # 检测当前 shell 类型
-        if [ -n "$ZSH_VERSION" ] || [ "$(ps -p $$ -o comm=)" = "zsh" ]; then
-            # 当前 shell 为 Zsh
-            config_file="$HOME/.zshrc"
-        else
-            config_file="$HOME/.bashrc"
-        fi
+	if [ -n "$ZSH_VERSION" ] || [ "$(ps -p $$ -o comm=)" = "zsh" ]; then
+	    # 当前 shell 为 Zsh
+	    config_file="$HOME/.zshrc"
+	elif [ "${SHELL##*/}" = "bash" ]; then
+	    config_file="$HOME/.bashrc"
+	else
+	    echo "非bash或者zsh，跳过修改环境变量"
+	 	echo "请将用户目录下 .bashrc 文件内 LL 相关内容自行拷贝到相应配置文件中"
+     	config_file="$HOME/.bashrc"
+	fi
 
         # 检查是否已存在LITELOADERQQNT_PROFILE
         if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
