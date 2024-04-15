@@ -93,6 +93,7 @@ def read_registry_key(hive, subkey, value_name):
         print(f"注册表读取失败: {e}")
         return None
 
+
 def compare_versions(version1, version2):
     v1_parts = [int(part) for part in version1.split('.')]
     v2_parts = [int(part) for part in version2.split('.')]
@@ -108,7 +109,6 @@ def compare_versions(version1, version2):
             return True
 
     return False  # 两个版本号相等
-
 
 
 def check_for_updates():
@@ -255,7 +255,6 @@ def copy_old_files(file_path):
     if os.path.exists(old_plugins_path):
         shutil.copytree(old_plugins_path, os.path.join(new_liteloader_path, "plugins"), dirs_exist_ok=True)
         print("已将 LiteLoader_bak 中旧插件 Plugins 复制到新的 LiteLoader 目录")
-        old_config_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak')
     # 复制 LiteLoader_bak 中的数据文件到新的 LiteLoader 目录
     old_data_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak', 'data')
     if os.path.exists(old_data_path):

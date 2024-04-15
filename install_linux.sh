@@ -27,17 +27,17 @@ else
         pluginsDir=${custompluginsDir:-"$HOME/.config/LiteLoader-Plugins"}
         echo "插件目录: $pluginsDir"
 
-        # 检测当前 shell 类型
-	if [ -n "$ZSH_VERSION" ] || [ "$(ps -p $$ -o comm=)" = "zsh" ]; then
-	    # 当前 shell 为 Zsh
-	    config_file="$HOME/.zshrc"
-	elif [ "${SHELL##*/}" = "bash" ]; then
-	    config_file="$HOME/.bashrc"
-	else
-	    echo "非bash或者zsh，跳过修改环境变量"
-	 	echo "请将用户目录下 .bashrc 文件内 LL 相关内容自行拷贝到相应配置文件中"
-     	config_file="$HOME/.bashrc"
-	fi
+            # 检测当前 shell 类型
+    	if [ -n "$ZSH_VERSION" ] || [ "$(ps -p $$ -o comm=)" = "zsh" ]; then
+    	    # 当前 shell 为 Zsh
+    	    config_file="$HOME/.zshrc"
+    	elif [ "${SHELL##*/}" = "bash" ]; then
+    	    config_file="$HOME/.bashrc"
+    	else
+            echo "非bash或者zsh，跳过修改环境变量"
+            echo "请将用户目录下 .bashrc 文件内 LL 相关内容自行拷贝到相应配置文件中"
+            config_file="$HOME/.bashrc"
+    	fi
 
         # 检查是否已存在LITELOADERQQNT_PROFILE
         if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
@@ -45,18 +45,15 @@ else
             if [ "$modify_choice" = "y" ] || [ "$modify_choice" = "Y" ]; then
                 # 如果用户同意修改，则替换原有的行
                 sudo sed -i 's|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE="'$pluginsDir'"|' "$config_file"
-
                 echo "LITELOADERQQNT_PROFILE 已修改为: $pluginsDir"
             else
                 echo "未修改 LITELOADERQQNT_PROFILE。"
-                pluginsDir=$config_file
             fi
         else
             # 如果不存在，则添加新的行
             echo 'export LITELOADERQQNT_PROFILE="'$pluginsDir'"' >> "$config_file"
             echo "已添加 LITELOADERQQNT_PROFILE: $pluginsDir"
         fi
-
         source $config_file
     else
         pluginsDir='/opt/LiteLoader/plugins'
