@@ -7,7 +7,15 @@
 
 windows 运行对应 exe  即可
 
-mac/linux 终端运行对应脚本即可
+mac 终端运行对应脚本即可
+
+linux 在下方选择一条指令运行
+```bash
+# Stable通道
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" | eval $SHELL
+# Git通道
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_linux_cn.sh" | eval $SHELL
+```
 
 ### 测试版
 
