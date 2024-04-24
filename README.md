@@ -5,7 +5,7 @@
 
 ## 安装方法
 
-windows 运行对应 exe  即可
+windows 运行对应 exe 即可 [Releases 下载链接](https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_windows.exe) 
 
 mac 终端运行对应脚本即可或者
 
