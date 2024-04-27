@@ -5,14 +5,17 @@ if [ "$(id -u)" -eq 0 ]; then
     echo "请使用普通用户执行"
     exit 1
 fi
-
+_reproxy_url=${REPROXY_URL:-"https://mirror.ghproxy.com/"}
+if [ ${_reproxy_url: -1} != "/" ]; then
+    _reproxy_url=$REPROXY_URL"/"
+fi
 # 检查网络连接选择镜像站
 function can_connect_to_internet() {
     wget --spider "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md"
     if [ $? -eq 0 ]; then
         return 0
     fi
-    wget --spider "https://mirror.ghproxy.com/https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md"
+    wget --spider $_reproxy_url"https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md"
     if [ $? -eq 0 ]; then
         return 1
     fi
@@ -78,7 +81,7 @@ case $(can_connect_to_internet); in
     ;;
     1)
         echo "正在拉取最新版本的Github仓库"
-        git clone https://mirror.ghproxy.com/https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
+        git clone $_reproxy_url"https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git" LiteLoader
     ;;
     2)
         echo "正在拉取最新版本的GitLink仓库"
