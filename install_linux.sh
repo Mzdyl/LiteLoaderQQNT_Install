@@ -74,7 +74,7 @@ fi
 cd /tmp
 rm -rf LiteLoader
 # 判断网络连接
-case $(can_connect_to_internet); in
+case $(can_connect_to_internet) in
     0)
         echo "正在拉取最新版本的Github仓库"
         git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
