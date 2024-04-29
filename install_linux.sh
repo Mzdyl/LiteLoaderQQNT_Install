@@ -11,16 +11,17 @@ if [ ${_reproxy_url: -1} != "/" ]; then
 fi
 # 检查网络连接选择镜像站
 function can_connect_to_internet() {
-    wget --spider "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md"
+    wget --tries=2 --timeout=1 --spider "https://gihub.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md"
     if [ $? -eq 0 ]; then
         return 0
     fi
-    wget --spider $_reproxy_url"https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md"
+    wget --tries=2 --timeout=1 --spider $_reproxy_url"https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md"
     if [ $? -eq 0 ]; then
         return 1
     fi
     return 2
 }
+
 
 if [ "$GITHUB_ACTIONS" == "true" ]; then
     echo "Detected GitHub Actions environment. Setting default values for non-interactive mode."
