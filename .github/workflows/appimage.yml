@@ -5,6 +5,7 @@ on:
     paths:
       - 'repack_appimage.sh'
   pull_request:
+    types: [opened]
     paths:
       - 'repack_appimage.sh'
   workflow_dispatch:

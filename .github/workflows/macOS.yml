@@ -5,6 +5,7 @@ on:
     paths:
       - 'install_mac.sh'
   pull_request:
+    types: [opened]
     paths:
       - 'install_mac.sh'
   workflow_dispatch:

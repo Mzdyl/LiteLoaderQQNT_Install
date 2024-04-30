@@ -5,6 +5,7 @@ on:
     paths:
       - 'install_linux.sh'
   pull_request:
+    types: [opened]
     paths:
       - 'install_linux.sh'
   workflow_dispatch:
