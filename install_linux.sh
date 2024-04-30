@@ -7,17 +7,15 @@ if [ "$(id -u)" -eq 0 ]; then
 fi
 _reproxy_url=${REPROXY_URL:-"https://mirror.ghproxy.com/"}
 if [ ${_reproxy_url: -1} != "/" ]; then
-    _reproxy_url=$REPROXY_URL"/"
+    _reproxy_url="$REPROXY_URL""/"
 fi
 # 检查网络连接选择镜像站
 function can_connect_to_internet() {
-    wget --spider "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md"
-    if [ $? -eq 0 ]; then
-        return 0
+    if [ `curl -sL "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md" | wc -c` > 0 ]; then
+        echo "GitHub通过"
     fi
-    wget --spider $_reproxy_url"https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md"
-    if [ $? -eq 0 ]; then
-        return 1
+    if [ `curl -sL "$_reproxy_url""https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md" | wc -c` > 0 ]; then
+        echo "反代通过"
     fi
     return 2
 }
