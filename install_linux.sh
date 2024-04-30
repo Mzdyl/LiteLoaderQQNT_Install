@@ -11,13 +11,16 @@ if [ ${_reproxy_url: -1} != "/" ]; then
 fi
 # 检查网络连接选择镜像站
 function can_connect_to_internet() {
-    if [ `curl -sL "https://github.com" | wc -c` > 0 ]; then
-        return 0
+    if [ `curl -sL --max-time 3 "https://github.com" | wc -c` > 0 ]; then
+        echo "0"
+        return 
     fi
-    if [ `curl -sL "$_reproxy_url""https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" | wc -c` > 0 ]; then
-        return 1
+    if [ `curl -sL --max-time 3 "$_reproxy_url""https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" | wc -c` > 0 ]; then
+        echo "1"
+        return
     fi
-    return 2
+    echo "2"
+    return
 }
 
 if [ "$GITHUB_ACTIONS" == "true" ]; then
