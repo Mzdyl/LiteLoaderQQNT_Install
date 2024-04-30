@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - 'repack_appimage.sh'
+  pull_request:
+    paths:
+      - 'repack_appimage.sh'
   workflow_dispatch:
 
 jobs:

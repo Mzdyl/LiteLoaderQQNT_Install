@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - 'install_linux.sh'
+  pull_request:
+    paths:
+      - 'install_linux.sh'
   workflow_dispatch:
 
 jobs:

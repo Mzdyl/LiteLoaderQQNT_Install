@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - 'install_mac.sh'
+  pull_request:
+    paths:
+      - 'install_mac.sh'
   workflow_dispatch:
 
 jobs:

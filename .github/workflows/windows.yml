@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - 'install_windows.py'
+  pull_request:
+    paths:
+      - 'install_windows.sh'
   workflow_dispatch:
 
 jobs:
