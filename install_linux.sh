@@ -11,10 +11,10 @@ if [ ${_reproxy_url: -1} != "/" ]; then
 fi
 # 检查网络连接选择镜像站
 function can_connect_to_internet() {
-    if [ `curl -sL "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md" | wc -c` > 0 ]; then
+    if [ `curl -sL "https://github.com" | wc -c` > 0 ]; then
         return 0
     fi
-    if [ `curl -sL "$_reproxy_url""https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md" | wc -c` > 0 ]; then
+    if [ `curl -sL "$_reproxy_url""https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" | wc -c` > 0 ]; then
         return 1
     fi
     return 2
@@ -27,26 +27,26 @@ else
     # 如果不在 GitHub Actions 环境中，继续使用用户输入
     echo "请输入您的密码以提升权限："
     sudo -v
-    
+
     read -p "是否通过环境变量修改插件目录 (y/N): " modify_env_choice
-    
+
     if [ "$modify_env_choice" = "y" ] || [ "$modify_env_choice" = "Y" ]; then
         read -p "请输入LiteLoader插件目录（默认为$HOME/.config/LiteLoader-Plugins）: " custompluginsDir
         pluginsDir=${custompluginsDir:-"$HOME/.config/LiteLoader-Plugins"}
         echo "插件目录: $pluginsDir"
-        
+
         # 检测当前 shell 类型
         if [ -n "$ZSH_VERSION" ] || [ "$(ps -p $$ -o comm=)" = "zsh" ]; then
             # 当前 shell 为 Zsh
             config_file="$HOME/.zshrc"
-            elif [ "${SHELL##*/}" = "bash" ]; then
+        elif [ "${SHELL##*/}" = "bash" ]; then
             config_file="$HOME/.bashrc"
         else
             echo "非bash或者zsh，跳过修改环境变量"
             echo "请将用户目录下 .bashrc 文件内 LL 相关内容自行拷贝到相应配置文件中"
             config_file="$HOME/.bashrc"
         fi
-        
+
         # 检查是否已存在LITELOADERQQNT_PROFILE
         if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
             read -p "LITELOADERQQNT_PROFILE 已存在，是否要修改？ (y/N): " modify_choice
@@ -66,13 +66,13 @@ else
     else
         pluginsDir='/opt/LiteLoader/plugins'
     fi
-    
+
 fi
 
 cd /tmp
 rm -rf LiteLoader
 # 判断网络连接
-case $(can_connect_to_internet); in
+case $(can_connect_to_internet) in
     0)
         echo "正在拉取最新版本的Github仓库"
         git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
@@ -85,6 +85,8 @@ case $(can_connect_to_internet); in
         echo "正在拉取最新版本的GitLink仓库"
         git clone https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git LiteLoader
     ;;
+    *)
+        echo "出现错误，请截图"
 esac
 
 
@@ -96,7 +98,7 @@ sudo cp -f LiteLoader/src/preload.js /opt/QQ/resources/app/application/preload.j
 if [ -e "/opt/LiteLoader" ]; then
     # 删除上次的备份
     sudo rm -rf "/opt/LiteLoader_bak"
-    
+
     # 将已存在的目录重命名为LiteLoader_bak
     sudo mv "/opt/LiteLoader" "/opt/LiteLoader_bak"
     echo "已将原LiteLoader目录备份为LiteLoader_bak"
