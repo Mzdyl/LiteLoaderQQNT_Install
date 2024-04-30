@@ -12,10 +12,10 @@ fi
 # 检查网络连接选择镜像站
 function can_connect_to_internet() {
     if [ `curl -sL "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md" | wc -c` > 0 ]; then
-        echo "GitHub通过"
+        return 0
     fi
     if [ `curl -sL "$_reproxy_url""https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/README.md" | wc -c` > 0 ]; then
-        echo "反代通过"
+        return 1
     fi
     return 2
 }
