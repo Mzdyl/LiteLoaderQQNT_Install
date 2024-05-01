@@ -7,7 +7,7 @@ on:
   pull_request:
     types: [opened]
     paths:
-      - 'install_windows.sh'
+      - 'install_windows.py'
   workflow_dispatch:
 
 jobs:
