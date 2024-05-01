@@ -44,8 +44,8 @@ jobs:
     - name: Download and Install QQ Software
       run: |
         # Download QQ software
-Write-Output "from requests import get\nr=get('https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/windowsDownloadUrl.js').text\nr=r[r.find('ntDownloadX64Url')+19:]
-\nwith open('QQInstaller.exe','wb') as QQ:\n QQ.write(get(r[:r.find('"')],stream=True).content)" | python
+        Write-Output "from requests import get\nr=get('https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/windowsDownloadUrl.js').text\nr=r[r.find('ntDownloadX64Url')+19:]
+\nwith open('QQInstaller.exe','wb') as QQ:\n QQ.write(get(r[:r.find('\"')],stream=True).content)" | python
         # Install QQ silently
         Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
 
