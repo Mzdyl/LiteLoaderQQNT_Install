@@ -7,7 +7,7 @@ on:
   pull_request:
     types: [opened]
     paths:
-      - 'install_windows.sh'
+      - 'install_windows.py'
   workflow_dispatch:
 
 jobs:
@@ -18,13 +18,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Download and Install QQ Software
-      run: |
-        # Download QQ software
-        Invoke-WebRequest -Uri 'https://dldir1.qq.com/qqfile/qq/QQNT/897bf087/QQ9.9.7.21484_x64.exe' -OutFile QQInstaller.exe
-        # Install QQ silently
-        Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -32,17 +25,14 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install requests
-        pip install rich
-        pip install psutil
+        python3 -m pip install --upgrade pip
+        python3 -m pip install requests
+        python3 -m pip install rich
+        python3 -m pip install psutil
 
-    - name: Install pyinstaller
+    - name: Install pyinstaller & Build install_windows.exe
       run: |
-        python -m pip install pyinstaller
-
-    - name: Build install_windows.exe
-      run: |
+        python3 -m pip install pyinstaller
         pyinstaller --onefile install_windows.py
 
     - name: Upload install_windows.exe
@@ -50,6 +40,13 @@ jobs:
       with:
         name: install_windows
         path: dist/install_windows.exe
+
+    - name: Download and Install QQ Software
+      run: |
+        # Download QQ software
+        python get_windows_qqnt.py
+        # Install QQ silently
+        Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
 
     - name: Run install_windows.exe
       run: |
