@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - 'install_windows.py'
+      - '.github/workflows/windows.yml'
   pull_request:
     types: [opened]
     paths:
       - 'install_windows.py'
+      - '.github/workflows/windows.yml'
   workflow_dispatch:
 
 jobs:
@@ -44,7 +46,7 @@ jobs:
     - name: Download and Install QQ Software
       run: |
         # Download QQ software
-        python get_windows_qqnt.py
+        python3 get_qqnt.py Windowsx64
         # Install QQ silently
         Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
 
