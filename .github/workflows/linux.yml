@@ -31,7 +31,7 @@ jobs:
 
     - name: Download and Install QQ Software
       run: |
-        python3 get_qqnt.py Linux
+        python3 get_qqnt.py Debianx64
         sudo dpkg -i LinuxQQ.deb
         sudo apt-get install -f
 
