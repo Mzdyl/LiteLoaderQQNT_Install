@@ -4,16 +4,23 @@ from sys import exit, argv
 plat = argv[1]
 print("plat:%s" % plat)
 if plat == "Windows":
-    url = "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/windowsDownloadUrl.js"
+    r = get(
+        "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/windowsDownloadUrl.js"
+    ).text
     key = "ntDownloadX64Url"
     name = "QQInstaller.exe"
 elif plat == "Linux":
-    pass
+    r = get(
+        "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxQQDownload.js"
+    ).text
+    r = r[r.find("x64DownloadUrl") :]
+    r = r[: r.find("}")]
+    key = "deb"
+    name = "LinuxQQ.deb"
 elif plat == "Macos":
     pass
 else:
     exit(-1)
-r = get(url).text
 r = r[r.find(key) :]
 r = r[r.find('"') + 1 :]
 r = r[r.find('"') + 1 :]
