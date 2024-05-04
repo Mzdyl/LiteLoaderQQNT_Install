@@ -3,7 +3,7 @@ from sys import exit, argv
 
 plat = argv[1]
 print("plat:%s" % plat)
-if plat == "Windows":
+if plat == "Windowsx64":
     r = get(
         "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/windowsDownloadUrl.js"
     ).text
