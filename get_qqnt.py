@@ -9,7 +9,7 @@ if plat == "Windowsx64":
     ).text
     key = "ntDownloadX64Url"
     name = "QQInstaller.exe"
-elif plat == "Linux":
+elif plat == "Debianx64":
     r = get(
         "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxQQDownload.js"
     ).text
