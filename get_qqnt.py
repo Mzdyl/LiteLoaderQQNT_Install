@@ -1,5 +1,6 @@
 from requests import get
-plat=input()
+from sys import exit,argv
+plat=argv[1]
 if plat=='Windows':
     url='https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/windowsDownloadUrl.js'
     key='ntDownloadX64Url'
