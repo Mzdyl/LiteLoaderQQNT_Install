@@ -47,10 +47,10 @@ fi
 
 
 # 是否为插件目录创建软连接
-read -p "是否为插件目录创建软连接方便安装插件 (y/N): " create_symlink
+read "?是否为插件目录创建软连接方便安装插件 (y/N): " create_symlink
 if [ "$create_symlink" = "y" ] || [ "$create_symlink" = "Y" ]; then
     # 自定义插件，默认为~/Downloads/plugins
-    read -p "请输入LiteLoader插件目录（默认为$HOME/Downloads/plugins）: " custompluginsDir
+    read "?请输入LiteLoader插件目录（默认为$HOME/Downloads/plugins）: " custompluginsDir
     pluginsDir=${custompluginsDir:-"$HOME/Downloads"}
     echo "插件目录: $pluginsDir"
 
