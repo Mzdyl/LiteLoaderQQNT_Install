@@ -19,9 +19,9 @@ curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_mac.sh
 linux 在下方选择一条指令运行
 ```bash
 # Stable通道
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" | eval $SHELL
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" | bash
 # Git通道
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_linux_cn.sh" | eval $SHELL
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_linux_cn.sh" | bash
 ```
 
 ### 测试版
