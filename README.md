@@ -9,19 +9,20 @@ windows 运行对应 exe 即可 [Releases 下载链接](https://github.com/Mzdyl
 
 mac 终端运行对应脚本即可或者
 
-```bash
+
+```
 # Stable通道
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_mac.sh" | zsh
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_mac.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
 # Git通道
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_mac.sh" | zsh
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_mac.sh" -o /tmp/install_git.sh && bash /tmp/install_git.sh
 ```
 
 linux 在下方选择一条指令运行
 ```bash
 # Stable通道
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" | bash
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
 # Git通道
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_linux_cn.sh" | bash
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_linux_cn.sh" -o /tmp/install_git.sh && bash /tmp/install_git.sh
 ```
 
 ### 测试版
