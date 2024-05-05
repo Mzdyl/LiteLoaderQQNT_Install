@@ -5,10 +5,12 @@ if [ "$(id -u)" -eq 0 ]; then
     echo "请使用普通用户执行"
     exit 1
 fi
+
 _reproxy_url=${REPROXY_URL:-"https://mirror.ghproxy.com/"}
 if [ ${_reproxy_url: -1} != "/" ]; then
     _reproxy_url="$REPROXY_URL""/"
 fi
+
 # 检查网络连接选择镜像站
 function can_connect_to_internet() {
     if [ `curl -sL --max-time 3 "https://github.com" | wc -c` > 0 ]; then
@@ -23,7 +25,7 @@ function can_connect_to_internet() {
     return
 }
 
-if [ "$GITHUB_ACTIONS" == "true" ]; then
+if [ "$GITHUB_ACTIONS" = "true" ]; then
     echo "Detected GitHub Actions environment. Setting default values for non-interactive mode."
     pluginsDir="/opt/LiteLoader/plugins"
 else
@@ -39,8 +41,7 @@ else
         echo "插件目录: $pluginsDir"
 
         # 检测当前 shell 类型
-        if [ -n "$ZSH_VERSION" ] || [ "$(ps -p $$ -o comm=)" = "zsh" ]; then
-            # 当前 shell 为 Zsh
+        if [ "${SHELL##*/}" = "zsh" ]; then
             config_file="$HOME/.zshrc"
         elif [ "${SHELL##*/}" = "bash" ]; then
             config_file="$HOME/.bashrc"
@@ -139,12 +140,11 @@ require('/opt/LiteLoader');\
     echo "已修补 index.js。"
 fi
 
-echo "LiteLoaderQQNT 安装完成！插件商店作者不维护删库了。"
-
 echo "修改LiteLoader文件夹权限(可能解决部分错误)"
 sudo chmod -R 0777 /opt/LiteLoader
 
-echo "安装完成！脚本将在3秒后退出..."
+echo "LiteLoaderQQNT 安装完成！插件商店作者不维护删库了。"
+echo "脚本将在3秒后退出..."
 
 # 清理临时文件
 rm -rf /tmp/LiteLoader
