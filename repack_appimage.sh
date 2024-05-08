@@ -1,7 +1,22 @@
+#!/bin/bash
+if [ $# -eq 0 ]; then
+    echo "未提供 QQ.AppImage 文件的路径，默认使用当前目录下的 QQ.AppImage"
+    custom_appimage_path="./QQ.AppImage"
+else
+    custom_appimage_path="$1"
+fi
 
+if [ -f "$custom_appimage_path" ]; then
+    echo "当前 QQ.AppImage 路径: $custom_appimage_path"
+    cp "$custom_appimage_path" QQ.AppImage.bak
+    chmod +x "$custom_appimage_path"
+else
+    echo "未找到指定的 QQ.AppImage 文件"
+    exit 1
+fi
 echo "处理原AppImage"
-chmod +x QQ.AppImage.old
-./QQ.AppImage.old --appimage-extract >/dev/null
+chmod +x QQ.AppImage
+./QQ.AppImage --appimage-extract >/dev/null
 
 cd squashfs-root
 target_dir=$PWD

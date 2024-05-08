@@ -23,6 +23,14 @@ elif plat == "Macos":
     ).text
     key = "downloadUrl"
     name = "QQ.dmg"
+elif plat == "AppImage":
+    r = get(
+        "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxQQDownload.js"
+    ).text
+    r = r[r.find("x64DownloadUrl") :]
+    r = r[: r.find("}")]
+    key = "appimage"
+    name = "QQ.AppImage"
 else:
     exit(-1)
 r = r[r.find(key) :]

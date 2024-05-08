@@ -18,13 +18,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9  # 指定 Python 3 版本
+
     - name: Install dependencies
-      run: sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 squashfs-tools libfuse2
+      run: |
+        sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 squashfs-tools libfuse2
+        python3 -m pip install --upgrade pip
+        python3 -m pip install requests
 
     - name: Download QQ Software
       run: |
-        wget https://dldir1.qq.com/qqfile/qq/QQNT/Linux/QQ_3.2.6_240322_x86_64_01.AppImage
-        mv QQ_3.2.6_240322_x86_64_01.AppImage QQ.AppImage.old
+        python3 get_qqnt.py AppImage
         wget --no-check-certificate --content-disposition https://github.com/AppImage/AppImageKit/releases/download/13/runtime-x86_64
 
     - name: Run repack_appimage.sh
@@ -40,4 +47,10 @@ jobs:
         else
           echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
         fi
+    - name: Upload QQ # 手动触发时上传
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/upload-artifact@v4
+      with:
+        name: QQ
+        path: QQ.AppImage
 
