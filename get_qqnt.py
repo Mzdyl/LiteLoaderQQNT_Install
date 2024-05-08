@@ -18,7 +18,11 @@ elif plat == "Debianx64":
     key = "deb"
     name = "LinuxQQ.deb"
 elif plat == "Macos":
-    pass
+    r = get(
+        "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/ntQQDownload.js"
+    ).text
+    key = "downloadUrl"
+    name = "QQ.dmg"
 else:
     exit(-1)
 r = r[r.find(key) :]

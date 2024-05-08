@@ -17,14 +17,25 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9  # 指定 Python 3 版本
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install requests
+
     - name: Download and Install QQ Software
       run: |
-        curl -LO https://dldir1.qq.com/qqfile/qq/QQNT/05e3ad8d/QQ_v6.9.29.21484.dmg
-        hdiutil attach QQ_v6.9.29.21484.dmg
+        python3 get_qqnt.py Macos
+        hdiutil attach QQ.dmg
         cp -R /Volumes/QQ/QQ.app /Applications
         hdiutil detach /Volumes/QQ
         open /Applications/QQ.app/ &
+                                
     - name: Run install_mac.sh
       run: |
         chmod +x install_mac.sh
