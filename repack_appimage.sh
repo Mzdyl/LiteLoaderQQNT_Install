@@ -15,11 +15,11 @@ else
     exit 1
 fi
 echo "处理原AppImage"
-chmod +x QQ.AppImage
-./QQ.AppImage --appimage-extract >/dev/null
+chmod +x $custom_appimage_path
+$custom_appimage_path --appimage-extract >/dev/null
 
 cd squashfs-root
-target_dir=$PWD
+target_dir="$custom_appimage_path/squashfs-root"
 install_dir="$target_dir/resources/app/app_launcher"
 config_file="$target_dir/AppRun"
 plugin_dir="\$HOME/.config/QQ/LiteLoader"
@@ -50,16 +50,15 @@ mv -f LiteLoader "$install_dir/LiteLoader"
 cd "$install_dir"
 
 # 修改index.js
-echo "正在修补index.js...$PWD"
+echo "正在修补index.js...$custom_appimage_path"
 
 # 检查是否已存在相同的修改
 if grep -q "require('./LiteLoader');" index.js; then
     echo "index.js 已包含相同的修改，无需再次修改。"
 else
     # 如果不存在，则进行修改
-    sed -i '' -e "1i\\
-require('./LiteLoader');\
-" -e '$a\' index.js
+sed -i -e "1i\\
+require('./LiteLoader');" -e '$a\' index.js
     echo "已修补 index.js。"
 fi
 
