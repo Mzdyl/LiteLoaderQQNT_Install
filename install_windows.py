@@ -275,6 +275,22 @@ def patch_index_js(file_path):
         f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n")
         f.write("require('./launcher.node').load('external_index', module);")
 
+def patch(file_path):
+
+    # 获取LITELOADERQQNT_PROFILE环境变量的值
+    lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
+
+    # 如果环境变量不存在，则使用默认路径
+    default_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins')
+    plugin_path = os.path.join(lite_loader_profile, 'plugins') if lite_loader_profile else default_path
+
+    # 打印或使用 plugin_path 变量
+    print(f"你的插件路径是 {plugin_path}")
+    print("赋予插件目录和插件数据目录完全控制权(解决部分插件权限问题)")
+    change_folder_permissions(plugin_path, 'everyone', 'F')
+    plugin_data_dir = os.path.join(os.path.dirname(plugin_path), "data")
+    change_folder_permissions(plugin_data_dir, 'everyone', 'F')
+
 
 def check_and_kill_qq(process_name):
     try:
@@ -315,6 +331,7 @@ def main():
         download_and_install_liteloader(file_path)
         copy_old_files(file_path)
         patch_index_js(file_path)
+        patch(file_path)
         print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
         
         # 检测是否在 GitHub Actions 中运行
