@@ -1,25 +1,27 @@
 #!/bin/bash
 if [ $# -eq 0 ]; then
     echo "未提供 QQ.AppImage 文件的路径，默认使用当前目录下的 QQ.AppImage"
-    custom_appimage_path="./QQ.AppImage"
+    appimage_path="$PWD/QQ.AppImage"
 else
-    custom_appimage_path="$1"
+    appimage_path="$1"
 fi
 
-if [ -f "$custom_appimage_path" ]; then
-    echo "当前 QQ.AppImage 路径: $custom_appimage_path"
-    cp "$custom_appimage_path" QQ.AppImage.bak
-    chmod +x "$custom_appimage_path"
+qq_path=$(dirname "$appimage_path")
+
+if [ -f "$appimage_path" ]; then
+    echo "当前 QQ.AppImage 路径: $appimage_path"
+    cp "$appimage_path" QQ.AppImage.bak
+    chmod +x "$appimage_path"
 else
     echo "未找到指定的 QQ.AppImage 文件"
     exit 1
 fi
 echo "处理原AppImage"
-chmod +x $custom_appimage_path
-$custom_appimage_path --appimage-extract >/dev/null
+chmod +x $appimage_path
+$appimage_path --appimage-extract >/dev/null
 
-cd squashfs-root
-target_dir="$custom_appimage_path/squashfs-root"
+cd $qq_path/squashfs-root
+target_dir="$qq_path/squashfs-root"
 install_dir="$target_dir/resources/app/app_launcher"
 config_file="$target_dir/AppRun"
 plugin_dir="\$HOME/.config/QQ/LiteLoader"
@@ -50,7 +52,7 @@ mv -f LiteLoader "$install_dir/LiteLoader"
 cd "$install_dir"
 
 # 修改index.js
-echo "正在修补index.js...$custom_appimage_path"
+echo "正在修补index.js...$appimage_path"
 
 # 检查是否已存在相同的修改
 if grep -q "require('./LiteLoader');" index.js; then
