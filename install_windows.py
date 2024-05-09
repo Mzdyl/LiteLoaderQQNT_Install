@@ -197,15 +197,9 @@ def download_and_install_liteloader(file_path):
     print(f"Moving to: {os.path.join(file_path, 'resources', 'app')}")
 
     # 遍历LiteLoaderQQNT目录下的所有目录和文件，更改为可写权限
-    for root, dirs, files in os.walk(os.path.join(file_path, 'resources', 'app'), topdown=False):
-        # 更改文件权限
-        for name in files:
-            path = os.path.join(root, name)
-            os.chmod(path, stat.S_IWRITE)
-        # 更改目录权限
-        for name in dirs:
-            path = os.path.join(root, name)
-            os.chmod(path, stat.S_IWRITE)
+    change_folder_permissions(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), 'everyone', '(oi)(ci)(F)')
+    change_folder_permissions(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main'), 'everyone', '(oi)(ci)(F)')
+
     # 移除目标路径及其内容
     shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), ignore_errors=True)
 
@@ -287,9 +281,9 @@ def patch(file_path):
     # 打印或使用 plugin_path 变量
     print(f"你的插件路径是 {plugin_path}")
     print("赋予插件目录和插件数据目录完全控制权(解决部分插件权限问题)")
-    change_folder_permissions(plugin_path, 'everyone', 'F')
+    change_folder_permissions(plugin_path, 'everyone', '(oi)(ci)(F)')
     plugin_data_dir = os.path.join(os.path.dirname(plugin_path), "data")
-    change_folder_permissions(plugin_data_dir, 'everyone', 'F')
+    change_folder_permissions(plugin_data_dir, 'everyone', '(oi)(ci)(F)')
 
 
 def check_and_kill_qq(process_name):
