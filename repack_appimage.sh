@@ -19,6 +19,7 @@ fi
 echo "处理原AppImage"
 chmod +x $appimage_path
 $appimage_path --appimage-extract >/dev/null
+rm "$appimage_path"
 
 cd $qq_path/squashfs-root
 target_dir="$qq_path/squashfs-root"
