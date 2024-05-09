@@ -196,8 +196,8 @@ def download_and_install_liteloader(file_path):
     print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main')}")
     print(f"Moving to: {os.path.join(file_path, 'resources', 'app')}")
 
-    # 遍历LiteLoaderQQNT_bak目录下的所有目录和文件，更改为可写权限
-    for root, dirs, files in os.walk(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), topdown=False):
+    # 遍历LiteLoaderQQNT目录下的所有目录和文件，更改为可写权限
+    for root, dirs, files in os.walk(os.path.join(file_path, 'resources', 'app'), topdown=False):
         # 更改文件权限
         for name in files:
             path = os.path.join(root, name)
