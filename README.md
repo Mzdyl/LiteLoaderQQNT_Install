@@ -63,11 +63,13 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 
 ## TODO List
 
-- [ ] [repack_appimage.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/repack_appimage.sh) 添加选择QQ.AppImage路径功能
+- [x] [repack_appimage.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/repack_appimage.sh) 添加选择QQ.AppImage路径功能
+- [x] [install_linux.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_linux.sh) 更通用环境变量设置以及特殊shell的适配
+- [x] [.github/workflows ](https://github.com/Mzdyl/LiteLoaderQQNT_Install/tree/main/.github/workflows) 更新QQ安装包版本
 - [ ] [install_mac.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_mac.sh) 研究如何快速复制 plugins 和 data 文件夹
-- [ ] [install_linux.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_linux.sh) 更通用环境变量设置以及特殊shell的适配
-- [ ] [.github/workflows ](https://github.com/Mzdyl/LiteLoaderQQNT_Install/tree/main/.github/workflows) 更新QQ安装包版本
-
+- [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 避免权限问题，如WinError5
+- [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 更新打包方式，替代PyInstaller，避免报毒
+- [ ] [install_linux.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_linux.sh) 添加 Arch Linux 下提示可以使用 aur liteloaderqqnt-bin
 ## 特别鸣谢：
 
 [LiteLoaderQQNT](https://github.com/LiteLoaderQQNT/LiteLoaderQQNT)

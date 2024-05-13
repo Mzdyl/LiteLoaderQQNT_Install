@@ -201,19 +201,42 @@ def download_and_install_liteloader(file_path):
     change_folder_permissions(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main'), 'everyone', '(oi)(ci)(F)')
 
     # 移除目标路径及其内容
-    shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), ignore_errors=True)
+    try:
+        shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), ignore_errors=True)
+    except Exception as e:
+        print(f"移除旧版备份失败，尝试再次移除: {e}")
+        os.system(f'del "{os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")}" /F')
 
     source_dir = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')
     destination_dir = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak')
 
     if os.path.exists(source_dir):
-        os.rename(source_dir, destination_dir)
-        print(f"已将旧版重命名为: {destination_dir}")
+        try:
+            os.rename(source_dir, destination_dir)
+            print(f"已将旧版重命名为: {destination_dir}")
+        except Exception as e:
+            print(f"重命名失败，尝试使用 shutil.move() 重命名: {e}")
+            try:
+                time.sleep(1)  # 等待一秒，防止文件被锁定
+                shutil.move(source_dir, destination_dir)
+                print(f"已将旧版重命名为: {destination_dir}")
+            except Exception as e:
+                print(f"使用 shutil.move() 重命名失败: {e}")
     else:
         print(f" {source_dir} 不存在，全新安装。")
 
-    shutil.move(os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main'),
-                os.path.join(file_path, 'resources', 'app'))
+    try:
+        shutil.move(os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main'),
+                    os.path.join(file_path, 'resources', 'app'))
+    except Exception as e:
+        print(f"移动LiteLoaderQQNT失败, 尝试再次移动: {e}")
+        try:
+            time.sleep(1)  # 等待一秒，防止文件被锁定
+            shutil.move(os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main'),
+                        os.path.join(file_path, 'resources', 'app'))
+        except Exception as e:
+            print(f"再次尝试移动失败: {e}")
+
 
 
 def prepare_for_installation(qq_exe_path):
