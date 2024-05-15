@@ -135,6 +135,7 @@ def check_for_updates():
             print("当前已是最新版本，开始安装。")
     except Exception as e:
         print(f"检查更新阶段发生错误: {e}")
+        print("将跳过检查更新，继续安装")
 
 
 def get_qq_path():
@@ -238,7 +239,6 @@ def download_and_install_liteloader(file_path):
             print(f"再次尝试移动失败: {e}")
 
 
-
 def prepare_for_installation(qq_exe_path):
     # 检测是否安装过旧版 Liteloader
     file_path = os.path.dirname(qq_exe_path)
@@ -263,6 +263,33 @@ def prepare_for_installation(qq_exe_path):
         print(f"已删除备份文件: {bak_file_path}")
     else:
         print("备份文件不存在，无需删除。")
+
+    # 获取环境变量
+    lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
+    if lite_loader_profile is None:
+        print("检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内")
+        command = 'setx LITELOADERQQNT_PROFILE "%USERPROFILE%\\Documents\\LiteloaderQQNT"'
+        os.system(command)
+        print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
+        print("但不影响LiteloaderQQNT正常使用")
+
+        # 获取环境变量
+        source_dir = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')
+        folders = ['plugins', 'data']
+        lite_loader_profile = os.path.expanduser("~/Documents/LiteloaderQQNT")
+        if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
+            for folder in folders:
+                source_folder = os.path.join(source_dir, folder)
+                target_folder = os.path.join(lite_loader_profile, folder)
+                if os.path.exists(target_folder):
+                    print(f"目标文件夹 {target_folder} 已存在，跳过移动操作。")
+                else:
+                    shutil.move(source_folder, target_folder)
+                    print(f"移动 {source_folder} 到 {target_folder}。")
+        else:
+            print(f"在 {source_dir} 下没有找到所有的目标文件夹，跳过移动操作。")
+    else:
+        print(f"你的 LiteloaderQQNT 插件数据目录在 {lite_loader_profile}")
 
 
 def copy_old_files(file_path):
@@ -292,6 +319,7 @@ def patch_index_js(file_path):
         f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n")
         f.write("require('./launcher.node').load('external_index', module);")
 
+
 def patch(file_path):
 
     # 获取LITELOADERQQNT_PROFILE环境变量的值
@@ -318,7 +346,6 @@ def check_and_kill_qq(process_name):
                 time.sleep(3)
                 proc.kill()
                 print(f"进程 {process_name} 已关闭。")
-
     except Exception as e:
         print(f"关闭进程 {process_name} 时出错: {e}")
 
@@ -334,26 +361,36 @@ def change_folder_permissions(folder_path, user, permissions):
 
 def main():
     try:
-        check_for_updates()
+        # 检测是否在 GitHub Actions 中运行
+        github_actions = os.getenv("GITHUB_ACTIONS", False)
+
         if not ctypes.windll.shell32.IsUserAnAdmin():
             print("推荐使用管理员运行")
-        check_and_kill_qq("QQ.exe")
+
         qq_exe_path = get_qq_path()
         file_path = os.path.dirname(qq_exe_path)
-        prepare_for_installation(qq_exe_path)
+
+        skip_update_file = os.path.join(file_path, "SKIP_UPDATE")
+        if os.path.exists(skip_update_file):
+            print("检测 SKIP_UPDATE 文件，跳过更新")
+        else:
+            check_for_updates()
+
+        check_and_kill_qq("QQ.exe")
+        if not github_actions:
+            prepare_for_installation(qq_exe_path)
+
         if os.path.exists(os.path.join(qq_exe_path, 'dbghelp.dll')):
             print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")
         else:
             patch_pe_file(qq_exe_path)
         download_and_install_liteloader(file_path)
-        copy_old_files(file_path)
+        # copy_old_files(file_path)
         patch_index_js(file_path)
         patch(file_path)
+
         print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
         
-        # 检测是否在 GitHub Actions 中运行
-        github_actions = os.getenv("GITHUB_ACTIONS", False)
-
         if not github_actions:
             print("按 回车键 退出…")
             input("如有问题请截图安装界面反馈")
