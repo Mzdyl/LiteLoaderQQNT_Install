@@ -25,6 +25,27 @@ function can_connect_to_internet() {
     return
 }
 
+if [ -f /usr/bin/pacman ]; then
+    # AUR 中的代码本身就需要对 GitHub 进行访问，故不添加网络判断了
+    if grep -q "Arch Linux" /etc/os-release; then
+        echo "检测到系统是 Arch Linux"
+        echo "3 秒后将使用 aur 中的 liteloader-qqnt-bin 进行安装"
+        echo "或按任意键切换传统安装方式"
+        read -r -t 3 -n 1 response
+        # Check if user input is empty (no input within 3 seconds)
+        if [[ -z "$response" ]]; then
+            echo "开始使用 aur 安装..."
+            git clone https://aur.archlinux.org/liteloader-qqnt-bin.git
+            cd liteloader-qqnt-bin
+            makepkg -si
+            rm -rf liteloader-qqnt-bin
+            exit 0
+        else
+            echo "切换使用传统方式安装"
+        fi
+    fi
+fi
+
 if [ "$GITHUB_ACTIONS" = "true" ]; then
     echo "Detected GitHub Actions environment. Setting default values for non-interactive mode."
     pluginsDir="/opt/LiteLoader/plugins"
