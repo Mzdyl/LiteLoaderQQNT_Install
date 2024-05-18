@@ -168,15 +168,10 @@ def can_connect_to_github():
         return False
 
 
-def download_file(url, filename, proxy_url=None):
-    if not can_connect_to_github() and proxy_url:
-        proxy_url = proxy_url + url  # 将代理地址和要下载的文件 URL 拼接在一起
-        response = requests.get(proxy_url, timeout=10)
-    else:
-        response = requests.get(url, timeout=10)
-
+def download_file(url: "str", filename: "str", proxy_url=""):
     with open(filename, 'wb') as file:
-        file.write(response.content)
+        for chunk in requests.get(("" if can_connect_to_github() else proxy_url) + url, timeout=10, stream=True).iter_content(chunk_size=4096):
+            file.write(chunk)
 
 
 def download_and_install_liteloader(file_path):
