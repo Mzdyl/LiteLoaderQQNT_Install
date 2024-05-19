@@ -22,7 +22,7 @@ linux 在下方选择一条指令运行
 # Stable通道
 curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
 # Git通道
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_linux_cn.sh" -o /tmp/install_git.sh && bash /tmp/install_git.sh
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_linux.sh" -o /tmp/install_git.sh && bash /tmp/install_git.sh
 ```
 
 ### 测试版
