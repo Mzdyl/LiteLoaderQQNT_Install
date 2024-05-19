@@ -1,6 +1,7 @@
 import os
 import sys
 import ctypes
+from ctypes.wintypes import MAX_PATH
 import time
 import winreg
 import shutil
@@ -15,25 +16,108 @@ from tkinter import filedialog
 from rich.console import Console
 from rich.markdown import Markdown
 
+
 # 当前版本号
 current_version = "1.12"
 
 # 存储反代服务器的URL
-PROXY_URL = 'https://mirror.ghproxy.com/'
+PROXY_URL = "https://mirror.ghproxy.com/"
 
 # 设置标准输出编码为UTF-8
-sys.stdout.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding="utf-8")
 
 # x64 or x86 signatures and replacements
 SIG_X64 = bytes(
-    [0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0, 0x48, 0x8B, 0x49, 0x18, 0xE8])
+    [
+        0x48,
+        0x89,
+        0xCE,
+        0x48,
+        0x8B,
+        0x11,
+        0x4C,
+        0x8B,
+        0x41,
+        0x08,
+        0x49,
+        0x29,
+        0xD0,
+        0x48,
+        0x8B,
+        0x49,
+        0x18,
+        0xE8,
+    ]
+)
 FIX_X64 = bytes(
-    [0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0, 0x48, 0x8B, 0x49, 0x18, 0xB8, 0x01,
-     0x00, 0x00, 0x00])
+    [
+        0x48,
+        0x89,
+        0xCE,
+        0x48,
+        0x8B,
+        0x11,
+        0x4C,
+        0x8B,
+        0x41,
+        0x08,
+        0x49,
+        0x29,
+        0xD0,
+        0x48,
+        0x8B,
+        0x49,
+        0x18,
+        0xB8,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+    ]
+)
 
-SIG_X86 = bytes([0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xE8])
+SIG_X86 = bytes(
+    [
+        0x89,
+        0xCE,
+        0x8B,
+        0x01,
+        0x8B,
+        0x49,
+        0x04,
+        0x29,
+        0xC1,
+        0x51,
+        0x50,
+        0xFF,
+        0x76,
+        0x0C,
+        0xE8,
+    ]
+)
 FIX_X86 = bytes(
-    [0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xB8, 0x01, 0x00, 0x00, 0x00])
+    [
+        0x89,
+        0xCE,
+        0x8B,
+        0x01,
+        0x8B,
+        0x49,
+        0x04,
+        0x29,
+        0xC1,
+        0x51,
+        0x50,
+        0xFF,
+        0x76,
+        0x0C,
+        0xB8,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+    ]
+)
 
 
 def scan_and_replace(buffer, pattern, replacement):
@@ -42,8 +126,8 @@ def scan_and_replace(buffer, pattern, replacement):
         index = buffer.find(pattern, index)
         if index == -1:
             break
-        buffer[index:index + len(replacement)] = replacement
-        print(f'Found at 0x{index:08X}')
+        buffer[index : index + len(replacement)] = replacement
+        print(f"Found at 0x{index:08X}")
         index += len(replacement)
 
 
@@ -53,7 +137,7 @@ def patch_pe_file(file_path):
         os.rename(file_path, save_path)
         print(f"已将原版备份在 : {save_path}")
 
-        with open(save_path, 'rb') as file:
+        with open(save_path, "rb") as file:
             pe_file = bytearray(file.read())
 
         if struct.calcsize("P") * 8 == 64:
@@ -61,7 +145,7 @@ def patch_pe_file(file_path):
         else:
             scan_and_replace(pe_file, SIG_X86, FIX_X86)
 
-        with open(file_path, 'wb') as output_file:
+        with open(file_path, "wb") as output_file:
             output_file.write(pe_file)
 
         print("修补成功!")
@@ -73,7 +157,9 @@ def patch_pe_file(file_path):
 def get_qq_exe_path():
     root = tk.Tk()
     root.withdraw()
-    file_path = filedialog.askopenfilename(title="选择 QQ.exe 文件", filetypes=[("Executable files", "*.exe")])
+    file_path = filedialog.askopenfilename(
+        title="选择 QQ.exe 文件", filetypes=[("Executable files", "*.exe")]
+    )
     return file_path
 
 
@@ -95,8 +181,8 @@ def read_registry_key(hive, subkey, value_name):
 
 
 def compare_versions(version1, version2):
-    v1_parts = [int(part) for part in version1.split('.')]
-    v2_parts = [int(part) for part in version2.split('.')]
+    v1_parts = [int(part) for part in version1.split(".")]
+    v2_parts = [int(part) for part in version2.split(".")]
 
     # 对比版本号的每个部分
     for i in range(max(len(v1_parts), len(v2_parts))):
@@ -114,18 +200,20 @@ def compare_versions(version1, version2):
 def check_for_updates():
     try:
         # 获取最新版本号
-        response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest", timeout=3)
+        response = requests.get(
+            "https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest",
+            timeout=3,
+        )
         latest_release = response.json()
-        tag_name = latest_release['tag_name']
-        body = latest_release['body']
+        tag_name = latest_release["tag_name"]
+        body = latest_release["body"]
         if compare_versions(tag_name, current_version):
             print(f"发现新版本 {tag_name}！开始自动更新")
             print(f"更新日志：\n ")
             console = Console()
             markdown = Markdown(body)
             console.print(markdown)
-            download_url = (
-                f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe")
+            download_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe"
             # urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
             download_file(download_url, f"install_windows-{tag_name}.exe", PROXY_URL)
             print("版本已更新，请重新运行最新脚本。")
@@ -141,13 +229,17 @@ def check_for_updates():
 def get_qq_path():
     # 定义注册表路径和键名
     registry_hive = winreg.HKEY_LOCAL_MACHINE
-    registry_subkey = r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\QQ"
+    registry_subkey = (
+        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\QQ"
+    )
     registry_value_name = "UninstallString"
 
     # 读取 UninstallString 信息
-    uninstall_string = read_registry_key(registry_hive, registry_subkey, registry_value_name)
+    uninstall_string = read_registry_key(
+        registry_hive, registry_subkey, registry_value_name
+    )
     if uninstall_string is None:
-        print('无法通过注册表读取 QQNT 的安装目录，请手动选择')
+        print("无法通过注册表读取 QQNT 的安装目录，请手动选择")
         qq_exe_path = get_qq_exe_path()
     else:
         if os.path.exists(uninstall_string):
@@ -160,17 +252,27 @@ def get_qq_path():
     return qq_exe_path
 
 
+def getDocumentPath() -> str:
+    path = ctypes.create_string_buffer(MAX_PATH)
+    ctypes.windll.shell32.SHGetFolderPathA(None, 5, None, None, path)
+    return path.value.decode()
+
+
 def can_connect_to_github():
     try:
-        response = requests.get('https://github.com', timeout=5)
+        response = requests.get("https://github.com", timeout=5)
         return response.status_code == 200
     except requests.exceptions.RequestException:
         return False
 
 
 def download_file(url: "str", filename: "str", proxy_url=""):
-    with open(filename, 'wb') as file:
-        for chunk in requests.get(("" if can_connect_to_github() else proxy_url) + url, timeout=10, stream=True).iter_content(chunk_size=4096):
+    with open(filename, "wb") as file:
+        for chunk in requests.get(
+            ("" if can_connect_to_github() else proxy_url) + url,
+            timeout=10,
+            stream=True,
+        ).iter_content(chunk_size=4096):
             file.write(chunk)
 
 
@@ -193,18 +295,31 @@ def download_and_install_liteloader(file_path):
     print(f"Moving to: {os.path.join(file_path, 'resources', 'app')}")
 
     # 遍历LiteLoaderQQNT目录下的所有目录和文件，更改为可写权限
-    change_folder_permissions(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), 'everyone', '(oi)(ci)(F)')
-    change_folder_permissions(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main'), 'everyone', '(oi)(ci)(F)')
+    change_folder_permissions(
+        os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak"),
+        "everyone",
+        "(oi)(ci)(F)",
+    )
+    change_folder_permissions(
+        os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main"),
+        "everyone",
+        "(oi)(ci)(F)",
+    )
 
     # 移除目标路径及其内容
     try:
-        shutil.rmtree(os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak'), ignore_errors=True)
+        shutil.rmtree(
+            os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak"),
+            ignore_errors=True,
+        )
     except Exception as e:
         print(f"移除旧版备份失败，尝试再次移除: {e}")
-        os.system(f'del "{os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")}" /F')
+        os.system(
+            f'del "{os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")}" /F'
+        )
 
-    source_dir = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')
-    destination_dir = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak')
+    source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
+    destination_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")
 
     if os.path.exists(source_dir):
         try:
@@ -222,14 +337,18 @@ def download_and_install_liteloader(file_path):
         print(f" {source_dir} 不存在，全新安装。")
 
     try:
-        shutil.move(os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main'),
-                    os.path.join(file_path, 'resources', 'app'))
+        shutil.move(
+            os.path.join(temp_dir, "LiteLoader", "LiteLoaderQQNT-main"),
+            os.path.join(file_path, "resources", "app"),
+        )
     except Exception as e:
         print(f"移动LiteLoaderQQNT失败, 尝试再次移动: {e}")
         try:
             time.sleep(1)  # 等待一秒，防止文件被锁定
-            shutil.move(os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main'),
-                        os.path.join(file_path, 'resources', 'app'))
+            shutil.move(
+                os.path.join(temp_dir, "LiteLoader", "LiteLoaderQQNT-main"),
+                os.path.join(file_path, "resources", "app"),
+            )
         except Exception as e:
             print(f"再次尝试移动失败: {e}")
 
@@ -237,18 +356,20 @@ def download_and_install_liteloader(file_path):
 def prepare_for_installation(qq_exe_path):
     # 检测是否安装过旧版 Liteloader
     file_path = os.path.dirname(qq_exe_path)
-    package_file_path = os.path.join(file_path, 'resources', 'app', 'package.json')
+    package_file_path = os.path.join(file_path, "resources", "app", "package.json")
     replacement_line = '"main": "./app_launcher/index.js"'
     target_line = '"main": "./LiteLoader"'
-    with open(package_file_path, 'r') as file:
+    with open(package_file_path, "r") as file:
         content = file.read()
     if target_line in content:
         print("检测到安装过旧版，执行复原 package.json")
         content = content.replace(target_line, replacement_line)
-        with open(package_file_path, 'w') as file:
+        with open(package_file_path, "w") as file:
             file.write(content)
         print(f"成功替换目标行: {target_line} -> {replacement_line}")
-        print("请根据需求自行删除 LiteloaderQQNT 0.x 版本本体以及 LITELOADERQQNT_PROFILE 环境变量以及对应目录")
+        print(
+            "请根据需求自行删除 LiteloaderQQNT 0.x 版本本体以及 LITELOADERQQNT_PROFILE 环境变量以及对应目录"
+        )
     else:
         print(f"未安装过旧版，全新安装")
 
@@ -260,18 +381,22 @@ def prepare_for_installation(qq_exe_path):
         print("备份文件不存在，无需删除。")
 
     # 获取环境变量
-    lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
+    lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
     if lite_loader_profile is None:
-        print("检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内")
-        command = 'setx LITELOADERQQNT_PROFILE "%USERPROFILE%\\Documents\\LiteloaderQQNT"'
+        print(
+            "检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内"
+        )
+        command = (
+            'setx LITELOADERQQNT_PROFILE ' + getDocumentPath()
+        )
         os.system(command)
         print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
         print("但不影响LiteloaderQQNT正常使用")
 
         # 获取环境变量
-        source_dir = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')
-        folders = ['plugins', 'data']
-        lite_loader_profile = os.path.expanduser("~/Documents/LiteloaderQQNT")
+        source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
+        folders = ["plugins", "data"]
+        lite_loader_profile = os.path.expanduser(getDocumentPath()+"/LiteloaderQQNT")
         if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
             for folder in folders:
                 source_folder = os.path.join(source_dir, folder)
@@ -288,16 +413,28 @@ def prepare_for_installation(qq_exe_path):
 
 
 def copy_old_files(file_path):
-    old_plugins_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak', 'plugins')
-    new_liteloader_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')
+    old_plugins_path = os.path.join(
+        file_path, "resources", "app", "LiteLoaderQQNT_bak", "plugins"
+    )
+    new_liteloader_path = os.path.join(
+        file_path, "resources", "app", "LiteLoaderQQNT-main"
+    )
     # 复制 LiteLoader_bak 中的插件到新的 LiteLoader 目录
     if os.path.exists(old_plugins_path):
-        shutil.copytree(old_plugins_path, os.path.join(new_liteloader_path, "plugins"), dirs_exist_ok=True)
+        shutil.copytree(
+            old_plugins_path,
+            os.path.join(new_liteloader_path, "plugins"),
+            dirs_exist_ok=True,
+        )
         print("已将 LiteLoader_bak 中旧插件 Plugins 复制到新的 LiteLoader 目录")
     # 复制 LiteLoader_bak 中的数据文件到新的 LiteLoader 目录
-    old_data_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT_bak', 'data')
+    old_data_path = os.path.join(
+        file_path, "resources", "app", "LiteLoaderQQNT_bak", "data"
+    )
     if os.path.exists(old_data_path):
-        shutil.copytree(old_data_path, os.path.join(new_liteloader_path, "data"), dirs_exist_ok=True)
+        shutil.copytree(
+            old_data_path, os.path.join(new_liteloader_path, "data"), dirs_exist_ok=True
+        )
         print("已将 LiteLoader_bak 中旧数据文件 data 复制到新的 LiteLoader 目录")
 
 
@@ -310,26 +447,34 @@ def patch_index_js(file_path):
     print("已将旧版文件备份为 index.js.bak ")
     bak_index_path = index_path + ".bak"
     shutil.copyfile(index_path, bak_index_path)
-    with open(index_path, "w", encoding='utf-8') as f:
-        f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n")
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.write(
+            f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n"
+        )
         f.write("require('./launcher.node').load('external_index', module);")
 
 
 def patch(file_path):
 
     # 获取LITELOADERQQNT_PROFILE环境变量的值
-    lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
+    lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
 
     # 如果环境变量不存在，则使用默认路径
-    default_path = os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main', 'plugins')
-    plugin_path = os.path.join(lite_loader_profile, 'plugins') if lite_loader_profile else default_path
+    default_path = os.path.join(
+        file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins"
+    )
+    plugin_path = (
+        os.path.join(lite_loader_profile, "plugins")
+        if lite_loader_profile
+        else default_path
+    )
 
     # 打印或使用 plugin_path 变量
     print(f"你的插件路径是 {plugin_path}")
     print("赋予插件目录和插件数据目录完全控制权(解决部分插件权限问题)")
-    change_folder_permissions(plugin_path, 'everyone', '(oi)(ci)(F)')
+    change_folder_permissions(plugin_path, "everyone", "(oi)(ci)(F)")
     plugin_data_dir = os.path.join(os.path.dirname(plugin_path), "data")
-    change_folder_permissions(plugin_data_dir, 'everyone', '(oi)(ci)(F)')
+    change_folder_permissions(plugin_data_dir, "everyone", "(oi)(ci)(F)")
 
 
 def check_and_kill_qq(process_name):
@@ -347,7 +492,7 @@ def check_and_kill_qq(process_name):
 
 def change_folder_permissions(folder_path, user, permissions):
     try:
-        cmd = ['icacls', folder_path, '/grant', f'{user}:{permissions}', '/t']
+        cmd = ["icacls", folder_path, "/grant", f"{user}:{permissions}", "/t"]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
         print(f"成功修改文件夹 {folder_path} 的权限。")
     except subprocess.CalledProcessError as e:
@@ -375,7 +520,7 @@ def main():
         if not github_actions:
             prepare_for_installation(qq_exe_path)
 
-        if os.path.exists(os.path.join(qq_exe_path, 'dbghelp.dll')):
+        if os.path.exists(os.path.join(qq_exe_path, "dbghelp.dll")):
             print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")
         else:
             patch_pe_file(qq_exe_path)
@@ -385,7 +530,7 @@ def main():
         patch(file_path)
 
         print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
-        
+
         if not github_actions:
             print("按 回车键 退出…")
             input("如有问题请截图安装界面反馈")
@@ -397,4 +542,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
