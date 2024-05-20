@@ -300,7 +300,7 @@ def prepare_for_installation(qq_exe_path):
             "检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内"
         )
         command = (
-            'setx LITELOADERQQNT_PROFILE ' + getDocumentPath()
+            'setx LITELOADERQQNT_PROFILE "' + getDocumentPath() + '\\LiteloaderQQNT"'
         )
         os.system(command)
         print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
