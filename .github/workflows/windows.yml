@@ -35,7 +35,7 @@ jobs:
     - name: Install pyinstaller & Build install_windows.exe
       run: |
         python3 -m pip install pyinstaller
-        pyinstaller --onefile install_windows.py
+        pyinstaller --onefile --uac-admin install_windows.py
 
     - name: Upload install_windows.exe
       uses: actions/upload-artifact@v4
