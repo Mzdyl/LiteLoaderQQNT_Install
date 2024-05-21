@@ -37,9 +37,10 @@ jobs:
       with:
         nuitka-version: main
         script-name: install_windows.py
-        standalone:
-        onefile:
-        windows-uac-admin:
+        standalone: true
+        onefile: true
+        windows-uac-admin: true
+        enable-plugins: tk-inter
 
     - name: Upload install_windows.exe
       uses: actions/upload-artifact@v4
