@@ -4,10 +4,11 @@ on:
   push:
     paths:
       - 'install_linux.sh'
+      - '.github/workflows/linux.yml'
   pull_request:
-    types: [opened]
     paths:
       - 'install_linux.sh'
+      - '.github/workflows/linux.yml'
   workflow_dispatch:
 
 jobs:

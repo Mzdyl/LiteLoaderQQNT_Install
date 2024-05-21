@@ -6,7 +6,6 @@ on:
       - 'install_windows.py'
       - '.github/workflows/windows_nuitka.yml'
   pull_request:
-    types: [opened]
     paths:
       - 'install_windows.py'
       - '.github/workflows/windows_nuitka.yml'

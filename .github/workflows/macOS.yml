@@ -4,10 +4,11 @@ on:
   push:
     paths:
       - 'install_mac.sh'
+      - '.github/workflows/macOS.yml'
   pull_request:
-    types: [opened]
     paths:
       - 'install_mac.sh'
+      - '.github/workflows/macOS.yml'
   workflow_dispatch:
 
 jobs:

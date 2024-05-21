@@ -4,10 +4,11 @@ on:
   push:
     paths:
       - 'repack_appimage.sh'
+      - '.github/workflows/appimage.yml'
   pull_request:
-    types: [opened]
     paths:
       - 'repack_appimage.sh'
+      - '.github/workflows/appimage.yml'
   workflow_dispatch:
 
 jobs:

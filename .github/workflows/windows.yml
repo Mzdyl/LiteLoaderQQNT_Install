@@ -6,7 +6,6 @@ on:
       - 'install_windows.py'
       - '.github/workflows/windows.yml'
   pull_request:
-    types: [opened]
     paths:
       - 'install_windows.py'
       - '.github/workflows/windows.yml'
