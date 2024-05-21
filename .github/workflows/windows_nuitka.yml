@@ -1,0 +1,72 @@
+name: Install and Test LL on Windows with Nuitka
+
+on:
+  push:
+    paths:
+      - 'install_windows.py'
+      - '.github/workflows/windows_nuitka.yml'
+  pull_request:
+    types: [opened]
+    paths:
+      - 'install_windows.py'
+      - '.github/workflows/windows_nuitka.yml'
+  workflow_dispatch:
+
+jobs:
+  install_and_test:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9  # 指定 Python 3 版本
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install requests
+        python3 -m pip install rich
+        python3 -m pip install psutil
+
+    - name: Build install_windows.exe
+      uses: Nuitka/Nuitka-Action@main
+      with:
+        nuitka-version: main
+        script-name: install_windows.py
+        standalone:
+        onefile:
+        windows-uac-admin:
+
+    - name: Upload install_windows.exe
+      uses: actions/upload-artifact@v4
+      with:
+        name: install_windows
+        path: build/install_windows.exe
+
+    - name: Download and Install QQ Software
+      run: |
+        # Download QQ software
+        python3 get_qqnt.py Windowsx64
+        # Install QQ silently
+        Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
+
+    - name: Run install_windows.exe
+      run: |
+        .\build\install_windows.exe
+
+    - name: Run QQ with logging
+      run: |
+        start "C:\Program Files\Tencent\QQNT\QQ" --enable-logging 
+
+    - name: Check if LiteLoader plugins folder exists
+      run: |
+        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\plugins") {
+          Write-Host "LiteLoader plugins folder found. Test passed."
+        } else {
+          Write-Host "LiteLoader plugins folder not found. Test failed."
+          exit 1
+        }
