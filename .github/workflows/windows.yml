@@ -27,9 +27,7 @@ jobs:
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install requests
-        python3 -m pip install rich
-        python3 -m pip install psutil
+        pip install -r requirements.txt
 
     - name: Install pyinstaller & Build install_windows.exe
       run: |

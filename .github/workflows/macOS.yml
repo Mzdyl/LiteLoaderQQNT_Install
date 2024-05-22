@@ -27,7 +27,7 @@ jobs:
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install requests
+        pip install -r requirements.txt
 
     - name: Download and Install QQ Software
       run: |
