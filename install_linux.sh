@@ -25,6 +25,25 @@ function can_connect_to_internet() {
     return
 }
 
+function download_and_extract() {
+    url=$1
+    output_dir=$2
+    archive_name=$(basename "$url")
+
+    if command -v wget > /dev/null; then
+        wget "$url" -O "$archive_name"
+    elif command -v curl > /dev/null; then
+        curl -L "$url" -o "$archive_name"
+    else
+        echo "wget 或 curl 均未安装，无法下载仓库."
+        exit 1
+    fi
+
+    mkdir -p "$output_dir"
+    tar -zxf "$archive_name" --strip-components=1 -C "$output_dir"
+    rm "$archive_name"
+}
+
 if [ -f /usr/bin/pacman ]; then
     # AUR 中的代码本身就需要对 GitHub 进行访问，故不添加网络判断了
     if grep -q "Arch Linux" /etc/os-release; then
@@ -96,22 +115,37 @@ fi
 
 cd /tmp
 rm -rf LiteLoader
+
+git_cmd=$(command -v git)
 # 判断网络连接
 case $(can_connect_to_internet) in
     0)
         echo "正在拉取最新版本的Github仓库"
-        git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
+        if [ -n "$git_cmd" ]; then
+            git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
+        else
+            download_and_extract https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/heads/main.tar.gz LiteLoader
+        fi
     ;;
     1)
         echo "正在拉取最新版本的Github仓库"
-        git clone $_reproxy_url"https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git" LiteLoader
+        if [ -n "$git_cmd" ]; then
+            git clone "${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git" LiteLoader
+        else
+            download_and_extract "${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/heads/main.tar.gz" LiteLoader
+        fi
     ;;
     2)
         echo "正在拉取最新版本的GitLink仓库"
-        git clone https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git LiteLoader
+        if [ -n "$git_cmd" ]; then
+            git clone https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git LiteLoader
+        else
+            download_and_extract https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT/archive/main.tar.gz LiteLoader
+        fi
     ;;
     *)
         echo "出现错误，请截图"
+    ;;
 esac
 
 
