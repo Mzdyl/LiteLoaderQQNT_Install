@@ -67,9 +67,10 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 - [x] [install_linux.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_linux.sh) 更通用环境变量设置以及特殊shell的适配
 - [x] [install_linux.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_linux.sh) 添加 Arch Linux 下提示可以使用 aur liteloaderqqnt-bin
 - [x] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 避免权限问题，如WinError5
+- [x] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 更新打包方式，替代PyInstaller，避免报毒
 - [x] [.github/workflows ](https://github.com/Mzdyl/LiteLoaderQQNT_Install/tree/main/.github/workflows) 更新QQ安装包版本
 - [ ] [install_mac.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_mac.sh) 研究如何快速复制 plugins 和 data 文件夹
-- [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 更新打包方式，替代PyInstaller，避免报毒
+- [ ] [README.md](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/README.md) 使用GitHub徽章显示通过自动化 ci 监测 LL 与 QQ 最新版的兼容状态
 ## 特别鸣谢：
 
 [LiteLoaderQQNT](https://github.com/LiteLoaderQQNT/LiteLoaderQQNT)
