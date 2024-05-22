@@ -27,20 +27,18 @@ jobs:
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install requests
-        python3 -m pip install rich
-        python3 -m pip install psutil
+        pip install -r requirements.txt
 
-    - name: Install pyinstaller & Build install_windows.exe
+    - name: Install pyinstaller & Build install_windows_pyinstaller.exe
       run: |
         python3 -m pip install pyinstaller
-        pyinstaller --onefile --uac-admin install_windows.py
+        pyinstaller --onefile --uac-admin install_windows.py -n install_windows_pyinstaller
 
-    - name: Upload install_windows.exe
+    - name: Upload install_windows_pyinstaller.exe
       uses: actions/upload-artifact@v4
       with:
-        name: install_windows
-        path: dist/install_windows.exe
+        name: install_windows_pyinstaller
+        path: dist/install_windows_pyinstaller.exe
 
     - name: Download and Install QQ Software
       run: |
@@ -49,9 +47,9 @@ jobs:
         # Install QQ silently
         Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
 
-    - name: Run install_windows.exe
+    - name: Run install_windows_pyinstaller.exe
       run: |
-        .\dist\install_windows.exe
+        .\dist\install_windows_pyinstaller.exe
 
     - name: Run QQ with logging
       run: |

@@ -1,0 +1,11 @@
+# mirror
+-i https://pypi.tuna.tsinghua.edu.cn/simple
+--extra-index-url https://pypi.org/simple
+
+requests~=2.32.1
+psutil~=5.9.8
+rich~=13.7.1
+
+# bundles_python_application_tools
+nuitka~=2.2.3
+pyinstaller~=6.7.0
