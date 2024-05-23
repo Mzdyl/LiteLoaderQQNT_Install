@@ -1,7 +1,6 @@
 import os
 import sys
 import ctypes
-from ctypes.wintypes import MAX_PATH
 import time
 import winreg
 import shutil
@@ -10,7 +9,6 @@ import psutil
 import requests
 import tempfile
 import subprocess
-import stat
 import tkinter as tk
 from tkinter import filedialog
 from rich.console import Console
@@ -27,10 +25,21 @@ PROXY_URL = "https://mirror.ghproxy.com/"
 sys.stdout.reconfigure(encoding="utf-8")
 
 # x64 or x86 signatures and replacements
-SIG_X64 = bytes([0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0, 0x48, 0x8B, 0x49, 0x18, 0xE8])
-FIX_X64 = bytes([0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0, 0x48, 0x8B, 0x49, 0x18, 0xB8, 0x01, 0x00, 0x00, 0x00])
-SIG_X86 = bytes([0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xE8])
-FIX_X86 = bytes([0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xB8, 0x01, 0x00, 0x00, 0x00])
+SIG_X64 = bytes(
+    [0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0, 0x48, 0x8B, 0x49, 0x18, 0xE8]
+)
+FIX_X64 = bytes(
+    [
+        0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0,
+        0x48, 0x8B, 0x49, 0x18, 0xB8, 0x01, 0x00, 0x00, 0x00
+    ]
+)
+SIG_X86 = bytes(
+    [0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xE8]
+)
+FIX_X86 = bytes(
+    [0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xB8, 0x01, 0x00, 0x00, 0x00]
+)
 
 
 def scan_and_replace(buffer, pattern, replacement):
@@ -126,7 +135,10 @@ def check_for_updates():
             console = Console()
             markdown = Markdown(body)
             console.print(markdown)
-            download_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe"
+            download_url = (
+                f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/"
+                f"releases/download/{tag_name}/install_windows.exe"
+            )
             # urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
             download_file(download_url, f"install_windows-{tag_name}.exe", PROXY_URL)
             print("版本已更新，请重新运行最新脚本。")
@@ -165,10 +177,18 @@ def get_qq_path():
     return qq_exe_path
 
 
-def getDocumentPath() -> str:
-    path = ctypes.create_string_buffer(MAX_PATH)
-    ctypes.windll.shell32.SHGetFolderPathA(None, 5, None, None, path)
-    return path.value.decode()
+def get_document_path() -> str:
+    registry_hive = winreg.HKEY_CURRENT_USER
+    registry_subkey = (
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+    )
+    registry_value_name = "Personal"
+    path = read_registry_key(registry_hive, registry_subkey, registry_value_name)
+    if path.startswith("%USERPROFILE%"):
+        path = path.replace("%USERPROFILE%", os.path.expanduser("~"))
+    if not path:
+        path = os.path.expanduser("~/Documents")
+    return path
 
 
 def can_connect_to_github():
@@ -300,7 +320,7 @@ def prepare_for_installation(qq_exe_path):
             "检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内"
         )
         command = (
-            'setx LITELOADERQQNT_PROFILE "' + getDocumentPath() + '\\LiteloaderQQNT"'
+            'setx LITELOADERQQNT_PROFILE "' + get_document_path() + '\\LiteloaderQQNT"'
         )
         os.system(command)
         print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
@@ -309,7 +329,7 @@ def prepare_for_installation(qq_exe_path):
         # 获取环境变量
         source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
         folders = ["plugins", "data"]
-        lite_loader_profile = os.path.join(getDocumentPath(), "LiteloaderQQNT")
+        lite_loader_profile = os.path.join(get_document_path(), "LiteloaderQQNT")
         if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
             for folder in folders:
                 source_folder = os.path.join(source_dir, folder)
