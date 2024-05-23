@@ -1,7 +1,6 @@
 import os
 import sys
 import ctypes
-from ctypes.wintypes import MAX_PATH
 import time
 import winreg
 import shutil
@@ -178,10 +177,18 @@ def get_qq_path():
     return qq_exe_path
 
 
-def getDocumentPath() -> str:
-    path = ctypes.create_string_buffer(MAX_PATH)
-    ctypes.windll.shell32.SHGetFolderPathA(None, 5, None, None, path)
-    return path.value.decode()
+def get_document_path() -> str:
+    registry_hive = winreg.HKEY_CURRENT_USER
+    registry_subkey = (
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+    )
+    registry_value_name = "Personal"
+    path = read_registry_key(registry_hive, registry_subkey, registry_value_name)
+    if path.startswith("%USERPROFILE%"):
+        path = path.replace("%USERPROFILE%", os.path.expanduser("~"))
+    if not path:
+        path = os.path.expanduser("~/Documents")
+    return path
 
 
 def can_connect_to_github():
@@ -313,7 +320,7 @@ def prepare_for_installation(qq_exe_path):
             "检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内"
         )
         command = (
-            'setx LITELOADERQQNT_PROFILE "' + getDocumentPath() + '\\LiteloaderQQNT"'
+            'setx LITELOADERQQNT_PROFILE "' + get_document_path() + '\\LiteloaderQQNT"'
         )
         os.system(command)
         print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
@@ -322,7 +329,7 @@ def prepare_for_installation(qq_exe_path):
         # 获取环境变量
         source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
         folders = ["plugins", "data"]
-        lite_loader_profile = os.path.join(getDocumentPath(), "LiteloaderQQNT")
+        lite_loader_profile = os.path.join(get_document_path(), "LiteloaderQQNT")
         if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
             for folder in folders:
                 source_folder = os.path.join(source_dir, folder)
