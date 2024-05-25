@@ -63,3 +63,58 @@ jobs:
           Write-Host "LiteLoader plugins folder not found. Test failed."
           exit 1
         }
+
+  release:
+    runs-on: ubuntu-latest
+    needs: install_and_test
+#    if: github.event_name == 'push' && github.ref == 'refs/tags/pro-release'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get recent commit messages
+        id: get_commit_messages
+        run: echo "::set-output name=commit_messages::$(git log -5 --pretty=format:'%h - %s')"
+
+      - name: Create release body
+        id: create_release_body
+        run: |
+          echo "Recent Commits:" >> release_body.txt
+          echo "${{ steps.get_commit_messages.outputs.commit_messages }}" >> release_body.txt
+        shell: bash
+
+      - name: Check if release exists
+        id: check_release
+        run: |
+          if gh release view "pro-release" > /dev/null 2>&1; then
+            echo "::set-output name=release_exists::true"
+          else
+            echo "::set-output name=release_exists::false"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
+
+      - name: Get existing release body
+        if: steps.check_release.outputs.release_exists == 'true'
+        id: get_existing_body
+        run: |
+          gh release view "pro-release" --json body --jq .body > existing_body.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
+
+      - name: Combine release body
+        if: steps.check_release.outputs.release_exists == 'true'
+        run: |
+          cat existing_body.txt >> release_body.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pro-release
+          draft: true
+          body_path: release_body.txt
+          files: |
+            .\dist\install_windows_pyinstaller.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
