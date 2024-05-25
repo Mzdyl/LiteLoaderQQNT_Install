@@ -195,10 +195,53 @@ require('/opt/LiteLoader');\
     echo "已修补 index.js。"
 fi
 
+response=$(curl -s https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/releases/latest)
+version=$(echo "$response" | grep 'tag_name' | cut -d'"' -f4 )
+download_url=https://github.com/ltxhhz/LL-plugin-list-viewer/releases/download/$version/list-viewer.zip
+
+pluginStoreFolder="$pluginsDir/list-viewer"
+
+if [ -e "$pluginsDir" ]; then
+   if [ -e "$pluginStoreFolder" ]; then
+       echo "插件列表查看已存在"
+   else
+       echo "正在拉取最新版本的插件列表查看..."
+       cd "$pluginsDir" || exit 1
+       # 判断网络连接
+       if can_connect_to_internet; then
+           echo "正在拉取最新版本的Github仓库"
+           download_and_extract "${download_url}" list-viewer
+       else
+           echo "正在拉取最新版本镜像仓库"
+           download_and_extract "${_reproxy_url}${download_url}" list-viewer
+       fi
+       if [ $? -eq 0 ]; then
+           echo "插件商店安装成功"
+       else
+           echo "插件商店安装失败"
+       fi
+   fi
+else
+   sudo mkdir -p "$pluginsDir"
+   echo "正在拉取最新版本的插件列表查看..."
+   cd "$pluginsDir" || exit 1
+       if can_connect_to_internet; then
+           echo "正在拉取最新版本的Github仓库"
+        download_and_extract "${download_url}" list-viewer
+    else
+        echo "正在拉取最新版本镜像仓库"
+        download_and_extract "${_reproxy_url}${download_url}" list-viewer
+    fi
+   if [ $? -eq 0 ]; then
+       echo "插件商店安装成功"
+   else
+       echo "插件商店安装失败"
+   fi
+fi
+
 echo "修改LiteLoader文件夹权限(可能解决部分错误)"
 sudo chmod -R 0777 /opt/LiteLoader
 
-echo "LiteLoaderQQNT 安装完成！插件商店作者不维护删库了。"
 echo "脚本将在3秒后退出..."
 
 # 清理临时文件

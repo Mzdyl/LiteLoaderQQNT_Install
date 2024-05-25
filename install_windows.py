@@ -432,6 +432,47 @@ def change_folder_permissions(folder_path, user, permissions):
         print(f"修改文件夹权限时出错: {e}")
 
 
+def download_and_install_plugin_store(file_path):
+    # 获取Windows下的临时目录
+    temp_dir = tempfile.gettempdir()
+    print(f"临时目录：{temp_dir}")
+
+    print("正在拉取最新版本的插件列表查看器(插件商店)…")
+    response = requests.get(
+        "https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/releases/latest",
+        timeout=3,
+    )
+    latest_release = response.json()
+    tag_name = latest_release["tag_name"]
+    store_zip_url = f"https://github.com/ltxhhz/LL-plugin-list-viewer/releases/download/{tag_name}/list-viewer.zip"
+
+    store_zip_path = os.path.join(temp_dir, "LiteLoaderQQNT-Store.zip")
+    download_file(store_zip_url, store_zip_path, PROXY_URL)
+
+    shutil.unpack_archive(store_zip_path, os.path.join(temp_dir, "list-viewer"))
+
+    # 获取LITELOADERQQNT_PROFILE环境变量的值
+    lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
+    plugin_path = os.path.join(lite_loader_profile, 'plugins')
+
+    existing_destination_path = os.path.join(plugin_path, 'list-viewer')
+
+    # 打印或使用 plugin_path 变量
+    print(f"你的插件路径是 {plugin_path}")
+
+    if not os.path.exists(existing_destination_path):
+        # 创建目标文件夹
+        os.makedirs(plugin_path, exist_ok=True)
+        print(
+            f"Moving from: {os.path.join(temp_dir, 'list-viewer')}")
+        print(f"Moving to: {existing_destination_path}")
+        shutil.move(
+            os.path.join(temp_dir, "list-viewer"),
+            plugin_path)
+    else:
+        print("检测到已安装插件商店，不再重新安装")
+
+
 def main():
     try:
         # 检测是否在 GitHub Actions 中运行
@@ -462,7 +503,9 @@ def main():
         patch_index_js(file_path)
         patch(file_path)
 
-        print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
+        # print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
+        print("LiteLoaderQQNT 安装完成！接下来进行插件列表安装")
+        download_and_install_plugin_store(file_path)
 
         if not github_actions:
             print("按 回车键 退出…")

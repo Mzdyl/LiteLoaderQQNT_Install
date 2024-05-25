@@ -161,7 +161,44 @@ require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader');\
     echo "已修补 index.js。"
 fi
 
-echo "LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束"
+targetFolder="$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins"
+pluginStoreFolder="$targetFolder/list-viewer"
+
+if [ -e "$targetFolder" ]; then
+    if [ -e $pluginStoreFolder" ]; then
+       echo "插件列表查看已存在"
+    else
+        echo "正在拉取最新版本的插件列表查看..."
+        if can_connect_to_internet; then
+            echo "正在拉取最新版本的Github仓库"
+            download_and_extract "${download_url}" list-viewer
+        else
+            echo "正在拉取最新版本镜像仓库"
+            download_and_extract "${_reproxy_url}${download_url}" list-viewer
+        fi
+        if [ $? -eq 0 ]; then
+            echo "插件商店安装成功"
+        else
+            echo "插件商店安装失败"
+        fi
+    fi
+else
+    mkdir -p "$targetFolder"
+    echo "正在拉取最新版本的插件列表查看..."
+    cd "$targetFolder" || exit 1
+    if can_connect_to_internet; then
+        echo "正在拉取最新版本的Github仓库"
+        download_and_extract "${download_url}" list-viewer
+    else
+        echo "正在拉取最新版本镜像仓库"
+        download_and_extract "${_reproxy_url}${download_url}" list-viewer
+    fi
+    if [ $? -eq 0 ]; then
+        echo "插件商店安装成功"
+    else
+        echo "插件商店安装失败"
+    fi
+fi
 
 # 清理临时文件
 rm -rf /tmp/LiteLoader

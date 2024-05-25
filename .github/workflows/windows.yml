@@ -113,6 +113,7 @@ jobs:
         with:
           tag_name: pro-release
           draft: false
+          prerelease: true
           body_path: release_body.txt
           files: |
             .\dist\install_windows_pyinstaller.exe
