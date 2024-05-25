@@ -2,6 +2,7 @@ import os
 import sys
 import ctypes
 import time
+import traceback
 import winreg
 import shutil
 import struct
@@ -531,6 +532,7 @@ def main():
 
     except Exception as e:
         print(f"发生错误: {e}")
+        print(traceback.format_exc())
         input("按 任意键 退出。")
 
 
