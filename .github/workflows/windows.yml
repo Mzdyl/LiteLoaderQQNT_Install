@@ -53,8 +53,7 @@ jobs:
 
     - name: Run QQ with logging
       run: |
-        Start-Process "C:\Program Files\Tencent\QQNT\QQ.exe" --ArgumentList '--enable-logging'
-
+        start "C:\Program Files\Tencent\QQNT\QQ" --enable-logging 
     - name: Check if LiteLoader plugins folder exists
       run: |
         if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\plugins") {
