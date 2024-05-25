@@ -32,20 +32,40 @@ function download_and_extract() {
     url=$1
     output_dir=$2
     archive_name=$(basename "$url")
+    archive_extension="${archive_name##*.}"
 
     if command -v wget > /dev/null; then
         wget "$url" -O "$archive_name"
     elif command -v curl > /dev/null; then
         curl -L "$url" -o "$archive_name"
     else
-        echo "wget 或 curl 均未安装，无法下载仓库."
+        echo "wget 或 curl 均未安装，无法下载文件."
         exit 1
     fi
 
     mkdir -p "$output_dir"
-    tar -zxf "$archive_name" --strip-components=1 -C "$output_dir"
+
+    case "$archive_extension" in
+        tar.gz)
+            tar -zxf "$archive_name" --strip-components=1 -C "$output_dir"
+            ;;
+        zip)
+            if command -v unzip > /dev/null; then
+                unzip -q "$archive_name" -d "$output_dir"
+            else
+                echo "unzip 未安装，无法解压 zip 文件."
+                exit 1
+            fi
+            ;;
+        *)
+            echo "不支持的文件格式: $archive_extension"
+            exit 1
+            ;;
+    esac
+
     rm "$archive_name"
 }
+
 
 # 提升权限
 echo "请输入您的密码以提升权限："

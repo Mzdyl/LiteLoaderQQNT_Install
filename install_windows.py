@@ -432,29 +432,50 @@ def change_folder_permissions(folder_path, user, permissions):
         print(f"修改文件夹权限时出错: {e}")
 
 
-def download_and_install_plugin_store(file_path):
+def download_and_install_plugin_store():
     # 获取Windows下的临时目录
     temp_dir = tempfile.gettempdir()
     print(f"临时目录：{temp_dir}")
 
     print("正在拉取最新版本的插件列表查看器(插件商店)…")
-    response = requests.get(
-        "https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/releases/latest",
-        timeout=3,
-    )
+    try:
+        response = requests.get(
+            "https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/releases/latest",
+            timeout=10
+        )
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"获取最新版本信息失败: {e}")
+        return
+
     latest_release = response.json()
-    tag_name = latest_release["tag_name"]
+    tag_name = latest_release.get("tag_name")
+    if not tag_name:
+        print("未能从最新版本信息中获取 tag_name")
+        return
+
     store_zip_url = f"https://github.com/ltxhhz/LL-plugin-list-viewer/releases/download/{tag_name}/list-viewer.zip"
-
     store_zip_path = os.path.join(temp_dir, "LiteLoaderQQNT-Store.zip")
-    download_file(store_zip_url, store_zip_path, PROXY_URL)
 
-    shutil.unpack_archive(store_zip_path, os.path.join(temp_dir, "list-viewer"))
+    try:
+        download_file(store_zip_url, store_zip_path, None)
+    except Exception as e:
+        print(f"下载文件失败: {e}")
+        return
+
+    try:
+        shutil.unpack_archive(store_zip_path, os.path.join(temp_dir, "list-viewer"))
+    except shutil.ReadError as e:
+        print(f"解压文件失败: {e}")
+        return
 
     # 获取LITELOADERQQNT_PROFILE环境变量的值
     lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
-    plugin_path = os.path.join(lite_loader_profile, 'plugins')
+    if not lite_loader_profile:
+        print("环境变量 LITELOADERQQNT_PROFILE 未设置")
+        return
 
+    plugin_path = os.path.join(lite_loader_profile, 'plugins')
     existing_destination_path = os.path.join(plugin_path, 'list-viewer')
 
     # 打印或使用 plugin_path 变量
@@ -463,12 +484,9 @@ def download_and_install_plugin_store(file_path):
     if not os.path.exists(existing_destination_path):
         # 创建目标文件夹
         os.makedirs(plugin_path, exist_ok=True)
-        print(
-            f"Moving from: {os.path.join(temp_dir, 'list-viewer')}")
+        print(f"Moving from: {os.path.join(temp_dir, 'list-viewer')}")
         print(f"Moving to: {existing_destination_path}")
-        shutil.move(
-            os.path.join(temp_dir, "list-viewer"),
-            plugin_path)
+        shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
     else:
         print("检测到已安装插件商店，不再重新安装")
 

@@ -29,20 +29,40 @@ function download_and_extract() {
     url=$1
     output_dir=$2
     archive_name=$(basename "$url")
+    archive_extension="${archive_name##*.}"
 
     if command -v wget > /dev/null; then
         wget "$url" -O "$archive_name"
     elif command -v curl > /dev/null; then
         curl -L "$url" -o "$archive_name"
     else
-        echo "wget 或 curl 均未安装，无法下载仓库."
+        echo "wget 或 curl 均未安装，无法下载文件."
         exit 1
     fi
 
     mkdir -p "$output_dir"
-    tar -zxf "$archive_name" --strip-components=1 -C "$output_dir"
+
+    case "$archive_extension" in
+        tar.gz)
+            tar -zxf "$archive_name" --strip-components=1 -C "$output_dir"
+            ;;
+        zip)
+            if command -v unzip > /dev/null; then
+                unzip -q "$archive_name" -d "$output_dir"
+            else
+                echo "unzip 未安装，无法解压 zip 文件."
+                exit 1
+            fi
+            ;;
+        *)
+            echo "不支持的文件格式: $archive_extension"
+            exit 1
+            ;;
+    esac
+
     rm "$archive_name"
 }
+
 
 if [ -f /usr/bin/pacman ]; then
     # AUR 中的代码本身就需要对 GitHub 进行访问，故不添加网络判断了
@@ -199,6 +219,9 @@ response=$(curl -s https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/rel
 version=$(echo "$response" | grep 'tag_name' | cut -d'"' -f4 )
 download_url=https://github.com/ltxhhz/LL-plugin-list-viewer/releases/download/$version/list-viewer.zip
 
+echo "修改LiteLoader文件夹权限(可能解决部分错误)"
+sudo chmod -R 0777 /opt/LiteLoader
+
 pluginStoreFolder="$pluginsDir/list-viewer"
 
 if [ -e "$pluginsDir" ]; then
@@ -222,7 +245,7 @@ if [ -e "$pluginsDir" ]; then
        fi
    fi
 else
-   sudo mkdir -p "$pluginsDir"
+   mkdir -p "$pluginsDir"
    echo "正在拉取最新版本的插件列表查看..."
    cd "$pluginsDir" || exit 1
        if can_connect_to_internet; then
@@ -239,8 +262,7 @@ else
    fi
 fi
 
-echo "修改LiteLoader文件夹权限(可能解决部分错误)"
-sudo chmod -R 0777 /opt/LiteLoader
+
 
 echo "脚本将在3秒后退出..."
 
