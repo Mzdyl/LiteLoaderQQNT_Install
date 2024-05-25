@@ -116,6 +116,6 @@ jobs:
           prerelease: true
           body_path: release_body.txt
           files: |
-            .\dist\install_windows_pyinstaller.exe
+            dist/install_windows_pyinstaller.exe
         env:
           GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
