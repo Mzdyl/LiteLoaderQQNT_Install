@@ -32,20 +32,40 @@ function download_and_extract() {
     url=$1
     output_dir=$2
     archive_name=$(basename "$url")
+    archive_extension="${archive_name##*.}"
 
     if command -v wget > /dev/null; then
         wget "$url" -O "$archive_name"
     elif command -v curl > /dev/null; then
         curl -L "$url" -o "$archive_name"
     else
-        echo "wget 或 curl 均未安装，无法下载仓库."
+        echo "wget 或 curl 均未安装，无法下载文件."
         exit 1
     fi
 
     mkdir -p "$output_dir"
-    tar -zxf "$archive_name" --strip-components=1 -C "$output_dir"
+
+    case "$archive_extension" in
+        tar.gz)
+            tar -zxf "$archive_name" --strip-components=1 -C "$output_dir"
+            ;;
+        zip)
+            if command -v unzip > /dev/null; then
+                unzip -q "$archive_name" -d "$output_dir"
+            else
+                echo "unzip 未安装，无法解压 zip 文件."
+                exit 1
+            fi
+            ;;
+        *)
+            echo "不支持的文件格式: $archive_extension"
+            exit 1
+            ;;
+    esac
+
     rm "$archive_name"
 }
+
 
 # 提升权限
 echo "请输入您的密码以提升权限："
@@ -161,7 +181,47 @@ require('$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader');\
     echo "已修补 index.js。"
 fi
 
-echo "LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束"
+targetFolder="$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins"
+pluginStoreFolder="$targetFolder/list-viewer"
+response=$(curl -s https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/releases/latest)
+version=$(echo "$response" | grep 'tag_name' | cut -d'"' -f4 )
+download_url=https://github.com/ltxhhz/LL-plugin-list-viewer/releases/download/$version/list-viewer.zip
+
+if [ -e "$targetFolder" ]; then
+    if [ -e "$pluginStoreFolder" ]; then
+        echo "插件列表查看已存在"
+    else
+        echo "正在拉取最新版本的插件列表查看..."
+        if [ "$(can_connect_to_internet)" -eq 0 ]; then
+            echo "正在拉取最新版本的Github仓库"
+            download_and_extract "${download_url}" list-viewer
+        else
+            echo "正在拉取最新版本镜像仓库"
+            download_and_extract "${_reproxy_url}${download_url}" list-viewer
+        fi
+        if [ $? -eq 0 ]; then
+            echo "插件商店安装成功"
+        else
+            echo "插件商店安装失败"
+        fi
+    fi
+else
+    mkdir -p "$targetFolder"
+    echo "正在拉取最新版本的插件列表查看..."
+    cd "$targetFolder" || exit 1
+    if [ "$(can_connect_to_internet)" -eq 0 ]; then
+        echo "正在拉取最新版本的Github仓库"
+        download_and_extract "${download_url}" list-viewer
+    else
+        echo "正在拉取最新版本镜像仓库"
+        download_and_extract "${_reproxy_url}${download_url}" list-viewer
+    fi
+    if [ $? -eq 0 ]; then
+        echo "插件商店安装成功"
+    else
+        echo "插件商店安装失败"
+    fi
+fi
 
 # 清理临时文件
 rm -rf /tmp/LiteLoader
