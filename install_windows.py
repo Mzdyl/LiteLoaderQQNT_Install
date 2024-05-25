@@ -523,7 +523,7 @@ def main():
 
         # print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
         print("LiteLoaderQQNT 安装完成！接下来进行插件列表安装")
-        download_and_install_plugin_store(file_path)
+        download_and_install_plugin_store()
 
         if not github_actions:
             print("按 回车键 退出…")

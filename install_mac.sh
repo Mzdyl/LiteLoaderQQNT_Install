@@ -183,13 +183,16 @@ fi
 
 targetFolder="$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins"
 pluginStoreFolder="$targetFolder/list-viewer"
+response=$(curl -s https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/releases/latest)
+version=$(echo "$response" | grep 'tag_name' | cut -d'"' -f4 )
+download_url=https://github.com/ltxhhz/LL-plugin-list-viewer/releases/download/$version/list-viewer.zip
 
 if [ -e "$targetFolder" ]; then
-    if [ -e $pluginStoreFolder" ]; then
-       echo "插件列表查看已存在"
+    if [ -e "$pluginStoreFolder" ]; then
+        echo "插件列表查看已存在"
     else
         echo "正在拉取最新版本的插件列表查看..."
-        if can_connect_to_internet; then
+        if [ "$(can_connect_to_internet)" -eq 0 ]; then
             echo "正在拉取最新版本的Github仓库"
             download_and_extract "${download_url}" list-viewer
         else
@@ -206,7 +209,7 @@ else
     mkdir -p "$targetFolder"
     echo "正在拉取最新版本的插件列表查看..."
     cd "$targetFolder" || exit 1
-    if can_connect_to_internet; then
+    if [ "$(can_connect_to_internet)" -eq 0 ]; then
         echo "正在拉取最新版本的Github仓库"
         download_and_extract "${download_url}" list-viewer
     else
