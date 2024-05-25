@@ -79,4 +79,4 @@ jobs:
           files: |
             install_linux.sh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
