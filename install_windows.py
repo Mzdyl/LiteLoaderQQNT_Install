@@ -17,7 +17,7 @@ from rich.markdown import Markdown
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 当前版本号
-current_version = "1.13"
+current_version = "1.14"
 
 
 # 存储反代服务器的URL
@@ -104,7 +104,7 @@ def patch_pe_file(file_path):
         print("修补成功!")
     except Exception as e:
         print(f"发生错误: {e}")
-        input("按 任意键 退出。")
+        input("按 回车键 退出。")
 
 
 def get_qq_exe_path():
@@ -174,7 +174,7 @@ def check_for_updates():
             download_file(download_url, f"install_windows-{tag_name}.exe")
 
             print("版本已更新，请重新运行最新脚本。")
-            input("按任意键退出")
+            input("按 回车键 退出")
             sys.exit(0)
         else:
             print("当前已是最新版本，开始安装。")
@@ -594,7 +594,7 @@ def main():
     except Exception as e:
         print(f"发生错误: {e}")
         print(traceback.format_exc())
-        input("按 任意键 退出。")
+        input("按 回车键 退出。")
 
 
 if __name__ == "__main__":
