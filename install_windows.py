@@ -16,10 +16,9 @@ from rich.console import Console
 from rich.markdown import Markdown
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
-
 # 当前版本号
 current_version = "1.13"
+
 
 # 存储反代服务器的URL
 def get_github_proxy_urls():
@@ -51,6 +50,7 @@ def get_github_proxy_urls():
         "https://github.moeyy.xyz",
         "https://mirror.ghproxy.com"
     ]
+
 
 # 设置标准输出编码为UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
@@ -410,7 +410,6 @@ def patch_index_js(file_path):
 
 
 def patch(file_path):
-
     # 获取LITELOADERQQNT_PROFILE环境变量的值
     lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
 
@@ -523,6 +522,7 @@ def check_proxy(proxy):
         pass
     return None
 
+
 def get_working_proxy():
     proxies = get_github_proxy_urls()
     with ThreadPoolExecutor(max_workers=len(proxies)) as executor:
@@ -533,19 +533,24 @@ def get_working_proxy():
                 return result
     return None
 
+
 def download_file(url: str, filename: str):
-    if not can_connect_to_github():
-        proxy = get_working_proxy()
-        if proxy:
-            download_url = f"{proxy}{url}"
+    try:
+        if can_connect_to_github():
+            download_url = url
         else:
-            raise ValueError("无法访问 GitHub 且无可用代理")
+            proxy = get_working_proxy()
+            if proxy:
+                download_url = f"{proxy}{url}"
+            else:
+                raise ValueError("无法访问 GitHub 且无可用代理")
 
-    with open(filename, "wb") as file:
-        response = requests.get(download_url, timeout=10, stream=True)
-        for chunk in response.iter_content(chunk_size=4096):
-            file.write(chunk)
-
+        with open(filename, "wb") as file:
+            response = requests.get(download_url, timeout=10, stream=True)
+            for chunk in response.iter_content(chunk_size=4096):
+                file.write(chunk)
+    except requests.RequestException as e:
+        raise Exception(f"下载 {url} 失败: {e}")
 
 
 def main():
