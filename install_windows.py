@@ -14,13 +14,43 @@ import tkinter as tk
 from tkinter import filedialog
 from rich.console import Console
 from rich.markdown import Markdown
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 
 # 当前版本号
 current_version = "1.13"
 
 # 存储反代服务器的URL
-PROXY_URL = "https://mirror.ghproxy.com/"
+def get_github_proxy_urls():
+    return [
+        "https://gh.h233.eu.org",
+        "https://gh.ddlc.top",
+        "https://slink.ltd",
+        "https://gh.con.sh",
+        "https://cors.isteed.cc",
+        "https://hub.gitmirror.com",
+        "https://sciproxy.com",
+        "https://ghproxy.cc",
+        "https://cf.ghproxy.cc",
+        "https://www.ghproxy.cc",
+        "https://ghproxy.cn",
+        "https://www.ghproxy.cn",
+        "https://gh.jiasu.in",
+        "https://dgithub.xyz",
+        "https://download.ixnic.net",
+        "https://download.nuaa.cf",
+        "https://download.scholar.rr.nu",
+        "https://download.yzuu.cf",
+        "https://mirror.ghproxy.com",
+        "https://ghproxy.net",
+        "https://kkgithub.com",
+        "https://gitclone.com",
+        "https://hub.incept.pw",
+        "https://githubfast.com",
+        "https://github.moeyy.xyz",
+        "https://mirror.ghproxy.com"
+    ]
 
 # 设置标准输出编码为UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
@@ -141,7 +171,8 @@ def check_for_updates():
                 f"releases/download/{tag_name}/install_windows.exe"
             )
             # urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
-            download_file(download_url, f"install_windows-{tag_name}.exe", PROXY_URL)
+            download_file(download_url, f"install_windows-{tag_name}.exe")
+
             print("版本已更新，请重新运行最新脚本。")
             input("按任意键退出")
             sys.exit(0)
@@ -194,20 +225,10 @@ def get_document_path() -> str:
 
 def can_connect_to_github():
     try:
-        response = requests.get("https://github.com", timeout=5)
+        response = requests.head("https://github.com", timeout=5)
         return response.status_code == 200
     except requests.exceptions.RequestException:
         return False
-
-
-def download_file(url: "str", filename: "str", proxy_url=""):
-    with open(filename, "wb") as file:
-        for chunk in requests.get(
-            ("" if can_connect_to_github() else proxy_url) + url,
-            timeout=10,
-            stream=True,
-        ).iter_content(chunk_size=4096):
-            file.write(chunk)
 
 
 def download_and_install_liteloader(file_path):
@@ -219,7 +240,7 @@ def download_and_install_liteloader(file_path):
     print("正在拉取最新版本的仓库…")
     zip_url = "https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/master.zip"
     zip_path = os.path.join(temp_dir, "LiteLoader.zip")
-    download_file(zip_url, zip_path, PROXY_URL)
+    download_file(zip_url, zip_path)
 
     shutil.unpack_archive(zip_path, os.path.join(temp_dir, "LiteLoader"))
 
@@ -459,7 +480,7 @@ def download_and_install_plugin_store():
     store_zip_path = os.path.join(temp_dir, "LiteLoaderQQNT-Store.zip")
 
     try:
-        download_file(store_zip_url, store_zip_path, None)
+        download_file(store_zip_url, store_zip_path)
     except Exception as e:
         print(f"下载文件失败: {e}")
         return
@@ -490,6 +511,41 @@ def download_and_install_plugin_store():
         shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
     else:
         print("检测到已安装插件商店，不再重新安装")
+
+
+def check_proxy(proxy):
+    try:
+        proxy_url = f"{proxy}/https://github.com"
+        response = requests.head(proxy_url, timeout=5)
+        if response.ok:
+            return proxy
+    except requests.exceptions.RequestException:
+        pass
+    return None
+
+def get_working_proxy():
+    proxies = get_github_proxy_urls()
+    with ThreadPoolExecutor(max_workers=len(proxies)) as executor:
+        future_to_proxy = {executor.submit(check_proxy, proxy): proxy for proxy in proxies}
+        for future in as_completed(future_to_proxy):
+            result = future.result()
+            if result is not None:
+                return result
+    return None
+
+def download_file(url: str, filename: str):
+    if not can_connect_to_github():
+        proxy = get_working_proxy()
+        if proxy:
+            download_url = f"{proxy}{url}"
+        else:
+            raise ValueError("无法访问 GitHub 且无可用代理")
+
+    with open(filename, "wb") as file:
+        response = requests.get(download_url, timeout=10, stream=True)
+        for chunk in response.iter_content(chunk_size=4096):
+            file.write(chunk)
+
 
 
 def main():
