@@ -543,7 +543,9 @@ def download_file(url: str, filename: str):
             if proxy:
                 download_url = f"{proxy}{url}"
             else:
-                raise ValueError("无法访问 GitHub 且无可用代理")
+                download_url = input("无法访问 GitHub 且无可用代理，请手动输入下载地址：")
+                if not download_url:
+                    raise ValueError("没有输入有效的下载地址")
 
         with open(filename, "wb") as file:
             response = requests.get(download_url, timeout=10, stream=True)
@@ -551,7 +553,6 @@ def download_file(url: str, filename: str):
                 file.write(chunk)
     except requests.RequestException as e:
         raise Exception(f"下载 {url} 失败: {e}")
-
 
 def main():
     try:
