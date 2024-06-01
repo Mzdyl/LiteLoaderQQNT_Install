@@ -263,6 +263,10 @@ else
 fi
 
 
+echo "如果安装过程中没有提示发生错误"
+echo "但 QQ 设置界面没有 LiteLoaderQQNT"
+echo "请检查已安装过的插件"
+echo "插件错误会导致 LiteLoaderQQNT 无法正常启动"
 
 echo "脚本将在3秒后退出..."
 

@@ -232,7 +232,11 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 等待3秒后退出
+echo "如果安装过程中没有提示发生错误"
+echo "但 QQ 设置界面没有 LiteLoaderQQNT"
+echo "请检查已安装过的插件"
+echo "插件错误会导致 LiteLoaderQQNT 无法正常启动"
+
 echo "脚本将在 3 秒后退出..."
 sleep 3
 exit 0

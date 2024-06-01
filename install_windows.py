@@ -604,6 +604,11 @@ def main():
         download_and_install_plugin_store()
 
         if not github_actions:
+            print("如果安装过程中没有提示发生错误")
+            print("但 QQ 设置界面没有 LiteLoaderQQNT")
+            print("请检查已安装过的插件")
+            print("插件错误会导致 LiteLoaderQQNT 无法正常启动")
+
             print("按 回车键 退出…")
             input("如有问题请截图安装界面反馈")
 
