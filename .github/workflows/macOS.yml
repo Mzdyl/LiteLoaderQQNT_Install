@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - 'install_mac.sh'
+      - 'install.sh'
       - '.github/workflows/macOS.yml'
   pull_request:
     paths:
       - 'install_mac.sh'
+      - 'install.sh'
       - '.github/workflows/macOS.yml'
   workflow_dispatch:
 
@@ -113,5 +115,6 @@ jobs:
           body_path: release_body.txt
           files: |
             install_mac.sh
+            install.sh
         env:
           GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}

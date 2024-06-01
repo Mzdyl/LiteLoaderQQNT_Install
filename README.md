@@ -15,6 +15,8 @@ mac 终端运行对应脚本即可或者
 curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_mac.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
 # Git通道
 curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_mac.sh" -o /tmp/install_git.sh && bash /tmp/install_git.sh
+
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install.sh" -o /tmp/install_git.sh && bash /tmp/install.sh
 ```
 
 linux 在下方选择一条指令运行
@@ -23,6 +25,8 @@ linux 在下方选择一条指令运行
 curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
 # Git通道
 curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_linux.sh" -o /tmp/install_git.sh && bash /tmp/install_git.sh
+
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install.sh" -o /tmp/install_git.sh && bash /tmp/install.sh
 ```
 
 ### 测试版

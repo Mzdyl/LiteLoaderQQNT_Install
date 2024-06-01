@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - 'install_linux.sh'
+      - 'install.sh'
       - '.github/workflows/linux.yml'
   pull_request:
     paths:
       - 'install_linux.sh'
+      - 'install.sh'
       - '.github/workflows/linux.yml'
   workflow_dispatch:
 
@@ -104,5 +106,6 @@ jobs:
           body_path: release_body.txt
           files: |
             install_linux.sh
+            install.sh
         env:
           GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
