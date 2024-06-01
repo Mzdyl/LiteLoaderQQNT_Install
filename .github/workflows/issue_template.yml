@@ -20,7 +20,7 @@ jobs:
     - name: Check Issue Content
       id: check_issue
       run: |
-        if [[ "${{ github.event.issue.body }}" == *"- [x] Bug 反馈"* ]] && [[ "${{ github.event.issue.body }}" == *"![image"* ]]; then
+        if [[ "${{ github.event.issue.body }}" == *"- [x] Bug 反馈"* ]] && [[ "${{ github.event.issue.body }}" == *"!["* ]]; then
           echo "::set-output name=priority::true"
         else
           echo "::set-output name=priority::false"
