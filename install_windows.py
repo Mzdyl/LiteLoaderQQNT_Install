@@ -534,9 +534,6 @@ def get_working_proxy():
     return None
 
 
-import os
-import requests
-
 def download_file(url: str, filename: str):
     try:
         if can_connect_to_github():
@@ -546,7 +543,9 @@ def download_file(url: str, filename: str):
             if proxy:
                 download_url = f"{proxy}{url}"
             else:
-                download_url = input("无法访问 GitHub 且无可用代理，请手动输入下载地址或本地文件路径：")
+                download_url = input("无法访问 GitHub 且无可用代理，请手动输入下载地址或本地文件路径（如 "
+                                     "https://mirror.ghproxy.com/https://github.com/Mzdyl/LiteLoaderQQNT_Install"
+                                     "/archive/master.zip 或 C:\\path\\to\\file.zip ）：")
                 if not download_url:
                     raise ValueError("没有输入有效的下载地址或本地文件路径")
 
