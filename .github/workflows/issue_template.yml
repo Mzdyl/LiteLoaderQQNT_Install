@@ -2,8 +2,10 @@ name: Issue Triage
 
 on:
   issues:
-    types: [opened]
-
+    types: 
+      - opened
+      - edited  
+      - reopened  
 jobs:
   triage:
     runs-on: ubuntu-latest
