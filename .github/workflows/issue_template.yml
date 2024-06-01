@@ -1,0 +1,34 @@
+name: Issue Triage
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Check Issue Content
+      id: check_issue
+      run: |
+        if [[ "${{ github.event.issue.body }}" == *"Bug 反馈"* ]] && [[ "${{ github.event.issue.body }}" == *"![image"* ]]; then
+          echo "::set-output name=priority::true"
+        else
+          echo "::set-output name=priority::false"
+        fi
+      
+    - name: Label Issue as Priority
+      if: steps.check_issue.outputs.priority == 'true'
+      uses: actions-ecosystem/action-add-labels@v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        labels: 'priority'
