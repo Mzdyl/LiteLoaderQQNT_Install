@@ -46,7 +46,6 @@ def get_github_proxy_urls():
         "https://kkgithub.com",
         "https://gitclone.com",
         "https://hub.incept.pw",
-        "https://githubfast.com",
         "https://github.moeyy.xyz",
         "https://mirror.ghproxy.com"
     ]
@@ -539,8 +538,7 @@ def download_file(url: str, filename: str):
         try:
             if os.path.exists(url):
                 # 本地文件
-                with open(url, "rb") as src_file, open(filename, "wb") as dest_file:
-                    dest_file.write(src_file.read())
+                shutil.copy(url, filename)
             else:
                 # URL
                 with open(filename, "wb") as file:
@@ -554,11 +552,13 @@ def download_file(url: str, filename: str):
 
     try:
         if can_connect_to_github():
+            print("网络良好，直连下载")
             download_url = url
         else:
             proxy = get_working_proxy()
             if proxy:
-                download_url = f"{proxy}{url}"
+                download_url = f"{proxy}/{url}"
+                print(f"当前使用的下载链接 {download_url}")
             else:
                 raise ValueError
         download(download_url, filename)
