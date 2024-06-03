@@ -159,22 +159,34 @@ def check_for_updates():
         latest_release = response.json()
         tag_name = latest_release["tag_name"]
         body = latest_release["body"]
+
         if compare_versions(tag_name, current_version):
-            print(f"发现新版本 {tag_name}！开始自动更新")
-            print(f"更新日志：\n ")
+            print(f"发现新版本 {tag_name}！")
+            print(f"更新日志：\n")
             console = Console()
             markdown = Markdown(body)
             console.print(markdown)
-            download_url = (
-                f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/"
-                f"releases/download/{tag_name}/install_windows.exe"
-            )
-            # urllib.request.urlretrieve(download_url, f"install_windows-{tag_name}.exe")
-            download_file(download_url, f"install_windows-{tag_name}.exe")
 
-            print("版本已更新，请重新运行最新脚本。")
-            input("按 回车键 退出")
-            sys.exit(0)
+            # 提示用户是否下载更新
+            print("是否要下载更新？输入 'y' 确认，5 秒内未输入则跳过更新。")
+            start_time = time.time()
+            user_input = None
+            while (time.time() - start_time) < 5:
+                if msvcrt.kbhit():
+                    user_input = msvcrt.getch().decode("utf-8").strip().lower()
+                    break
+
+            if user_input == 'y':
+                download_url = (
+                    f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/"
+                    f"releases/download/{tag_name}/install_windows.exe"
+                )
+                download_file(download_url, f"install_windows-{tag_name}.exe")
+                print("版本已更新，请重新运行最新脚本。")
+                input("按 回车键 退出")
+                sys.exit(0)
+            else:
+                print("跳过更新，继续安装。")
         else:
             print("当前已是最新版本，开始安装。")
     except Exception as e:
