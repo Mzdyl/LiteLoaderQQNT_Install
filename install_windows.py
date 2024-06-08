@@ -248,8 +248,8 @@ def can_connect_to_github():
 
 
 def install_liteloader(file_path):
-
-    download_and_extract_form_release(LiteLoaderQQNT/LiteLoaderQQNT)
+    temp_dir = tempfile.gettempdir()
+    download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
     print("拉取完成，正在安装 LiteLoaderQQNT")
 
     print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader')}")
@@ -461,8 +461,9 @@ def change_folder_permissions(folder_path, user, permissions):
 
 
 def install_plugin_store():
-    download_and_extract_form_release(ltxhhz/LL-plugin-list-viewer)
+    temp_dir = tempfile.gettempdir()
 
+    download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
     # 获取LITELOADERQQNT_PROFILE环境变量的值
     lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
     if not lite_loader_profile:
@@ -591,6 +592,7 @@ def download_and_extract_form_release(repos: str):
     except shutil.ReadError as e:
         print(f"解压文件失败: {e}")
 
+
 def main():
     try:
         # 检测是否在 GitHub Actions 中运行
@@ -612,7 +614,7 @@ def main():
         if not github_actions:
             prepare_for_installation(qq_exe_path)
 
-        if os.path.exists(os.path.join(qq_exe_path, "dbghelp.dll")):
+        if os.path.exists(os.path.join(file_path, "dbghelp.dll")):
             print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")
         else:
             patch_pe_file(qq_exe_path)
