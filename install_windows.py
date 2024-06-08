@@ -19,6 +19,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # 当前版本号
 current_version = "1.14"
 
+# 网络错误或者 api 超限度时使用指定版本号
+# 后期使用 github runner 实现每周自动更新固定版本号
+liteloader_version = "1.1.1"
+list_view_version = "v1.2.1"
+
 
 # 存储反代服务器的URL
 def get_github_proxy_urls():
@@ -154,7 +159,7 @@ def check_for_updates():
         # 获取最新版本号
         response = requests.get(
             "https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest",
-            timeout=3,
+            timeout=2,
         )
         latest_release = response.json()
         tag_name = latest_release["tag_name"]
@@ -242,23 +247,14 @@ def can_connect_to_github():
         return False
 
 
-def download_and_install_liteloader(file_path):
-    # 获取Windows下的临时目录
-    temp_dir = tempfile.gettempdir()
-    print(f"临时目录：{temp_dir}")
+def install_liteloader(file_path):
 
-    # 使用urllib下载最新版本的仓库
-    print("正在拉取最新版本的仓库…")
-    zip_url = "https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/master.zip"
-    zip_path = os.path.join(temp_dir, "LiteLoader.zip")
-    download_file(zip_url, zip_path)
-
-    shutil.unpack_archive(zip_path, os.path.join(temp_dir, "LiteLoader"))
-
+    download_and_extract_form_release(LiteLoaderQQNT/LiteLoaderQQNT)
     print("拉取完成，正在安装 LiteLoaderQQNT")
 
-    print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader', 'LiteLoaderQQNT-main')}")
-    print(f"Moving to: {os.path.join(file_path, 'resources', 'app')}")
+    print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader')}")
+    # 历史遗留问题，以前是直接拉取仓库代码，使用了 -main 后缀
+    print(f"Moving to: {os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')}")
 
     # 遍历LiteLoaderQQNT目录下的所有目录和文件，更改为可写权限
     change_folder_permissions(
@@ -452,7 +448,7 @@ def check_and_kill_qq(process_name):
                 proc.kill()
                 print(f"进程 {process_name} 已关闭。")
     except Exception as e:
-        print(f"关闭进程 {process_name} 时出错: {e}")
+        print(f"关闭进程 {process_name} 时发生: {e}，无影响，继续执行")
 
 
 def change_folder_permissions(folder_path, user, permissions):
@@ -464,42 +460,8 @@ def change_folder_permissions(folder_path, user, permissions):
         print(f"修改文件夹权限时出错: {e}")
 
 
-def download_and_install_plugin_store():
-    # 获取Windows下的临时目录
-    temp_dir = tempfile.gettempdir()
-    print(f"临时目录：{temp_dir}")
-
-    print("正在拉取最新版本的插件列表查看器(插件商店)…")
-    try:
-        response = requests.get(
-            "https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/releases/latest",
-            timeout=10
-        )
-        response.raise_for_status()
-    except requests.RequestException as e:
-        print(f"获取最新版本信息失败: {e}")
-        return
-
-    latest_release = response.json()
-    tag_name = latest_release.get("tag_name")
-    if not tag_name:
-        print("未能从最新版本信息中获取 tag_name")
-        return
-
-    store_zip_url = f"https://github.com/ltxhhz/LL-plugin-list-viewer/releases/download/{tag_name}/list-viewer.zip"
-    store_zip_path = os.path.join(temp_dir, "LiteLoaderQQNT-Store.zip")
-
-    try:
-        download_file(store_zip_url, store_zip_path)
-    except Exception as e:
-        print(f"下载文件失败: {e}")
-        return
-
-    try:
-        shutil.unpack_archive(store_zip_path, os.path.join(temp_dir, "list-viewer"))
-    except shutil.ReadError as e:
-        print(f"解压文件失败: {e}")
-        return
+def install_plugin_store():
+    download_and_extract_form_release(ltxhhz/LL-plugin-list-viewer)
 
     # 获取LITELOADERQQNT_PROFILE环境变量的值
     lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
@@ -581,6 +543,54 @@ def download_file(url: str, filename: str):
         if not download_url:
             raise ValueError("没有输入有效的下载地址或本地文件路径")
         download(download_url, filename)
+
+
+def download_and_extract_form_release(repos: str):
+    temp_dir = tempfile.gettempdir()
+    print(f"临时目录：{temp_dir}")
+
+    download_url = None
+    try:
+        response = requests.get(
+            f"https://api.github.com/repos/{repos}/releases/latest",
+            timeout=3
+        )
+        response.raise_for_status()
+        latest_release = response.json()
+        assets = latest_release.get("assets", [])
+        download_url = assets[0].get("browser_download_url") if assets else None
+        if not download_url:
+            raise ValueError("未找到有效的下载链接")
+    except (requests.RequestException, ValueError) as e:
+        print(f"获取最新版本信息失败: {e}")
+        print("使用缓存下载链接")
+        cached_names = {
+            "ltxhhz/LL-plugin-list-viewer": "list-viewer.zip",
+            "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip"
+        }
+        versions = {
+            "ltxhhz/LL-plugin-list-viewer": list_view_version,
+            "LiteLoaderQQNT/LiteLoaderQQNT": liteloader_version
+        }
+
+        if repos not in cached_names:
+            print("发生错误")
+            return
+
+        filename = cached_names[repos]
+        version = versions[repos]
+        download_url = f"https://github.com/{repos}/releases/download/{version}/{filename}"
+
+    zip_name = "LiteLoaderQQNT-Store.zip" if repos == "ltxhhz/LL-plugin-list-viewer" else "LiteLoader.zip"
+    zip_path = os.path.join(temp_dir, zip_name)
+    download_file(download_url, zip_path)
+
+    try:
+        extract_dir = os.path.join(temp_dir, zip_name.split(".")[0])
+        shutil.unpack_archive(zip_path, extract_dir)
+    except shutil.ReadError as e:
+        print(f"解压文件失败: {e}")
+
 def main():
     try:
         # 检测是否在 GitHub Actions 中运行
@@ -606,14 +616,14 @@ def main():
             print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")
         else:
             patch_pe_file(qq_exe_path)
-        download_and_install_liteloader(file_path)
+        install_liteloader(file_path)
         # copy_old_files(file_path)
         patch_index_js(file_path)
         patch(file_path)
 
         # print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
         print("LiteLoaderQQNT 安装完成！接下来进行插件列表安装")
-        download_and_install_plugin_store()
+        install_plugin_store()
 
         if not github_actions:
             print("如果安装过程中没有提示发生错误")
