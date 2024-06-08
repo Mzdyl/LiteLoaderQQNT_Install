@@ -252,10 +252,6 @@ def install_liteloader(file_path):
     download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
     print("拉取完成，正在安装 LiteLoaderQQNT")
 
-    print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader')}")
-    # 历史遗留问题，以前是直接拉取仓库代码，使用了 -main 后缀
-    print(f"Moving to: {os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')}")
-
     # 遍历LiteLoaderQQNT目录下的所有目录和文件，更改为可写权限
     change_folder_permissions(
         os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak"),
@@ -298,18 +294,22 @@ def install_liteloader(file_path):
     else:
         print(f" {source_dir} 不存在，全新安装。")
 
+    print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader')}")
+    # 历史遗留问题，以前是直接拉取仓库代码，使用了 -main 后缀
+    print(f"Moving to: {os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')}")
+    
     try:
         shutil.move(
-            os.path.join(temp_dir, "LiteLoader", "LiteLoaderQQNT-main"),
-            os.path.join(file_path, "resources", "app"),
+            os.path.join(temp_dir, "LiteLoader"),
+            os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main"),
         )
     except Exception as e:
         print(f"移动LiteLoaderQQNT失败, 尝试再次移动: {e}")
         try:
             time.sleep(1)  # 等待一秒，防止文件被锁定
             shutil.move(
-                os.path.join(temp_dir, "LiteLoader", "LiteLoaderQQNT-main"),
-                os.path.join(file_path, "resources", "app"),
+                os.path.join(temp_dir, "LiteLoader"),
+                os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main"),
             )
         except Exception as e:
             print(f"再次尝试移动失败: {e}")
@@ -644,3 +644,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
