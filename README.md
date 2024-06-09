@@ -3,43 +3,46 @@
 
 ~~同时安装 eee 大佬编写的[插件商店](https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store/releases)，作者不再维护，已经删库~~
 
-## 安装方法
+同时安装 ltxhhz 大佬编写的[插件列表查看](https://github.com/ltxhhz/LL-plugin-list-viewer/)
+
+**最推荐的插件安装方式目前仍是手动安装**
+
+**若出现 LiteLoaderQQNT 成功安装，而设置中没有 LiteLoaderQQNT 选项时极有可能是存在插件问题，一般均由自动插件安装导致**
+
+## 使用方法
 
 windows 运行对应 exe 即可 [Releases 下载链接](https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_windows.exe) 
 
-mac 终端运行对应脚本即可或者
+mac/linux 下载运行[release](https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases)中对应脚本或者终端输入下方指令运行
 
 
 ```
-# Stable通道
+# Stable通道(macOS only)
 curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_mac.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
-# Git通道
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_mac.sh" -o /tmp/install_git.sh && bash /tmp/install_git.sh
-
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install.sh" -o /tmp/install_git.sh && bash /tmp/install.sh
-```
-
-linux 在下方选择一条指令运行
-```bash
-# Stable通道
+# Stable通道(linux only)
 curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
-# Git通道
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install_linux.sh" -o /tmp/install_git.sh && bash /tmp/install_git.sh
 
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install.sh" -o /tmp/install_git.sh && bash /tmp/install.sh
+# Stable通道(mac/linux) 暂未发布，仍在测试中
+# curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
 ```
 
 ### 测试版
 
 Win 用户可以通过 [Github Action](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions) 下载最新测试版本
+mac/linux 可以在终端中复制运行
+```
+# Git通道(mac/linux)
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install.sh" -o /tmp/install_git.sh && bash /tmp/install_git.sh
+```
+使用最新测试版本
 
 ## 版本支持
 
-理论支持 QQNT 桌面端 全架构 全版本
+理论支持 QQNT 桌面端 全架构 全版本(NT 旧版本会存在显示错误，推荐使用较新版本)
 
 ## 升级更新
 
-若 LiteLoaderQQNT 更新版本一样可以使用 脚本/exe 升级
+更新 LiteLoaderQQNT 版本一样可以使用 脚本/exe 进行保留数据升级
 
 ## 针对仓库内其他文件的附加说明
 
@@ -51,19 +54,21 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 
 ## 常见问题
 
-**Windows 用户请确保使用 已管理员身份运行。**
+**Windows 用户请确保使用 管理员身份运行。**
 
 **macOS 遇到 Operation not permitted 请检查是否给予 终端 完全磁盘访问权限 或者 允许 终端想访问其他App的数据。**
 
 **LiteLoaderQQNT 安装后无法使用插件请自行检测原因或加群交流，本脚本仅负责安装，同时步骤完全遵循官网指南**
 
-**如有[报毒](https://github.com/Mzdyl/LiteLoaderQQNT_Install/issues/20)请自行判断，本代码完全开源，同时发布的exe均由 GitHub Actions 通过 pyinstaller 构建，代码公开可以自行审查**
+**如有[报毒](https://github.com/Mzdyl/LiteLoaderQQNT_Install/issues/20)请自行判断，本代码完全开源，同时发布的exe均由 GitHub Actions 通过 pyinstaller 及 Nuitka 构建，代码公开可以自行审查**
 
 软件目前使用 GitHub Action 自动化验证脚本效果
 
 如仍有其他问题或者 bug 欢迎友好反馈
 
-**反馈群 : [Telegram](https://t.me/+EKoVlfEI7Ow4MzJl)**
+**安装器反馈群 :  [Telegram](https://t.me/+EKoVlfEI7Ow4MzJl)**
+
+LiteLoaderQQNT群: [Telegram](https://t.me/LiteLoaderQQNT)
 
 ## TODO List
 
@@ -73,8 +78,13 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 - [x] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 避免权限问题，如WinError5
 - [x] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 更新打包方式，替代PyInstaller，避免报毒
 - [x] [.github/workflows ](https://github.com/Mzdyl/LiteLoaderQQNT_Install/tree/main/.github/workflows) 更新QQ安装包版本
-- [ ] [install_mac.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_mac.sh) 研究如何快速复制 plugins 和 data 文件夹
 - [ ] [README.md](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/README.md) 使用GitHub徽章显示通过自动化 ci 监测 LL 与 QQ 最新版的兼容状态
+- [ ] [install_mac.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_mac.sh) **研究如何快速复制 plugins 和 data 文件夹（NEED HELP）**
+- [ ] [install.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install.sh) 使用 release 版本而不是直接 git 拉取源码
+- [ ] [install.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install.sh) 跟上 win 代码的反代逻辑，目前的过于简陋
+- [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 已经发现的潜在问题修复
+- [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 是否需要其他插件安装功能？
+
 ## 特别鸣谢：
 
 [LiteLoaderQQNT](https://github.com/LiteLoaderQQNT/LiteLoaderQQNT)
@@ -82,3 +92,5 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 windows脚本借用[QQNTFileVerifyPatch](https://github.com/LiteLoaderQQNT/QQNTFileVerifyPatch)项目代码实现修补
 
 ~~附加安装的[插件商店](https://github.com/Night-stars-1/LiteLoaderQQNT-Plugin-Plugin-Store/releases)~~
+
+附加安装的[插件列表查看](https://github.com/ltxhhz/LL-plugin-list-viewer/)
