@@ -89,6 +89,7 @@ def scan_and_replace(buffer, pattern, replacement):
 
 
 def patch_pe_file(file_path):
+    # 存在 64 位系统安装 32 位 QQ 的可能，需考虑
     try:
         save_path = file_path + ".bak"
         os.rename(file_path, save_path)
@@ -162,15 +163,11 @@ def check_for_updates():
             timeout=2,
         )
         latest_release = response.json()
-        tag_name = latest_release["tag_name"]
-        body = latest_release["body"]
+        tag_name, body = latest_release["tag_name"], latest_release["body"]
 
         if compare_versions(tag_name, current_version):
-            print(f"发现新版本 {tag_name}！")
-            print(f"更新日志：\n")
-            console = Console()
-            markdown = Markdown(body)
-            console.print(markdown)
+            print(f"发现新版本 {tag_name}！更新日志：\n")
+            Console().print(Markdown(body))
 
             # 提示用户是否下载更新
             print("是否要下载更新？输入 'y' 确认，5 秒内未输入则跳过更新。")
@@ -200,32 +197,26 @@ def check_for_updates():
 
 
 def get_qq_path():
-    # 定义注册表路径和键名
-    registry_hive = winreg.HKEY_LOCAL_MACHINE
-    registry_subkey = (
-        r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\QQ"
-    )
-    registry_value_name = "UninstallString"
+    try:
+        hive, subkey, value = winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\QQ", "UninstallString"
+        uninstall_string = read_registry_key(hive, subkey, value)
 
-    # 读取 UninstallString 信息
-    uninstall_string = read_registry_key(
-        registry_hive, registry_subkey, registry_value_name
-    )
-    if uninstall_string is None:
-        print("无法通过注册表读取 QQNT 的安装目录，请手动选择")
+        if not uninstall_string or not os.path.exists(uninstall_string):
+            raise FileNotFoundError("无法通过注册表读取 QQNT 的安装目录或路径不存在")
+
+        qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
+        print(f"QQNT 的安装目录为: {qq_exe_path}")
+    # except FileNotFoundError as e:
+    except Exception as e:
+        print(e)
+        print("请手动选择 QQ.exe 文件 ")
         qq_exe_path = get_qq_exe_path()
-    else:
-        if os.path.exists(uninstall_string):
-            qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
-            print(f"QQNT 的安装目录为: {qq_exe_path}")
-        else:
-            print("系统 QQNT 的安装路径不存在，请手动选择.")
-            qq_exe_path = get_qq_exe_path()
 
     return qq_exe_path
 
 
 def get_document_path() -> str:
+    # 部分用户是OneDrive 路径？是否有影响
     registry_hive = winreg.HKEY_CURRENT_USER
     registry_subkey = (
         r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
@@ -250,31 +241,7 @@ def can_connect_to_github():
 def install_liteloader(file_path):
     temp_dir = tempfile.gettempdir()
     download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
-    print("拉取完成，正在安装 LiteLoaderQQNT")
-
-    # 遍历LiteLoaderQQNT目录下的所有目录和文件，更改为可写权限
-    change_folder_permissions(
-        os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak"),
-        "everyone",
-        "(oi)(ci)(F)",
-    )
-    change_folder_permissions(
-        os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main"),
-        "everyone",
-        "(oi)(ci)(F)",
-    )
-
-    # 移除目标路径及其内容
-    try:
-        shutil.rmtree(
-            os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak"),
-            ignore_errors=True,
-        )
-    except Exception as e:
-        print(f"移除旧版备份失败，尝试再次移除: {e}")
-        os.system(
-            f'del "{os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")}" /F'
-        )
+    print("下载完成，开始安装 LiteLoaderQQNT")
 
     source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
     destination_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")
@@ -315,63 +282,96 @@ def install_liteloader(file_path):
             print(f"再次尝试移动失败: {e}")
 
 
-def prepare_for_installation(qq_exe_path):
+def check_old_version(qq_exe_path):
     # 检测是否安装过旧版 Liteloader
-    file_path = os.path.dirname(qq_exe_path)
-    package_file_path = os.path.join(file_path, "resources", "app", "package.json")
-    replacement_line = '"main": "./app_launcher/index.js"'
-    target_line = '"main": "./LiteLoader"'
-    with open(package_file_path, "r") as file:
-        content = file.read()
-    if target_line in content:
-        print("检测到安装过旧版，执行复原 package.json")
-        content = content.replace(target_line, replacement_line)
-        with open(package_file_path, "w") as file:
-            file.write(content)
-        print(f"成功替换目标行: {target_line} -> {replacement_line}")
-        print(
-            "请根据需求自行删除 LiteloaderQQNT 0.x 版本本体以及 LITELOADERQQNT_PROFILE 环境变量以及对应目录"
-        )
-    else:
-        print(f"未安装过旧版，全新安装")
+    try:
+        file_path = os.path.dirname(qq_exe_path)
+        package_file_path = os.path.join(file_path, "resources", "app", "package.json")
+        replacement_line = '"main": "./app_launcher/index.js"'
+        target_line = '"main": "./LiteLoader"'
+        with open(package_file_path, "r") as file:
+            content = file.read()
 
-    bak_file_path = qq_exe_path + ".bak"
-    if os.path.exists(bak_file_path):
-        os.remove(bak_file_path)
-        print(f"已删除备份文件: {bak_file_path}")
-    else:
-        print("备份文件不存在，无需删除。")
+        if target_line in content:
+            print("检测到安装过旧版，执行复原 package.json")
+            content = content.replace(target_line, replacement_line)
+            with open(package_file_path, "w") as file:
+                file.write(content)
+            print(f"成功替换目标行: {target_line} -> {replacement_line}")
+            print(
+                "请根据需求自行删除 LiteloaderQQNT 0.x 版本本体以及 LITELOADERQQNT_PROFILE 环境变量以及对应目录"
+            )
+    except Exception as e:
+        print(f"检测是否安装过0.x版本时发生错误: {e}")
 
-    # 获取环境变量
-    lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
-    if lite_loader_profile is None:
-        print(
-            "检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内"
-        )
-        command = (
-            'setx LITELOADERQQNT_PROFILE "' + get_document_path() + '\\LiteloaderQQNT"'
-        )
-        os.system(command)
-        print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
-        print("但不影响LiteloaderQQNT正常使用")
 
-        # 获取环境变量
-        source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
-        folders = ["plugins", "data"]
-        lite_loader_profile = os.path.join(get_document_path(), "LiteloaderQQNT")
-        if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
-            for folder in folders:
-                source_folder = os.path.join(source_dir, folder)
-                target_folder = os.path.join(lite_loader_profile, folder)
-                if os.path.exists(target_folder):
-                    print(f"目标文件夹 {target_folder} 已存在，跳过移动操作。")
-                else:
-                    shutil.move(source_folder, target_folder)
-                    print(f"移动 {source_folder} 到 {target_folder}。")
+def setup_environment_and_move_files(qq_exe_path):
+    try:
+        lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
+        if lite_loader_profile is None:
+            print(
+                "检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内"
+            )
+            command = (
+                'setx LITELOADERQQNT_PROFILE "' + get_document_path() + '\\LiteloaderQQNT"'
+            )
+            os.system(command)
+            print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
+            print("但不影响LiteloaderQQNT正常使用")
+
+            source_dir = os.path.join(os.path.dirname(qq_exe_path), "resources", "app", "LiteLoaderQQNT-main")
+            folders = ["plugins", "data"]
+            lite_loader_profile = os.path.join(get_document_path(), "LiteloaderQQNT")
+            if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
+                for folder in folders:
+                    source_folder = os.path.join(source_dir, folder)
+                    target_folder = os.path.join(lite_loader_profile, folder)
+                    if os.path.exists(target_folder):
+                        print(f"目标文件夹 {target_folder} 已存在，跳过移动操作。")
+                    else:
+                        shutil.move(source_folder, target_folder)
         else:
-            print(f"在 {source_dir} 下没有找到所有的目标文件夹，跳过移动操作。")
-    else:
-        print(f"你的 LiteloaderQQNT 插件数据目录在 {lite_loader_profile}")
+            print(f"你的 LiteloaderQQNT 插件数据目录在 {lite_loader_profile}")
+    except Exception as e:
+        print(f"检测并修改数据目录时发生错误: {e}")
+
+
+def cleanup_old_bak(qq_exe_path):
+    try:
+        file_path = os.path.dirname(qq_exe_path)
+
+        # 访问LiteLoaderQQNT目录并更改目录和文件权限
+        lite_loader_qqnt_paths = [
+            os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak"),
+            os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
+        ]
+
+        for path in lite_loader_qqnt_paths:
+            change_folder_permissions(path, "everyone", "(oi)(ci)(F)")
+
+        # 删除备份文件
+        bak_file_path = qq_exe_path + ".bak"
+        if os.path.exists(bak_file_path):
+            os.remove(bak_file_path)
+            print(f"已删除备份文件: {bak_file_path}")
+        else:
+            print("备份文件不存在，无需删除。")
+
+        # 移除旧版备份文件夹
+        try:
+            shutil.rmtree(os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak"), ignore_errors=True)
+        except Exception as e:
+            print(f"移除旧版备份失败，尝试再次移除: {e}")
+            os.system(f'del "{os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")}" /F')
+
+    except Exception as e:
+        print(f"移除旧版备份时发生错误: {e}")
+
+
+def prepare_for_installation(qq_exe_path):
+    check_old_version(qq_exe_path)
+    cleanup_old_bak(qq_exe_path)
+    setup_environment_and_move_files(qq_exe_path)
 
 
 def copy_old_files(file_path):
@@ -606,7 +606,7 @@ def main():
 
         skip_update_file = os.path.join(file_path, "SKIP_UPDATE")
         if os.path.exists(skip_update_file):
-            print("检测 SKIP_UPDATE 文件，跳过更新")
+            print("检测到 SKIP_UPDATE 文件，跳过更新")
         else:
             check_for_updates()
 
