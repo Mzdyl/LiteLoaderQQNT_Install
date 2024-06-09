@@ -60,21 +60,10 @@ def get_github_proxy_urls():
 sys.stdout.reconfigure(encoding="utf-8")
 
 # x64 or x86 signatures and replacements
-SIG_X64 = bytes(
-    [0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0, 0x48, 0x8B, 0x49, 0x18, 0xE8]
-)
-FIX_X64 = bytes(
-    [
-        0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0,
-        0x48, 0x8B, 0x49, 0x18, 0xB8, 0x01, 0x00, 0x00, 0x00
-    ]
-)
-SIG_X86 = bytes(
-    [0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xE8]
-)
-FIX_X86 = bytes(
-    [0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xB8, 0x01, 0x00, 0x00, 0x00]
-)
+SIG_X64 = bytes([0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0, 0x48, 0x8B, 0x49, 0x18, 0xE8])
+FIX_X64 = bytes([0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0, 0x48, 0x8B, 0x49, 0x18, 0xB8, 0x01, 0x00, 0x00, 0x00])
+SIG_X86 = bytes([0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xE8])
+FIX_X86 = bytes([0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xB8, 0x01, 0x00, 0x00, 0x00])
 
 
 def scan_and_replace(buffer, pattern, replacement):
@@ -125,13 +114,10 @@ def read_registry_key(hive, subkey, value_name):
     try:
         # 打开指定的注册表项
         key = winreg.OpenKey(hive, subkey)
-
         # 读取注册表项中指定名称的值
         value, _ = winreg.QueryValueEx(key, value_name)
-
         # 关闭注册表项
         winreg.CloseKey(key)
-
         return value
     except Exception as e:
         print(f"注册表读取失败: {e}")
@@ -158,10 +144,7 @@ def compare_versions(version1, version2):
 def check_for_updates():
     try:
         # 获取最新版本号
-        response = requests.get(
-            "https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest",
-            timeout=2,
-        )
+        response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest", timeout=2)
         latest_release = response.json()
         tag_name, body = latest_release["tag_name"], latest_release["body"]
 
@@ -179,10 +162,7 @@ def check_for_updates():
                     break
 
             if user_input == 'y':
-                download_url = (
-                    f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/"
-                    f"releases/download/{tag_name}/install_windows.exe"
-                )
+                download_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe"
                 download_file(download_url, f"install_windows-{tag_name}.exe")
                 print("版本已更新，请重新运行最新脚本。")
                 input("按 回车键 退出")
@@ -216,17 +196,24 @@ def get_qq_path():
 
 
 def get_document_path() -> str:
-    # 部分用户是OneDrive 路径？是否有影响
-    registry_hive = winreg.HKEY_CURRENT_USER
-    registry_subkey = (
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
-    )
-    registry_value_name = "Personal"
-    path = read_registry_key(registry_hive, registry_subkey, registry_value_name)
-    if path.startswith("%USERPROFILE%"):
-        path = path.replace("%USERPROFILE%", os.path.expanduser("~"))
-    if not path:
+    try:
+        # 部分用户是OneDrive 路径，是否有影响
+        registry_hive = winreg.HKEY_CURRENT_USER
+        registry_subkey = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+        registry_value_name = "Personal"
+
+        path = read_registry_key(registry_hive, registry_subkey, registry_value_name)
+
+        if path is None:
+            path = os.path.expanduser("~/Documents")
+
+        if path.startswith("%USERPROFILE%"):
+            path = path.replace("%USERPROFILE%", os.path.expanduser("~"))
+
+    except Exception as e:
+        print(f"获取文档路径失败: {e}")
         path = os.path.expanduser("~/Documents")
+
     return path
 
 
@@ -239,47 +226,43 @@ def can_connect_to_github():
 
 
 def install_liteloader(file_path):
-    temp_dir = tempfile.gettempdir()
-    download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
-    print("下载完成，开始安装 LiteLoaderQQNT")
-
-    source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
-    destination_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")
-
-    if os.path.exists(source_dir):
-        try:
-            os.rename(source_dir, destination_dir)
-            print(f"已将旧版重命名为: {destination_dir}")
-        except Exception as e:
-            print(f"重命名失败，尝试使用 shutil.move() 重命名: {e}")
-            try:
-                time.sleep(1)  # 等待一秒，防止文件被锁定
-                shutil.move(source_dir, destination_dir)
-                print(f"已将旧版重命名为: {destination_dir}")
-            except Exception as e:
-                print(f"使用 shutil.move() 重命名失败: {e}")
-    else:
-        print(f" {source_dir} 不存在，全新安装。")
-
-    print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader')}")
-    # 历史遗留问题，以前是直接拉取仓库代码，使用了 -main 后缀
-    print(f"Moving to: {os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')}")
-    
     try:
-        shutil.move(
-            os.path.join(temp_dir, "LiteLoader"),
-            os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main"),
-        )
-    except Exception as e:
-        print(f"移动LiteLoaderQQNT失败, 尝试再次移动: {e}")
+        temp_dir = tempfile.gettempdir()
+        download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
+        print("下载完成，开始安装 LiteLoaderQQNT")
+
+        source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
+        destination_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")
+
+        if os.path.exists(source_dir):
+            try:
+                os.rename(source_dir, destination_dir)
+                print(f"已将旧版重命名为: {destination_dir}")
+            except Exception as e1:
+                print(f"重命名失败，尝试使用 shutil.move() 重命名: {e1}")
+                try:
+                    time.sleep(1)  # 等待一秒，防止文件被锁定
+                    shutil.move(source_dir, destination_dir)
+                    print(f"已将旧版重命名为: {destination_dir}")
+                except Exception as e2:
+                    print(f"使用 shutil.move() 重命名失败: {e2}")
+
+        print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader')}")
+        # 历史遗留问题，以前是直接拉取仓库代码，使用了 -main 后缀
+        print(f"Moving to: {os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')}")
+
         try:
+            shutil.move(os.path.join(temp_dir, "LiteLoader"), source_dir)
+        except Exception as e1:
+            print(f"移动 LiteLoaderQQNT 失败, 尝试再次移动: {e1}")
             time.sleep(1)  # 等待一秒，防止文件被锁定
-            shutil.move(
-                os.path.join(temp_dir, "LiteLoader"),
-                os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main"),
-            )
-        except Exception as e:
-            print(f"再次尝试移动失败: {e}")
+            try:
+                shutil.move(os.path.join(temp_dir, "LiteLoader"), source_dir)
+            except Exception as e2:
+                print(f"再次尝试移动失败: {e2}")
+
+    except Exception as e:
+        print(f"安装LL过程发生错误: {e}")
 
 
 def check_old_version(qq_exe_path):
@@ -298,9 +281,7 @@ def check_old_version(qq_exe_path):
             with open(package_file_path, "w") as file:
                 file.write(content)
             print(f"成功替换目标行: {target_line} -> {replacement_line}")
-            print(
-                "请根据需求自行删除 LiteloaderQQNT 0.x 版本本体以及 LITELOADERQQNT_PROFILE 环境变量以及对应目录"
-            )
+            print("请根据需求自行删除 LiteloaderQQNT 0.x 版本本体以及 LITELOADERQQNT_PROFILE 环境变量以及对应目录")
     except Exception as e:
         print(f"检测是否安装过0.x版本时发生错误: {e}")
 
@@ -309,12 +290,8 @@ def setup_environment_and_move_files(qq_exe_path):
     try:
         lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
         if lite_loader_profile is None:
-            print(
-                "检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内"
-            )
-            command = (
-                'setx LITELOADERQQNT_PROFILE "' + get_document_path() + '\\LiteloaderQQNT"'
-            )
+            print("检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内")
+            command = ('setx LITELOADERQQNT_PROFILE "' + get_document_path() + '\\LiteloaderQQNT"')
             os.system(command)
             print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
             print("但不影响LiteloaderQQNT正常使用")
@@ -375,12 +352,8 @@ def prepare_for_installation(qq_exe_path):
 
 
 def copy_old_files(file_path):
-    old_plugins_path = os.path.join(
-        file_path, "resources", "app", "LiteLoaderQQNT_bak", "plugins"
-    )
-    new_liteloader_path = os.path.join(
-        file_path, "resources", "app", "LiteLoaderQQNT-main"
-    )
+    old_plugins_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak", "plugins")
+    new_liteloader_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
     # 复制 LiteLoader_bak 中的插件到新的 LiteLoader 目录
     if os.path.exists(old_plugins_path):
         shutil.copytree(
@@ -401,41 +374,43 @@ def copy_old_files(file_path):
 
 
 def patch_index_js(file_path):
-    app_launcher_path = os.path.join(file_path, "resources", "app", "app_launcher")
-    os.chdir(app_launcher_path)
-    print("开始修补 index.js…")
-    index_path = os.path.join(app_launcher_path, "index.js")
-    # 备份原文件
-    print("已将旧版文件备份为 index.js.bak ")
-    bak_index_path = index_path + ".bak"
-    shutil.copyfile(index_path, bak_index_path)
-    with open(index_path, "w", encoding="utf-8") as f:
-        f.write(
-            f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n"
-        )
-        f.write("require('./launcher.node').load('external_index', module);")
+    try:
+        app_launcher_path = os.path.join(file_path, "resources", "app", "app_launcher")
+        os.chdir(app_launcher_path)
+        print("开始修补 index.js…")
+        index_path = os.path.join(app_launcher_path, "index.js")
+        # 备份原文件
+        print("已将旧版文件备份为 index.js.bak ")
+        bak_index_path = index_path + ".bak"
+        shutil.copyfile(index_path, bak_index_path)
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n")
+            f.write("require('./launcher.node').load('external_index', module);")
+    except Exception as e:
+        print(f"修补 index.js 时发生错误: {e}")
 
 
 def patch(file_path):
-    # 获取LITELOADERQQNT_PROFILE环境变量的值
-    lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
+    try:
+        # 获取LITELOADERQQNT_PROFILE环境变量的值
+        lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
 
-    # 如果环境变量不存在，则使用默认路径
-    default_path = os.path.join(
-        file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins"
-    )
-    plugin_path = (
-        os.path.join(lite_loader_profile, "plugins")
-        if lite_loader_profile
-        else default_path
-    )
+        # 如果环境变量不存在，则使用默认路径
+        default_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
+        plugin_path = (
+            os.path.join(lite_loader_profile, "plugins")
+            if lite_loader_profile
+            else default_path
+        )
 
-    # 打印或使用 plugin_path 变量
-    print(f"你的插件路径是 {plugin_path}")
-    print("赋予插件目录和插件数据目录完全控制权(解决部分插件权限问题)")
-    change_folder_permissions(plugin_path, "everyone", "(oi)(ci)(F)")
-    plugin_data_dir = os.path.join(os.path.dirname(plugin_path), "data")
-    change_folder_permissions(plugin_data_dir, "everyone", "(oi)(ci)(F)")
+        # 打印或使用 plugin_path 变量
+        print(f"你的插件路径是 {plugin_path}")
+        print("赋予插件目录和插件数据目录完全控制权(解决部分插件权限问题)")
+        change_folder_permissions(plugin_path, "everyone", "(oi)(ci)(F)")
+        plugin_data_dir = os.path.join(os.path.dirname(plugin_path), "data")
+        change_folder_permissions(plugin_data_dir, "everyone", "(oi)(ci)(F)")
+    except Exception as e:
+        print(f"发生错误: {e}")
 
 
 def check_and_kill_qq(process_name):
@@ -461,29 +436,28 @@ def change_folder_permissions(folder_path, user, permissions):
 
 
 def install_plugin_store():
-    temp_dir = tempfile.gettempdir()
+    try:
+        temp_dir = tempfile.gettempdir()
+        download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
+        # 获取LITELOADERQQNT_PROFILE环境变量的值
+        lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
+        if not lite_loader_profile:
+            print("环境变量 LITELOADERQQNT_PROFILE 未设置")
+            return
 
-    download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
-    # 获取LITELOADERQQNT_PROFILE环境变量的值
-    lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
-    if not lite_loader_profile:
-        print("环境变量 LITELOADERQQNT_PROFILE 未设置")
-        return
+        plugin_path = os.path.join(lite_loader_profile, 'plugins')
+        existing_destination_path = os.path.join(plugin_path, 'list-viewer')
 
-    plugin_path = os.path.join(lite_loader_profile, 'plugins')
-    existing_destination_path = os.path.join(plugin_path, 'list-viewer')
-
-    # 打印或使用 plugin_path 变量
-    print(f"你的插件路径是 {plugin_path}")
-
-    if not os.path.exists(existing_destination_path):
-        # 创建目标文件夹
-        os.makedirs(plugin_path, exist_ok=True)
-        print(f"Moving from: {os.path.join(temp_dir, 'list-viewer')}")
-        print(f"Moving to: {existing_destination_path}")
-        shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
-    else:
-        print("检测到已安装插件商店，不再重新安装")
+        if not os.path.exists(existing_destination_path):
+            # 创建目标文件夹
+            os.makedirs(plugin_path, exist_ok=True)
+            print(f"Moving from: {os.path.join(temp_dir, 'list-viewer')}")
+            print(f"Moving to: {existing_destination_path}")
+            shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
+        else:
+            print("检测到已安装插件商店，不再重新安装")
+    except Exception as e:
+        print(f"安装插件商店发生错误: {e}\n请尝试手动安装")
 
 
 def check_proxy(proxy):
@@ -550,12 +524,8 @@ def download_and_extract_form_release(repos: str):
     temp_dir = tempfile.gettempdir()
     print(f"临时目录：{temp_dir}")
 
-    download_url = None
     try:
-        response = requests.get(
-            f"https://api.github.com/repos/{repos}/releases/latest",
-            timeout=3
-        )
+        response = requests.get(f"https://api.github.com/repos/{repos}/releases/latest", timeout=3)
         response.raise_for_status()
         latest_release = response.json()
         assets = latest_release.get("assets", [])
