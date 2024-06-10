@@ -83,7 +83,10 @@ LiteLoaderQQNT群: [Telegram](https://t.me/LiteLoaderQQNT)
 - [ ] [install.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install.sh) 使用 release 版本而不是直接 git 拉取源码
 - [ ] [install.sh](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install.sh) 跟上 win 代码的反代逻辑，目前的过于简陋
 - [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 已经发现的潜在问题修复
+- [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py)  357a79e 提交导致 Nuitka 构建失败？
+- [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py)  考虑打包 LiteloaderQQNT 文件进安装器，实现离线更新？
 - [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 是否需要其他插件安装功能？
+
 
 ## 特别鸣谢：
 
