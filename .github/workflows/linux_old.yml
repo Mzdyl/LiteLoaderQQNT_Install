@@ -1,19 +1,19 @@
-name: Install and Test LL on macOS
+name: Install and Test LL on Linux
 
 on:
   push:
     paths:
-      - 'install.sh'
-      - '.github/workflows/macOS.yml'
+      - 'install_linux.sh'
+      - '.github/workflows/linux.yml'
   pull_request:
     paths:
-      - 'install.sh'
-      - '.github/workflows/macOS.yml'
+      - 'install_linux.sh'
+      - '.github/workflows/linux.yml'
   workflow_dispatch:
 
 jobs:
   install_and_test:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
@@ -26,45 +26,36 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
 
     - name: Download and Install QQ Software
       run: |
-        python3 get_qqnt.py Macos
-        hdiutil attach QQ.dmg
-        cp -R /Volumes/QQ/QQ.app /Applications
-        hdiutil detach /Volumes/QQ
-        open /Applications/QQ.app/ &
-                                
-    - name: Run install_mac.sh
-      run: |
-        chmod +x install.sh
-        ./install.sh
-        
-    - name: Run QQ on macOS, wait, and check LiteLoader
-      run: |
-        /Applications/QQ.app/Contents/MacOS/QQ &  # 启动 QQ，放入后台
-        sleep 3  # 等待 3 秒
+        python3 get_qqnt.py Debianx64
+        sudo dpkg -i LinuxQQ.deb
+        sudo apt-get install -f
 
-        # 关闭 QQ 应用程序，这里使用 pkill 假设 QQ 进程的名字为 QQ
-        pkill QQ
+    - name: Run install_linux.sh
+      run: |
+        chmod +x install_linux.sh
+        ./install_linux.sh
 
-        # 检查 LiteLoader 插件是否存在
-        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins" ]; then
-          echo "LiteLoader plugins folder exists. Test succeeded."
-        else
-          echo "LiteLoader plugins folder does not exist. Test failed."
+    - name: Check output and directory existence
+      run: |
+        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]" || [ ! -d "/opt/LiteLoader/plugins" ]; then
+          echo "LiteLoader not found in output or /opt/LiteLoader/plugins directory does not exist. Test failed."
           exit 1
+        else
+          echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
         fi
-
 
 
   release:
     runs-on: ubuntu-latest
     needs: install_and_test
     if: github.event_name == 'push'
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -112,7 +103,7 @@ jobs:
           prerelease: true
           body_path: release_body.txt
           files: |
-            install_mac.sh
+            install_linux.sh
             install.sh
         env:
           GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}

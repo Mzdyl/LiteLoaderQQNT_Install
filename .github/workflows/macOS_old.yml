@@ -3,11 +3,11 @@ name: Install and Test LL on macOS
 on:
   push:
     paths:
-      - 'install.sh'
+      - 'install_mac.sh'
       - '.github/workflows/macOS.yml'
   pull_request:
     paths:
-      - 'install.sh'
+      - 'install_mac.sh'
       - '.github/workflows/macOS.yml'
   workflow_dispatch:
 
@@ -39,8 +39,8 @@ jobs:
                                 
     - name: Run install_mac.sh
       run: |
-        chmod +x install.sh
-        ./install.sh
+        chmod +x install_mac.sh
+        ./install_mac.sh
         
     - name: Run QQ on macOS, wait, and check LiteLoader
       run: |

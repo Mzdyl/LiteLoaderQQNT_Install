@@ -3,12 +3,10 @@ name: Install and Test LL on Linux
 on:
   push:
     paths:
-      - 'install_linux.sh'
       - 'install.sh'
       - '.github/workflows/linux.yml'
   pull_request:
     paths:
-      - 'install_linux.sh'
       - 'install.sh'
       - '.github/workflows/linux.yml'
   workflow_dispatch:
@@ -40,8 +38,8 @@ jobs:
 
     - name: Run install_linux.sh
       run: |
-        chmod +x install_linux.sh
-        ./install_linux.sh
+        chmod +x install.sh
+        ./install.sh
 
     - name: Check output and directory existence
       run: |
