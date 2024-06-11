@@ -485,21 +485,21 @@ def get_working_proxy():
 def download_file(url: str, filename: str):
     def download(url: str, filename: str):
         try:
-            if os.path.exists(url):
-                # 本地文件
-                shutil.copy(url, filename)
-            else:
-                # URL
-                with open(filename, "wb") as file:
-                    response = requests.get(url, timeout=10, stream=True)
-                    for chunk in response.iter_content(chunk_size=4096):
-                        file.write(chunk)
+            with open(filename, "wb") as file:
+                response = requests.get(url, timeout=10, stream=True)
+                for chunk in response.iter_content(chunk_size=4096):
+                    file.write(chunk)
         except requests.RequestException as e:
             raise Exception(f"下载 {url} 失败: {e}")
+    try:
+        try:
+            if os.path.exists(url):
+                # 本地文件
+                print(f"内嵌文件路径{url}")
+                shutil.copy(url, filename)
+                return
         except OSError as e:
             raise Exception(f"处理本地文件 {url} 失败: {e}")
-
-    try:
         if can_connect_to_github():
             print("网络良好，直连下载")
             download_url = url
@@ -533,24 +533,30 @@ def download_and_extract_form_release(repos: str):
         if not download_url:
             raise ValueError("未找到有效的下载链接")
     except (requests.RequestException, ValueError) as e:
-        print(f"获取最新版本信息失败: {e}")
-        print("使用缓存下载链接")
         cached_names = {
             "ltxhhz/LL-plugin-list-viewer": "list-viewer.zip",
             "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip"
-        }
-        versions = {
-            "ltxhhz/LL-plugin-list-viewer": list_view_version,
-            "LiteLoaderQQNT/LiteLoaderQQNT": liteloader_version
-        }
+            }
+        if get_external_data_path():
+            print("使用内嵌版本")
+            filename = cached_names[repos]
+            download_url= os.path.join(get_external_data_path(), filename)
+        else:
+            print(f"获取最新版本信息失败: {e}")
+            print("使用缓存下载链接")
 
-        if repos not in cached_names:
-            print("发生错误")
-            return
+            versions = {
+                "ltxhhz/LL-plugin-list-viewer": list_view_version,
+                "LiteLoaderQQNT/LiteLoaderQQNT": liteloader_version
+            }
 
-        filename = cached_names[repos]
-        version = versions[repos]
-        download_url = f"https://github.com/{repos}/releases/download/{version}/{filename}"
+            if repos not in cached_names:
+                print("发生错误")
+                return
+
+            filename = cached_names[repos]
+            version = versions[repos]
+            download_url = f"https://github.com/{repos}/releases/download/{version}/{filename}"
 
     zip_name = "LiteLoaderQQNT-Store.zip" if repos == "ltxhhz/LL-plugin-list-viewer" else "LiteLoader.zip"
     zip_path = os.path.join(temp_dir, zip_name)
@@ -561,6 +567,13 @@ def download_and_extract_form_release(repos: str):
         shutil.unpack_archive(zip_path, extract_dir)
     except shutil.ReadError as e:
         print(f"解压文件失败: {e}")
+
+
+def get_external_data_path():
+    if hasattr(sys, '_MEIPASS'):
+        # If running in a PyInstaller bundle
+        base_path = sys._MEIPASS
+        return os.path.join(base_path)
 
 
 def main():
