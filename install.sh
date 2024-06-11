@@ -22,9 +22,9 @@ function download_and_extract() {
     archive_extension="${archive_name##*.}"
 
     if command -v wget > /dev/null; then
-        wget "$url" -O "$archive_name"
+        wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name"
     elif command -v curl > /dev/null; then
-        curl -L "$url" -o "$archive_name"
+        curl -L -H "Accept: " "$url" -o "$archive_name"
     else
         echo "wget 或 curl 均未安装，无法下载文件."
         exit 1
@@ -67,56 +67,73 @@ function pull_liteloader() {
 
     git_cmd=$(command -v git)
 
-    echo "正在拉取最新版本的仓库"
+    echo "正在拉取最新Release版本的仓库"
+
     case $(can_connect_to_internet) in
         0)
+            echo "通过GitHub获取最新Release版本"
+            LATEST_RELEASE_URL="https://api.github.com/repos/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
+            LATEST_RELEASE_INFO=$(curl -s $LATEST_RELEASE_URL)
+            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oP '"tag_name": "\K(.*?)(?=")')
             repo_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
-            archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/heads/main.tar.gz"
+            archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
             ;;
         1)
+            echo "通过GitHub镜像获取最新Release版本"
+            LATEST_RELEASE_URL="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
+            LATEST_RELEASE_INFO=$(curl -s -o /dev/null -w "%{redirect_url}" "$LATEST_RELEASE_URL")
+            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oE "tag/[^/]+" | cut -d'/' -f2)
             repo_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
-            archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/heads/main.tar.gz"
+            archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
             ;;
         2)
+            echo "通过GitLink获取最新Release版本"
+            TAG_URL="https://gitlink.org.cn/api/shenmo7192/LiteLoaderQQNT/tags.json"
+            LATEST_TAG=$(echo $(curl -s $TAG_URL) | grep -oP '"name"\s*:\s*"\K[^"]+' | head -n 1)
             repo_url="https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git"
-            archive_url="https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT/archive/main.tar.gz"
+            archive_url="https://www.gitlink.org.cn/api/shenmo7192/liteloaderqqnt/archive/$LATEST_TAG.tar.gz"
             ;;
         *)
             echo "出现错误，请截图"
             exit 1
             ;;
     esac
-    
+
+    if [ -z "$LATEST_TAG" ]; then
+        echo "获取最新版本失败，请截图：$LATEST_TAG"
+        exit 1
+    fi
+
     if [ -n "$git_cmd" ]; then
-        git clone $repo_url LiteLoader
+        git clone $repo_url LiteLoader -b $LATEST_TAG || { echo "git clone 失败，退出脚本"; exit 1; }
     else
-        download_and_extract $archive_url LiteLoader
+        download_and_extract $archive_url LiteLoader || { echo "下载并解压失败，退出脚本"; exit 1; }
     fi
 }
 
 # 安装 LiteLoader
 function install_liteloader() {
     echo "拉取完成，正在安装 LiteLoader..."
-    if [ "$platform" == "Linux" ]; then
+    if [ "$platform" == "linux" ]; then
         qq_path="/opt/QQ/resources"
         ll_path="/opt"
         sudo_cmd="sudo"
-    elif [ "$platform" == "Darwin" ]; then
+    elif [ "$platform" == "macos" ]; then
         qq_path="Applications/QQ.app/Contents/Resources/"
         ll_path="$HOME/Library/Containers/com.tencent.qq/Data/Documents"
         sudo_cmd=""
     fi
-    
-    $sudo_cmd mv -f LiteLoader "$ll_path"
-    
+
     # 如果目标目录存在且不为空，则先备份处理
     if [ -e "$ll_path/LiteLoader" ]; then
         $sudo_cmd rm -rf "$ll_path/LiteLoader_bak"
         $sudo_cmd mv "$ll_path/LiteLoader" "$ll_path/LiteLoader_bak"
         echo "已将原LiteLoader目录备份为LiteLoader_bak"
     fi
-    
-    $sudo_cmd cp -f LiteLoader/src/preload.js $qq_path/app/application/preload.js
+
+    $sudo_cmd mv -f LiteLoader "$ll_path"
+
+    $sudo_cmd cp -f "$ll_path"/LiteLoader/src/preload.js $qq_path/app/application/preload.js
 
     # 恢复插件和数据
     if [ -d "$ll_path/LiteLoader_bak/plugins" ]; then
@@ -172,6 +189,7 @@ function install_plugin_store() {
         echo "插件列表查看已存在"
     else
         echo "正在拉取最新版本的插件列表查看..."
+    fi
     URL="${_reproxy_url}${download_url}"
     if [ $(can_connect_to_internet) -eq 0 ]; then
         URL="${download_url}"
@@ -300,7 +318,7 @@ pull_liteloader
 
 install_liteloader
 
-if "$platform" == "Darwin" then
+if [ "$platform" == "macos" ]; then
     create_symlink_func
 fi
 
