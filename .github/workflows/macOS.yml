@@ -37,7 +37,7 @@ jobs:
         hdiutil detach /Volumes/QQ
         open /Applications/QQ.app/ &
                                 
-    - name: Run install_mac.sh
+    - name: Run install.sh
       run: |
         chmod +x install.sh
         ./install.sh

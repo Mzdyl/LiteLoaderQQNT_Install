@@ -36,7 +36,7 @@ jobs:
         sudo dpkg -i LinuxQQ.deb
         sudo apt-get install -f
 
-    - name: Run install_linux.sh
+    - name: Run install.sh
       run: |
         chmod +x install.sh
         ./install.sh
