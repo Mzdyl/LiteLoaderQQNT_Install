@@ -485,21 +485,21 @@ def get_working_proxy():
 def download_file(url: str, filename: str):
     def download(url: str, filename: str):
         try:
-            if os.path.exists(url):
-                # 本地文件
-                shutil.copy(url, filename)
-            else:
-                # URL
-                with open(filename, "wb") as file:
-                    response = requests.get(url, timeout=10, stream=True)
-                    for chunk in response.iter_content(chunk_size=4096):
-                        file.write(chunk)
+            with open(filename, "wb") as file:
+                response = requests.get(url, timeout=10, stream=True)
+                for chunk in response.iter_content(chunk_size=4096):
+                    file.write(chunk)
         except requests.RequestException as e:
             raise Exception(f"下载 {url} 失败: {e}")
+    try:
+        try:
+            if os.path.exists(url):
+                # 本地文件
+                print(f"内嵌文件路径{url}")
+                shutil.copy(url, filename)
+                return
         except OSError as e:
             raise Exception(f"处理本地文件 {url} 失败: {e}")
-
-    try:
         if can_connect_to_github():
             print("网络良好，直连下载")
             download_url = url
@@ -538,8 +538,9 @@ def download_and_extract_form_release(repos: str):
             "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip"
             }
         if get_external_data_path():
+            print("使用内嵌版本")
             filename = cached_names[repos]
-            download_url= os.join(get_external_data_path(), filename)
+            download_url= os.path.join(get_external_data_path(), filename)
         else:
             print(f"获取最新版本信息失败: {e}")
             print("使用缓存下载链接")

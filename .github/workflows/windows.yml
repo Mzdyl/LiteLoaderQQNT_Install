@@ -36,7 +36,7 @@ jobs:
     - name: Install pyinstaller & Build install_windows_pyinstaller.exe
       run: |
         python -m pip install pyinstaller
-        pyinstaller --onefile --uac-admin --add-data "LiteLoaderQQNT.zip" install_windows.py -n install_windows_pyinstaller
+        pyinstaller --onefile --uac-admin --add-data "LiteLoaderQQNT.zip:." install_windows.py -n install_windows_pyinstaller
 
     - name: Upload install_windows_pyinstaller.exe
       uses: actions/upload-artifact@v4
