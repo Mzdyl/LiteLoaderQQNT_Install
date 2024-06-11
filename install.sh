@@ -121,7 +121,7 @@ function install_liteloader() {
         ll_path="/opt"
         sudo_cmd="sudo"
     elif [ "$platform" == "macos" ]; then
-        qq_path="Applications/QQ.app/Contents/Resources/"
+        qq_path="/Applications/QQ.app/Contents/Resources"
         ll_path="$HOME/Library/Containers/com.tencent.qq/Data/Documents"
         sudo_cmd=""
     fi
