@@ -91,7 +91,7 @@ function pull_liteloader() {
             echo "通过GitLink获取最新Release版本"
             TAG_URL="https://gitlink.org.cn/api/shenmo7192/LiteLoaderQQNT/tags.json"
 #            LATEST_TAG=$(echo $(curl -s $TAG_URL) | grep -oP '"name"\s*:\s*"\K[^"]+' | head -n 1)
-            LATEST_TAG=$(echo $(curl -s $TAG_URL) | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+            LATEST_TAG=$(perl -nle 'print $1 if /"name"\s*:\s*"([^"]+)/' <<< "$(curl -s $TAG_URL)" | head -n 1)
             repo_url="https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git"
             archive_url="https://www.gitlink.org.cn/api/shenmo7192/liteloaderqqnt/archive/$LATEST_TAG.tar.gz"
             ;;
@@ -107,7 +107,7 @@ function pull_liteloader() {
     fi
 
     if [ -n "$git_cmd" ]; then
-        git clone $repo_url LiteLoader -b $LATEST_TAG || { echo "git clone 失败，退出脚本"; exit 1; }
+        git clone $repo_url LiteLoader -b $LATEST_TAG > /dev/null 2>&1 || { echo "git clone 失败，退出脚本"; exit 1; }
     else
         download_and_extract $archive_url LiteLoader || { echo "下载并解压失败，退出脚本"; exit 1; }
     fi
@@ -189,6 +189,7 @@ function install_plugin_store() {
 
     if [ -e "$pluginStoreFolder" ]; then
         echo "插件列表查看已存在"
+        return
     else
         echo "正在拉取最新版本的插件列表查看..."
     fi
@@ -287,6 +288,7 @@ function aur_install_func() {
     fi
 }
 
+
 # 检查是否为 root 用户
 if [ "$(id -u)" -eq 0 ]; then
     echo "错误：禁止以 root 用户执行此脚本。"
@@ -312,7 +314,7 @@ fi
 
 elevate_permissions
 
-if [[ "$platform" == "linux" || "$GITHUB_ACTIONS" != "true" ]]; then
+if [[ "$platform" == "linux" && "$GITHUB_ACTIONS" != "true" ]]; then
     modify_plugins_directory
 fi
 
