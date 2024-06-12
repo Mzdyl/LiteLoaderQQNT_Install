@@ -596,6 +596,8 @@ def main():
         check_and_kill_qq("QQ.exe")
         if not github_actions:
             prepare_for_installation(qq_exe_path)
+        else:
+            cleanup_old_bak(qq_exe_path)
 
         if os.path.exists(os.path.join(file_path, "dbghelp.dll")):
             print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")

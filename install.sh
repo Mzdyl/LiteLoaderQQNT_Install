@@ -164,9 +164,7 @@ require('$ll_path/LiteLoader');\
 
 
 function install_plugin_store() {
-    response=$(curl -s https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/releases/latest)
-    version=$(echo "$response" | grep 'tag_name' | cut -d'"' -f4 )
-    download_url=https://github.com/ltxhhz/LL-plugin-list-viewer/releases/download/$version/list-viewer.zip
+    download_url=https://github.com/ltxhhz/LL-plugin-list-viewer/releases/latest/download/list-viewer.zip
 
     if [ "$platform" == "linux" ]; then
         pluginsDir=${LITELOADERQQNT_PROFILE:-/opt/LiteLoader/plugins}
