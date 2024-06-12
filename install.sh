@@ -65,27 +65,27 @@ function pull_liteloader() {
     cd /tmp || { echo "无法进入 /tmp 目录"; exit 1; }
     rm -rf LiteLoader
 
-    git_cmd=$(command -v git)
-
     echo "正在拉取最新Release版本的仓库"
 
     case $(can_connect_to_internet) in
         0)
             echo "通过GitHub获取最新Release版本"
-            LATEST_RELEASE_URL="https://api.github.com/repos/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
-            LATEST_RELEASE_INFO=$(curl -s $LATEST_RELEASE_URL)
-#            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oP '"tag_name": "\K(.*?)(?=")') # macOS 不支持 grep -P
-            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | sed -n 's/.*"tag_name": "\(.*\)".*/\1/p')
-            repo_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
-            archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
+#            LATEST_RELEASE_URL="https://api.github.com/repos/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
+#            LATEST_RELEASE_INFO=$(curl -s $LATEST_RELEASE_URL)
+##            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oP '"tag_name": "\K(.*?)(?=")') # macOS 不支持 grep -P
+#            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | sed -n 's/.*"tag_name": "\(.*\)".*/\1/p')
+#            repo_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
+#            archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
+            archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
             ;;
         1)
             echo "通过GitHub镜像获取最新Release版本"
-            LATEST_RELEASE_URL="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
-            LATEST_RELEASE_INFO=$(curl -s -o /dev/null -w "%{redirect_url}" "$LATEST_RELEASE_URL")
-            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oE "tag/[^/]+" | cut -d'/' -f2)
-            repo_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
-            archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
+#            LATEST_RELEASE_URL="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
+#            LATEST_RELEASE_INFO=$(curl -s -o /dev/null -w "%{redirect_url}" "$LATEST_RELEASE_URL")
+#            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oE "tag/[^/]+" | cut -d'/' -f2)
+#            repo_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
+#            archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
+            archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
             ;;
         2)
             echo "通过GitLink获取最新Release版本"
@@ -94,6 +94,10 @@ function pull_liteloader() {
             LATEST_TAG=$(perl -nle 'print $1 if /"name"\s*:\s*"([^"]+)/' <<< "$(curl -s $TAG_URL)" | head -n 1)
             repo_url="https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git"
             archive_url="https://www.gitlink.org.cn/api/shenmo7192/liteloaderqqnt/archive/$LATEST_TAG.tar.gz"
+            if [ -z "$LATEST_TAG" ]; then
+                echo "获取最新版本失败，请截图：$LATEST_TAG"
+                exit 1
+            fi
             ;;
         *)
             echo "出现错误，请截图"
@@ -101,16 +105,8 @@ function pull_liteloader() {
             ;;
     esac
 
-    if [ -z "$LATEST_TAG" ]; then
-        echo "获取最新版本失败，请截图：$LATEST_TAG"
-        exit 1
-    fi
+    download_and_extract $archive_url LiteLoader || { echo "下载并解压失败，退出脚本"; exit 1; }
 
-    if [ -n "$git_cmd" ]; then
-        git clone $repo_url LiteLoader -b $LATEST_TAG > /dev/null 2>&1 || { echo "git clone 失败，退出脚本"; exit 1; }
-    else
-        download_and_extract $archive_url LiteLoader || { echo "下载并解压失败，退出脚本"; exit 1; }
-    fi
 }
 
 # 安装 LiteLoader
