@@ -50,6 +50,33 @@ jobs:
           echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
         fi
 
+    - name: Set up iptables rules
+      run: |
+        # 阻止访问 GitHub
+        sudo iptables -A OUTPUT -d github.com -j REJECT
+
+    - name: Remove LiteLoader directory
+      run: |
+        if [ -d "/opt/LiteLoader" ]; then
+          # 删除目录及其内容
+          rm -rf "/opt/LiteLoader"
+          echo "LiteLoader directory removed successfully."
+        else
+          echo "LiteLoader directory does not exist."
+        fi
+
+    - name: ReRun install.sh
+      run: |
+        ./install.sh
+
+    - name: Check output again
+      run: |
+        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]" || [ ! -d "/opt/LiteLoader/plugins" ]; then
+          echo "LiteLoader not found in output or /opt/LiteLoader/plugins directory does not exist. Test failed."
+          exit 1
+        else
+          echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
+        fi
 
   release:
     runs-on: ubuntu-latest

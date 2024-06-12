@@ -58,7 +58,41 @@ jobs:
           exit 1
         fi
 
+    - name: Set up iptables rules
+      run: |
+        # 阻止访问 GitHub
+        echo "127.0.0.1 github.com" | sudo tee -a /etc/hosts
+        echo "127.0.0.1 api.github.com" | sudo tee -a /etc/hosts
 
+    - name: Remove LiteLoader directory
+      run: |
+        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader" ]; then
+          # 删除目录及其内容
+          rm -rf "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader"
+          echo "LiteLoader directory removed successfully."
+        else
+          echo "LiteLoader directory does not exist."
+        fi
+
+    - name: ReRun install.sh
+      run: |
+        ./install.sh
+
+    - name: Check LiteLoader
+      run: |
+        /Applications/QQ.app/Contents/MacOS/QQ &  # 启动 QQ，放入后台
+        sleep 3  # 等待 3 秒
+
+        # 关闭 QQ 应用程序，这里使用 pkill 假设 QQ 进程的名字为 QQ
+        pkill QQ
+
+        # 检查 LiteLoader 插件是否存在
+        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins" ]; then
+          echo "LiteLoader plugins folder exists. Test succeeded."
+        else
+          echo "LiteLoader plugins folder does not exist. Test failed."
+          exit 1
+        fi
 
   release:
     runs-on: ubuntu-latest

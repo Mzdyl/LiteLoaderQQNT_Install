@@ -19,12 +19,23 @@ function download_and_extract() {
     url=$1
     output_dir=$2
     archive_name=$(basename "$url")
-    archive_extension="${archive_name##*.}"
+    # 获取扩展名并处理多部分扩展名
+    case "$archive_name" in
+        *.tar.gz)
+            archive_extension="tar.gz"
+        ;;
+        *.zip)
+            archive_extension="zip"
+        ;;
+        *)
+            archive_extension="${archive_name##*.}"
+        ;;
+    esac
 
     if command -v wget > /dev/null; then
-        wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name"
+        wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
     elif command -v curl > /dev/null; then
-        curl -L -H "Accept: " "$url" -o "$archive_name"
+        curl -L -H "Accept: " "$url" -o "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
     else
         echo "wget 或 curl 均未安装，无法下载文件."
         exit 1
@@ -65,35 +76,39 @@ function pull_liteloader() {
     cd /tmp || { echo "无法进入 /tmp 目录"; exit 1; }
     rm -rf LiteLoader
 
-    git_cmd=$(command -v git)
-
     echo "正在拉取最新Release版本的仓库"
 
     case $(can_connect_to_internet) in
         0)
             echo "通过GitHub获取最新Release版本"
-            LATEST_RELEASE_URL="https://api.github.com/repos/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
-            LATEST_RELEASE_INFO=$(curl -s $LATEST_RELEASE_URL)
-#            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oP '"tag_name": "\K(.*?)(?=")') # macOS 不支持 grep -P
-            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | sed -n 's/.*"tag_name": "\(.*\)".*/\1/p')
-            repo_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
-            archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
+#            LATEST_RELEASE_URL="https://api.github.com/repos/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
+#            LATEST_RELEASE_INFO=$(curl -s $LATEST_RELEASE_URL)
+##            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oP '"tag_name": "\K(.*?)(?=")') # macOS 不支持 grep -P
+#            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | sed -n 's/.*"tag_name": "\(.*\)".*/\1/p')
+#            repo_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
+#            archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
+            archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
             ;;
         1)
             echo "通过GitHub镜像获取最新Release版本"
-            LATEST_RELEASE_URL="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
-            LATEST_RELEASE_INFO=$(curl -s -o /dev/null -w "%{redirect_url}" "$LATEST_RELEASE_URL")
-            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oE "tag/[^/]+" | cut -d'/' -f2)
-            repo_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
-            archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
+#            LATEST_RELEASE_URL="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
+#            LATEST_RELEASE_INFO=$(curl -s -o /dev/null -w "%{redirect_url}" "$LATEST_RELEASE_URL")
+#            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oE "tag/[^/]+" | cut -d'/' -f2)
+#            repo_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
+#            archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
+            archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
             ;;
         2)
             echo "通过GitLink获取最新Release版本"
             TAG_URL="https://gitlink.org.cn/api/shenmo7192/LiteLoaderQQNT/tags.json"
 #            LATEST_TAG=$(echo $(curl -s $TAG_URL) | grep -oP '"name"\s*:\s*"\K[^"]+' | head -n 1)
-            LATEST_TAG=$(echo $(curl -s $TAG_URL) | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+            LATEST_TAG=$(perl -nle 'print $1 if /"name"\s*:\s*"([^"]+)/' <<< "$(curl -s $TAG_URL)" | head -n 1)
             repo_url="https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git"
             archive_url="https://www.gitlink.org.cn/api/shenmo7192/liteloaderqqnt/archive/$LATEST_TAG.tar.gz"
+            if [ -z "$LATEST_TAG" ]; then
+                echo "获取最新版本失败，请截图：$LATEST_TAG"
+                exit 1
+            fi
             ;;
         *)
             echo "出现错误，请截图"
@@ -101,16 +116,8 @@ function pull_liteloader() {
             ;;
     esac
 
-    if [ -z "$LATEST_TAG" ]; then
-        echo "获取最新版本失败，请截图：$LATEST_TAG"
-        exit 1
-    fi
+    download_and_extract $archive_url LiteLoader || { echo "下载并解压失败，退出脚本"; exit 1; }
 
-    if [ -n "$git_cmd" ]; then
-        git clone $repo_url LiteLoader -b $LATEST_TAG || { echo "git clone 失败，退出脚本"; exit 1; }
-    else
-        download_and_extract $archive_url LiteLoader || { echo "下载并解压失败，退出脚本"; exit 1; }
-    fi
 }
 
 # 安装 LiteLoader
@@ -168,9 +175,7 @@ require('$ll_path/LiteLoader');\
 
 
 function install_plugin_store() {
-    response=$(curl -s https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/releases/latest)
-    version=$(echo "$response" | grep 'tag_name' | cut -d'"' -f4 )
-    download_url=https://github.com/ltxhhz/LL-plugin-list-viewer/releases/download/$version/list-viewer.zip
+    download_url=https://github.com/ltxhhz/LL-plugin-list-viewer/releases/latest/download/list-viewer.zip
 
     if [ "$platform" == "linux" ]; then
         pluginsDir=${LITELOADERQQNT_PROFILE:-/opt/LiteLoader/plugins}
@@ -189,6 +194,7 @@ function install_plugin_store() {
 
     if [ -e "$pluginStoreFolder" ]; then
         echo "插件列表查看已存在"
+        return
     else
         echo "正在拉取最新版本的插件列表查看..."
     fi
@@ -287,6 +293,7 @@ function aur_install_func() {
     fi
 }
 
+
 # 检查是否为 root 用户
 if [ "$(id -u)" -eq 0 ]; then
     echo "错误：禁止以 root 用户执行此脚本。"
@@ -312,7 +319,7 @@ fi
 
 elevate_permissions
 
-if [[ "$platform" == "linux" || "$GITHUB_ACTIONS" != "true" ]]; then
+if [[ "$platform" == "linux" && "$GITHUB_ACTIONS" != "true" ]]; then
     modify_plugins_directory
 fi
 
