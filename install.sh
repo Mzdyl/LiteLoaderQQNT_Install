@@ -19,7 +19,18 @@ function download_and_extract() {
     url=$1
     output_dir=$2
     archive_name=$(basename "$url")
-    archive_extension="${archive_name##*.}"
+    # 获取扩展名并处理多部分扩展名
+    case "$archive_name" in
+        *.tar.gz)
+            archive_extension="tar.gz"
+        ;;
+        *.zip)
+            archive_extension="zip"
+        ;;
+        *)
+            archive_extension="${archive_name##*.}"
+        ;;
+    esac
 
     if command -v wget > /dev/null; then
         wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
