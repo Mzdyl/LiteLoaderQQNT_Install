@@ -22,9 +22,9 @@ function download_and_extract() {
     archive_extension="${archive_name##*.}"
 
     if command -v wget > /dev/null; then
-        wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name"
+        wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
     elif command -v curl > /dev/null; then
-        curl -L -H "Accept: " "$url" -o "$archive_name"
+        curl -L -H "Accept: " "$url" -o "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
     else
         echo "wget 或 curl 均未安装，无法下载文件."
         exit 1
