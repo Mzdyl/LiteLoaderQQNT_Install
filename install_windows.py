@@ -21,8 +21,8 @@ current_version = "1.14"
 
 # 网络错误或者 api 超限度时使用指定版本号
 # 后期使用 github runner 实现每周自动更新固定版本号
-liteloader_version = "1.1.1"
-list_view_version = "v1.2.1"
+liteloader_version = "1.1.2"
+list_view_version = "v1.3.4"
 
 
 # 存储反代服务器的URL
