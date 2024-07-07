@@ -290,25 +290,41 @@ def setup_environment_and_move_files(qq_exe_path):
     try:
         lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
         if lite_loader_profile is None:
-            print("检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内")
-            command = ('setx LITELOADERQQNT_PROFILE "' + get_document_path() + '\\LiteloaderQQNT"')
-            os.system(command)
-            print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
-            print("但不影响LiteloaderQQNT正常使用")
+            modify_env = input("检测到未设置 LITELOADERQQNT_PROFILE 环境变量，是否修改环境变量？(y/n): ").strip().lower()
+            if modify_env == 'y':
+                print("默认将为你修改为用户目录下 Documents 文件夹内")
+                custom_path_choice = input("是否使用自定义路径？(y/n): ").strip().lower()
+                if custom_path_choice == 'y':
+                    root = tk.Tk()
+                    root.withdraw()
+                    custom_path = filedialog.askdirectory(title="请选择你要设定的 LiteLoaderQQNT 数据文件")
+					command = ('setx LITELOADERQQNT_PROFILE "' + custom_path )
+                else:
+                    default_path = get_document_path() + '\\LiteloaderQQNT"
+                    command = ('setx LITELOADERQQNT_PROFILE "' + get_document_path() + '\\LiteloaderQQNT"')
+                os.system(command)
+                print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
+                print("但不影响LiteloaderQQNT正常使用")
 
-            source_dir = os.path.join(os.path.dirname(qq_exe_path), "resources", "app", "LiteLoaderQQNT-main")
-            folders = ["plugins", "data"]
-            lite_loader_profile = os.path.join(get_document_path(), "LiteloaderQQNT")
-            if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
-                for folder in folders:
-                    source_folder = os.path.join(source_dir, folder)
-                    target_folder = os.path.join(lite_loader_profile, folder)
-                    if os.path.exists(target_folder):
-                        print(f"目标文件夹 {target_folder} 已存在，跳过移动操作。")
-                    else:
-                        shutil.move(source_folder, target_folder)
-        else:
-            print(f"你的 LiteloaderQQNT 插件数据目录在 {lite_loader_profile}")
+                if custom_path_choice == 'y':
+                    lite_loader_profile = custom_path
+                else:
+                    lite_loader_profile = default_path
+
+                source_dir = os.path.join(os.path.dirname(qq_exe_path), "resources", "app", "LiteLoaderQQNT-main")
+                folders = ["plugins", "data"]
+                if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
+                    for folder in folders:
+                        source_folder = os.path.join(source_dir, folder)
+                        target_folder = os.path.join(lite_loader_profile, folder)
+                        if os.path.exists(target_folder):
+                            print(f"目标文件夹 {target_folder} 已存在，跳过移动操作。")
+                        else:
+                            shutil.move(source_folder, target_folder)
+                            print(f"你的 LiteloaderQQNT 插件数据目录在 {lite_loader_profile}")
+
+            else:
+				print("已取消修改环境变量操作。")
     except Exception as e:
         print(f"检测并修改数据目录时发生错误: {e}")
 
