@@ -298,14 +298,14 @@ def setup_environment_and_move_files(qq_exe_path):
                     root = tk.Tk()
                     root.withdraw()
                     custom_path = filedialog.askdirectory(title="请选择你要设定的 LiteLoaderQQNT 数据文件")
-					command = ('setx LITELOADERQQNT_PROFILE "' + custom_path )
+                    command = ('setx LITELOADERQQNT_PROFILE "' + custom_path + '"')
                 else:
-                    default_path = get_document_path() + '\\LiteloaderQQNT"
-                    command = ('setx LITELOADERQQNT_PROFILE "' + get_document_path() + '\\LiteloaderQQNT"')
+                    default_path = get_document_path() + '\\LiteloaderQQNT'
+                    command = ('setx LITELOADERQQNT_PROFILE "' + default_path + '"')
                 os.system(command)
-                print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
-                print("但不影响LiteloaderQQNT正常使用")
-
+                print("注意，目前版本修改环境变量后需重启电脑 Python 才能检测到")
+                print("但不影响 LiteloaderQQNT 正常使用")
+                print("接下来尝试检查是否存在旧数据并尝试移动")
                 if custom_path_choice == 'y':
                     lite_loader_profile = custom_path
                 else:
@@ -321,10 +321,12 @@ def setup_environment_and_move_files(qq_exe_path):
                             print(f"目标文件夹 {target_folder} 已存在，跳过移动操作。")
                         else:
                             shutil.move(source_folder, target_folder)
-                            print(f"你的 LiteloaderQQNT 插件数据目录在 {lite_loader_profile}")
-
+                            print(f"成功移动 {folder} 文件夹至 {lite_loader_profile}")
+                print(f"你的 LiteloaderQQNT 插件数据目录在 {lite_loader_profile}")
             else:
-				print("已取消修改环境变量操作。")
+                print("已取消修改环境变量操作。")
+        else:
+            print(f"你的 LiteloaderQQNT 插件数据目录在 {lite_loader_profile}")
     except Exception as e:
         print(f"检测并修改数据目录时发生错误: {e}")
 
@@ -451,7 +453,7 @@ def change_folder_permissions(folder_path, user, permissions):
         print(f"修改文件夹权限时出错: {e}")
 
 
-def install_plugin_store():
+def install_plugin_store(file_path):
     try:
         temp_dir = tempfile.gettempdir()
         download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
@@ -459,9 +461,9 @@ def install_plugin_store():
         lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
         if not lite_loader_profile:
             print("环境变量 LITELOADERQQNT_PROFILE 未设置")
-            return
-
-        plugin_path = os.path.join(lite_loader_profile, 'plugins')
+            plugin_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
+        else:
+            plugin_path = os.path.join(lite_loader_profile, 'plugins')
         existing_destination_path = os.path.join(plugin_path, 'list-viewer')
 
         if not os.path.exists(existing_destination_path):
@@ -626,7 +628,7 @@ def main():
 
         # print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
         print("LiteLoaderQQNT 安装完成！接下来进行插件列表安装")
-        install_plugin_store()
+        install_plugin_store(file_path)
 
         if not github_actions:
             print("如果安装过程中没有提示发生错误")
