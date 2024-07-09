@@ -287,16 +287,25 @@ def check_old_version(qq_exe_path):
         print(f"检测是否安装过0.x版本时发生错误: {e}")
 
 
+
 def countdown_input(prompt, default='y', timeout=5):
     def time_up():
         nonlocal user_input
-        user_input = default
+        if user_input is None:
+            user_input = default
+            print("\n超时！使用默认值 '{}'".format(default))
 
     user_input = None
     timer = threading.Timer(timeout, time_up)
     timer.start()
-    user_input = input(prompt).strip().lower()
-    timer.cancel()
+
+    try:
+        user_input = input(prompt).strip().lower()
+        timer.cancel()
+    except KeyboardInterrupt:
+        print("\n输入中断，使用默认值默 '{}'".format(default))
+        user_input = default
+
     return user_input if user_input else default
 
 
