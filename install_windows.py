@@ -312,6 +312,7 @@ def setup_environment_and_move_files(qq_exe_path):
                 root = tk.Tk()
                 root.withdraw()
                 custom_path = filedialog.askdirectory(title="请选择你要设定的 LiteLoaderQQNT 数据文件")
+                custom_path = os.path.normpath(custom_path) # 路径转换
                 command = ('setx LITELOADERQQNT_PROFILE "' + custom_path + '"')
             else:
                 default_path = get_document_path() + '\\LiteloaderQQNT'
