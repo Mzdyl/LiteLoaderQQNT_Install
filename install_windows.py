@@ -8,7 +8,6 @@ import struct
 import psutil
 import requests
 import tempfile
-import threading
 import traceback
 import subprocess
 import tkinter as tk
@@ -23,7 +22,7 @@ current_version = "1.14"
 # 网络错误或者 api 超限度时使用指定版本号
 # 后期使用 github runner 实现每周自动更新固定版本号
 liteloader_version = "1.1.2"
-list_view_version = "v1.3.4"
+list_view_version = "v1.3.5"
 
 
 # 存储反代服务器的URL
@@ -248,9 +247,9 @@ def install_liteloader(file_path):
                 except Exception as e2:
                     print(f"使用 shutil.move() 重命名失败: {e2}")
 
-        print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader')}")
+        print(f"移动自: {os.path.join(temp_dir, 'LiteLoader')}")
         # 历史遗留问题，以前是直接拉取仓库代码，使用了 -main 后缀
-        print(f"Moving to: {os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')}")
+        print(f"移动到: {source_dir}")
 
         try:
             shutil.move(os.path.join(temp_dir, "LiteLoader"), source_dir)
@@ -286,26 +285,14 @@ def check_old_version(qq_exe_path):
     except Exception as e:
         print(f"检测是否安装过0.x版本时发生错误: {e}")
 
-
-
 def countdown_input(prompt, default='y', timeout=5):
-    def time_up():
-        nonlocal user_input
-        if user_input is None:
-            user_input = default
-            print("\n超时！使用默认值 '{}'".format(default))
-
+    print(prompt)
+    start_time = time.time()
     user_input = None
-    timer = threading.Timer(timeout, time_up)
-    timer.start()
-
-    try:
-        user_input = input(prompt).strip().lower()
-        timer.cancel()
-    except KeyboardInterrupt:
-        print("\n输入中断，使用默认值默 '{}'".format(default))
-        user_input = default
-
+    while (time.time() - start_time) < timeout:
+        if msvcrt.kbhit():
+            user_input = msvcrt.getch().decode("utf-8").strip().lower()
+            break
     return user_input if user_input else default
 
 
