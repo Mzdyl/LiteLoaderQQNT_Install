@@ -5,6 +5,7 @@ import time
 import winreg
 import shutil
 import struct
+import msvcrt
 import psutil
 import requests
 import tempfile
