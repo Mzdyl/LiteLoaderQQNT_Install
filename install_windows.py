@@ -481,8 +481,8 @@ def install_plugin_store(file_path):
         if not os.path.exists(existing_destination_path):
             # 创建目标文件夹
             os.makedirs(plugin_path, exist_ok=True)
-            print(f"Moving from: {os.path.join(temp_dir, 'list-viewer')}")
-            print(f"Moving to: {existing_destination_path}")
+            print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
+            print(f"移动到: {existing_destination_path}")
             shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
         else:
             print("检测到已安装插件商店，不再重新安装")
@@ -588,7 +588,7 @@ def download_and_extract_form_release(repos: str):
             version = versions[repos]
             download_url = f"https://github.com/{repos}/releases/download/{version}/{filename}"
 
-    zip_name = "LiteLoaderQQNT-Store.zip" if repos == "ltxhhz/LL-plugin-list-viewer" else "LiteLoader.zip"
+    zip_name = "list-viewer.zip" if repos == "ltxhhz/LL-plugin-list-viewer" else "LiteLoader.zip"
     zip_path = os.path.join(temp_dir, zip_name)
     download_file(download_url, zip_path)
 
