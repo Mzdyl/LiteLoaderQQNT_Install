@@ -2,13 +2,14 @@ import os
 import sys
 import ctypes
 import time
-import traceback
 import winreg
 import shutil
 import struct
+import msvcrt
 import psutil
 import requests
 import tempfile
+import traceback
 import subprocess
 import tkinter as tk
 from tkinter import filedialog
@@ -21,8 +22,8 @@ current_version = "1.14"
 
 # 网络错误或者 api 超限度时使用指定版本号
 # 后期使用 github runner 实现每周自动更新固定版本号
-liteloader_version = "1.1.1"
-list_view_version = "v1.2.1"
+liteloader_version = "1.1.2"
+list_view_version = "v1.3.5"
 
 
 # 存储反代服务器的URL
@@ -247,9 +248,9 @@ def install_liteloader(file_path):
                 except Exception as e2:
                     print(f"使用 shutil.move() 重命名失败: {e2}")
 
-        print(f"Moving from: {os.path.join(temp_dir, 'LiteLoader')}")
+        print(f"移动自: {os.path.join(temp_dir, 'LiteLoader')}")
         # 历史遗留问题，以前是直接拉取仓库代码，使用了 -main 后缀
-        print(f"Moving to: {os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main')}")
+        print(f"移动到: {source_dir}")
 
         try:
             shutil.move(os.path.join(temp_dir, "LiteLoader"), source_dir)
@@ -285,20 +286,47 @@ def check_old_version(qq_exe_path):
     except Exception as e:
         print(f"检测是否安装过0.x版本时发生错误: {e}")
 
+def countdown_input(prompt, default='y', timeout=5):
+    print(prompt)
+    start_time = time.time()
+    user_input = None
+    while (time.time() - start_time) < timeout:
+        if msvcrt.kbhit():
+            user_input = msvcrt.getch().decode("utf-8").strip().lower()
+            break
+    return user_input if user_input else default
+
 
 def setup_environment_and_move_files(qq_exe_path):
     try:
         lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
-        if lite_loader_profile is None:
-            print("检测到未设置 LITELOADERQQNT_PROFILE 环境变量，将为你修改在用户目录下Documents 文件夹内")
-            command = ('setx LITELOADERQQNT_PROFILE "' + get_document_path() + '\\LiteloaderQQNT"')
+        if lite_loader_profile:
+            modify_change = countdown_input(f"检测到数据目录为 {lite_loader_profile}，是否修改(y/n): ")
+        else:
+            modify_change = countdown_input("检测到未设置 LITELOADERQQNT_PROFILE 环境变量，是否设置环境变量？(y/n): ")
+
+        if modify_change == 'y':
+            print("默认将为你修改为用户目录下 Documents 文件夹内")
+            custom_path_choice = countdown_input("是否使用自定义路径？(y/n): ", 'n')
+            if custom_path_choice == 'y':
+                root = tk.Tk()
+                root.withdraw()
+                custom_path = filedialog.askdirectory(title="请选择你要设定的 LiteLoaderQQNT 数据文件")
+                command = ('setx LITELOADERQQNT_PROFILE "' + custom_path + '"')
+            else:
+                default_path = get_document_path() + '\\LiteloaderQQNT'
+                command = ('setx LITELOADERQQNT_PROFILE "' + default_path + '"')
             os.system(command)
-            print("注意，目前版本修改环境变量后需重启电脑Python才能检测到")
-            print("但不影响LiteloaderQQNT正常使用")
+            print("注意，目前版本修改环境变量后需重启电脑 Python 才能检测到")
+            print("但不影响 LiteloaderQQNT 正常使用")
+            print("接下来尝试检查是否存在旧数据并尝试移动")
+            if custom_path_choice == 'y':
+                lite_loader_profile = custom_path
+            else:
+                lite_loader_profile = default_path
 
             source_dir = os.path.join(os.path.dirname(qq_exe_path), "resources", "app", "LiteLoaderQQNT-main")
             folders = ["plugins", "data"]
-            lite_loader_profile = os.path.join(get_document_path(), "LiteloaderQQNT")
             if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
                 for folder in folders:
                     source_folder = os.path.join(source_dir, folder)
@@ -307,8 +335,10 @@ def setup_environment_and_move_files(qq_exe_path):
                         print(f"目标文件夹 {target_folder} 已存在，跳过移动操作。")
                     else:
                         shutil.move(source_folder, target_folder)
-        else:
+                        print(f"成功移动 {folder} 文件夹至 {lite_loader_profile}")
             print(f"你的 LiteloaderQQNT 插件数据目录在 {lite_loader_profile}")
+        else:
+            print("已取消修改环境变量操作。")
     except Exception as e:
         print(f"检测并修改数据目录时发生错误: {e}")
 
@@ -435,7 +465,7 @@ def change_folder_permissions(folder_path, user, permissions):
         print(f"修改文件夹权限时出错: {e}")
 
 
-def install_plugin_store():
+def install_plugin_store(file_path):
     try:
         temp_dir = tempfile.gettempdir()
         download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
@@ -443,9 +473,9 @@ def install_plugin_store():
         lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
         if not lite_loader_profile:
             print("环境变量 LITELOADERQQNT_PROFILE 未设置")
-            return
-
-        plugin_path = os.path.join(lite_loader_profile, 'plugins')
+            plugin_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
+        else:
+            plugin_path = os.path.join(lite_loader_profile, 'plugins')
         existing_destination_path = os.path.join(plugin_path, 'list-viewer')
 
         if not os.path.exists(existing_destination_path):
@@ -610,7 +640,7 @@ def main():
 
         # print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
         print("LiteLoaderQQNT 安装完成！接下来进行插件列表安装")
-        install_plugin_store()
+        install_plugin_store(file_path)
 
         if not github_actions:
             print("如果安装过程中没有提示发生错误")
