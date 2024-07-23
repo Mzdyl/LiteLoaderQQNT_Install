@@ -17,13 +17,8 @@ mac/linux 下载运行[release](https://github.com/Mzdyl/LiteLoaderQQNT_Install/
 
 
 ```
-# Stable通道(macOS only)
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_mac.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
-# Stable通道(linux only)
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_linux.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
-
-# Stable通道(mac/linux) 暂未发布，仍在测试中
-# curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
+# Stable通道(mac/linux) 
+curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install.sh" -o /tmp/install_stable.sh && bash /tmp/install_stable.sh
 ```
 
 ### 测试版
@@ -50,7 +45,7 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 
 但是由于 macOS 严格的软件沙盒限制，会遇到大量权限问题，**无法正常使用**，仅作为后续研究用
 
-普通用户还请使用 install_mac.sh
+普通用户还请使用 install.sh
 
 ## 常见问题
 
