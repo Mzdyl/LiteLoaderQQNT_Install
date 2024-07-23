@@ -146,13 +146,12 @@ function install_liteloader() {
 
     # 恢复插件和数据
     if [ -d "$ll_path/LiteLoader_bak/plugins" ]; then
-        if [ "$platform" == "Darwin" ]; then
+        if [ "$platform" == "macos" ]; then
             echo "正在恢复插件数据..."
             echo "PS:由于macOS限制，对Sandbox目录操作预计耗时数分钟左右"
         fi
         $sudo_cmd cp -r "$ll_path/LiteLoader_bak/plugins" "$ll_path/LiteLoader/"
         echo "已将 LiteLoader_bak 中的旧插件复制到新的 LiteLoader 目录"
-
     fi
 
     if [ -d "$ll_path/LiteLoader_bak/data" ]; then
@@ -169,7 +168,27 @@ function install_liteloader() {
         sudo sed -i '' -e "1i\\
 require('$ll_path/LiteLoader');\
 " -e '$a\' index.js
-    echo "已修补 index.js。"
+        echo "已修补 index.js。"
+    fi
+    # 针对macOS 官网版热更新适配
+    if [ "$platform" == "macos" ]; then
+        # 修补每个 QQ 版本中的 index.js
+        versions_path="$HOME/Library/Containers/com.tencent.qq/Data/Library/Application Support/QQ/versions"
+        for version_dir in "$versions_path"/*; do
+            if [ -d "$version_dir/QQUpdate.app/Contents/Resources/app/app_launcher" ]; then
+                echo "尝试修补 $version_dir 中的 index.js..."
+                (cd "$version_dir/QQUpdate.app/Contents/Resources/app/app_launcher" && {
+                    if grep -q "require('$ll_path/LiteLoader');" index.js; then
+                        echo "$version_dir/index.js 已包含相同的修改，无需再次修改。"
+                    else
+                        $sudo_cmd sed -i '' -e "1i\\
+require('$ll_path/LiteLoader');\
+" -e '$a\' index.js
+                        echo "已修补 $version_dir/index.js。"
+                    fi
+                }) || { echo "无法修补 $version_dir 中的 index.js，继续下一个版本。"; }
+            fi
+        done
     fi
 }
 
