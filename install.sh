@@ -81,27 +81,15 @@ function pull_liteloader() {
     case $(can_connect_to_internet) in
         0)
             echo "通过GitHub获取最新Release版本"
-#            LATEST_RELEASE_URL="https://api.github.com/repos/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
-#            LATEST_RELEASE_INFO=$(curl -s $LATEST_RELEASE_URL)
-##            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oP '"tag_name": "\K(.*?)(?=")') # macOS 不支持 grep -P
-#            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | sed -n 's/.*"tag_name": "\(.*\)".*/\1/p')
-#            repo_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
-#            archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
             archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
             ;;
         1)
             echo "通过GitHub镜像获取最新Release版本"
-#            LATEST_RELEASE_URL="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
-#            LATEST_RELEASE_INFO=$(curl -s -o /dev/null -w "%{redirect_url}" "$LATEST_RELEASE_URL")
-#            LATEST_TAG=$(echo "$LATEST_RELEASE_INFO" | grep -oE "tag/[^/]+" | cut -d'/' -f2)
-#            repo_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git"
-#            archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/archive/refs/tags/$LATEST_TAG.tar.gz"
             archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
             ;;
         2)
             echo "通过GitLink获取最新Release版本"
             TAG_URL="https://gitlink.org.cn/api/shenmo7192/LiteLoaderQQNT/tags.json"
-#            LATEST_TAG=$(echo $(curl -s $TAG_URL) | grep -oP '"name"\s*:\s*"\K[^"]+' | head -n 1)
             LATEST_TAG=$(perl -nle 'print $1 if /"name"\s*:\s*"([^"]+)/' <<< "$(curl -s $TAG_URL)" | head -n 1)
             repo_url="https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git"
             archive_url="https://www.gitlink.org.cn/api/shenmo7192/liteloaderqqnt/archive/$LATEST_TAG.tar.gz"
