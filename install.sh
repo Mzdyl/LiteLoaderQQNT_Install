@@ -366,6 +366,8 @@ echo "但 QQ 设置界面没有 LiteLoaderQQNT"
 echo "请检查已安装过的插件"
 echo "插件错误会导致 LiteLoaderQQNT 无法正常启动"
 
+echo "打开QQ后会弹出初始化失败，此为正常现象，请按照说明完成后续操作"
+
 echo "脚本将在 3 秒后退出..."
 sleep 3
 exit 0
