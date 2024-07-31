@@ -6,7 +6,7 @@ function can_connect_to_internet() {
         echo "0"
         return
     fi
-    if [ $(curl -sL --max-time 3 "${_reproxy_url}https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_mac.sh" | wc -c) -gt 0 ]; then
+    if [ $(curl -sL --max-time 3 "${_reproxy_url}https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install.sh" | wc -c) -gt 0 ]; then
         echo "1"
         return
     fi
