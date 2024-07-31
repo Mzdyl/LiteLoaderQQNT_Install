@@ -61,6 +61,8 @@ def get_github_proxy_urls():
 sys.stdout.reconfigure(encoding="utf-8")
 
 # x64 or x86 signatures and replacements
+SIG_ARM64 = bytes([0x98, 0x01, 0x00, 0x35, 0xB2, 0xED, 0xFF, 0x97])
+FIX_ARM64 = bytes([0x98, 0x01, 0x00, 0x35, 0x20, 0x00, 0x80, 0xD2])
 SIG_X64 = bytes([0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0, 0x48, 0x8B, 0x49, 0x18, 0xE8])
 FIX_X64 = bytes([0x48, 0x89, 0xCE, 0x48, 0x8B, 0x11, 0x4C, 0x8B, 0x41, 0x08, 0x49, 0x29, 0xD0, 0x48, 0x8B, 0x49, 0x18, 0xB8, 0x01, 0x00, 0x00, 0x00])
 SIG_X86 = bytes([0x89, 0xCE, 0x8B, 0x01, 0x8B, 0x49, 0x04, 0x29, 0xC1, 0x51, 0x50, 0xFF, 0x76, 0x0C, 0xE8])
@@ -77,6 +79,12 @@ def scan_and_replace(buffer, pattern, replacement):
         print(f"Found at 0x{index:08X}")
         index += len(replacement)
 
+def get_pe_arch(pe_file):
+    e_lfanew_offset = 0x3C
+    pe_header_offset = struct.unpack("<I", pe_file[e_lfanew_offset:e_lfanew_offset + 4])[0]
+    machine_offset = pe_header_offset + 4
+    machine = struct.unpack("<H", pe_file[machine_offset:machine_offset + 2])[0]
+    return machine
 
 def patch_pe_file(file_path):
     # 存在 64 位系统安装 32 位 QQ 的可能，需考虑
@@ -88,10 +96,13 @@ def patch_pe_file(file_path):
         with open(save_path, "rb") as file:
             pe_file = bytearray(file.read())
 
-        if struct.calcsize("P") * 8 == 64:
+        machine = get_pe_arch(pe_file)
+        if machine == 0x8664:  # x64
             scan_and_replace(pe_file, SIG_X64, FIX_X64)
-        else:
+        elif machine == 0x014C:  # x86
             scan_and_replace(pe_file, SIG_X86, FIX_X86)
+        elif machine == 0xAA64:  # ARM64
+            scan_and_replace(pe_file, SIG_ARM64, FIX_ARM64)
 
         with open(file_path, "wb") as output_file:
             output_file.write(pe_file)
