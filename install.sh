@@ -150,12 +150,12 @@ function install_liteloader() {
             echo "正在恢复插件数据..."
             echo "PS:由于macOS限制，对Sandbox目录操作预计耗时数分钟左右"
         fi
-        $sudo_cmd cp -r "$ll_path/LiteLoader_bak/plugins" "$ll_path/LiteLoader/"
+        $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/plugins" "$ll_path/LiteLoader/" | grep -E '^[0-9]+%|^ '
         echo "已将 LiteLoader_bak 中的旧插件复制到新的 LiteLoader 目录"
     fi
 
     if [ -d "$ll_path/LiteLoader_bak/data" ]; then
-        $sudo_cmd cp -r "$ll_path/LiteLoader_bak/data" "$ll_path/LiteLoader/"
+        $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/data" "$ll_path/LiteLoader/"  | grep -E '^[0-9]+%|^ '
         echo "已将 LiteLoader_bak 中的数据文件复制到新的 LiteLoader 目录"
     fi
 
