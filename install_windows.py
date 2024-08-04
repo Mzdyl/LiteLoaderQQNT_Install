@@ -60,7 +60,7 @@ def get_github_proxy_urls():
 
 # 设置标准输出编码为UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
-subprocess.run("chcp 65001")
+subprocess.run("chcp 65001",shell=True)
 
 # x64 or x86 signatures and replacements
 SIG_ARM64 = bytes([0x98, 0x01, 0x00, 0x35, 0xB2, 0xED, 0xFF, 0x97])
