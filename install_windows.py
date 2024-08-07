@@ -1,10 +1,11 @@
 # coding=utf-8
 import os
 import sys
-import ctypes
 import time
+import ctypes
 import winreg
 import shutil
+import urllib
 import struct
 import msvcrt
 import psutil
@@ -14,17 +15,10 @@ import traceback
 import subprocess
 import tkinter as tk
 from tkinter import filedialog
-from rich.console import Console
-from rich.markdown import Markdown
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 当前版本号
-current_version = "1.14"
-
-# 网络错误或者 api 超限度时使用指定版本号
-# 后期使用 github runner 实现每周自动更新固定版本号
-liteloader_version = "1.1.2"
-list_view_version = "v1.3.5"
+current_version = "1.15"
 
 
 # 存储反代服务器的URL
@@ -60,7 +54,7 @@ def get_github_proxy_urls():
 
 # 设置标准输出编码为UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
-subprocess.run("chcp 65001",shell=True)
+subprocess.run("chcp 65001", shell=True)
 
 # x64 or x86 signatures and replacements
 SIG_ARM64 = bytes([0x98, 0x01, 0x00, 0x35, 0xB2, 0xED, 0xFF, 0x97])
@@ -81,12 +75,14 @@ def scan_and_replace(buffer, pattern, replacement):
         print(f"Found at 0x{index:08X}")
         index += len(replacement)
 
+
 def get_pe_arch(pe_file):
     e_lfanew_offset = 0x3C
     pe_header_offset = struct.unpack("<I", pe_file[e_lfanew_offset:e_lfanew_offset + 4])[0]
     machine_offset = pe_header_offset + 4
     machine = struct.unpack("<H", pe_file[machine_offset:machine_offset + 2])[0]
     return machine
+
 
 def patch_pe_file(file_path):
     # 存在 64 位系统安装 32 位 QQ 的可能，需考虑
@@ -158,13 +154,12 @@ def compare_versions(version1, version2):
 def check_for_updates():
     try:
         # 获取最新版本号
-        response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest", timeout=2)
-        latest_release = response.json()
-        tag_name, body = latest_release["tag_name"], latest_release["body"]
+        latest_url = "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest"
+        response = requests.get(latest_url, timeout=2)
+        latest_release = response.url.split('/')[-1]  # 获取重定向后的 URL 中的版本号
 
-        if compare_versions(tag_name, current_version):
-            print(f"发现新版本 {tag_name}！更新日志：\n")
-            Console().print(Markdown(body))
+        if compare_versions(latest_release, current_version):
+            print(f"发现新版本 {latest_release}！")
 
             # 提示用户是否下载更新
             print("是否要下载更新？输入 'y' 确认，5 秒内未输入则跳过更新。")
@@ -176,8 +171,8 @@ def check_for_updates():
                     break
 
             if user_input == 'y':
-                download_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe"
-                download_file(download_url, f"install_windows-{tag_name}.exe")
+                download_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{latest_release}/install_windows.exe"
+                download_file(download_url, f"install_windows-{latest_release}.exe")
                 print("版本已更新，请重新运行最新脚本。")
                 input("按 回车键 退出")
                 sys.exit(0)
@@ -299,6 +294,7 @@ def check_old_version(qq_exe_path):
     except Exception as e:
         print(f"检测是否安装过0.x版本时发生错误: {e}")
 
+
 def countdown_input(prompt, default='y', timeout=5):
     print(prompt)
     start_time = time.time()
@@ -325,7 +321,7 @@ def setup_environment_and_move_files(qq_exe_path):
                 root = tk.Tk()
                 root.withdraw()
                 custom_path = filedialog.askdirectory(title="请选择你要设定的 LiteLoaderQQNT 数据文件")
-                custom_path = os.path.normpath(custom_path) # 路径转换
+                custom_path = os.path.normpath(custom_path)  # 路径转换
                 command = ('setx LITELOADERQQNT_PROFILE "' + custom_path + '"')
             else:
                 default_path = get_document_path() + '\\LiteloaderQQNT'
@@ -338,6 +334,7 @@ def setup_environment_and_move_files(qq_exe_path):
                 lite_loader_profile = custom_path
             else:
                 lite_loader_profile = default_path
+            os.environ['ML_LITELOADERQQNT_TEMP'] = lite_loader_profile
 
             source_dir = os.path.join(os.path.dirname(qq_exe_path), "resources", "app", "LiteLoaderQQNT-main")
             folders = ["plugins", "data"]
@@ -438,15 +435,21 @@ def patch(file_path):
     try:
         # 获取LITELOADERQQNT_PROFILE环境变量的值
         lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
+        lite_loader_temp = os.getenv("ML_LITELOADERQQNT_TEMP")
 
         # 如果环境变量不存在，则使用默认路径
         default_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
-        plugin_path = (
-            os.path.join(lite_loader_profile, "plugins")
-            if lite_loader_profile
-            else default_path
-        )
-
+        if lite_loader_profile:
+            plugin_path = os.path.join(lite_loader_profile, "plugins")
+        elif lite_loader_temp:
+            print("未能检测到LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量")
+            plugin_path = os.path.join(lite_loader_temp, "plugins")
+        else:
+            print("未能检测到LITELOADERQQNT_PROFILE，使用默认路径")
+            plugin_path = default_path
+        if not os.path.exists(lite_loader_profile):
+            os.makedirs(lite_loader_profile)
+            print(f"目标目录 {lite_loader_profile} 不存在，已创建。")
         # 打印或使用 plugin_path 变量
         print(f"你的插件路径是 {plugin_path}")
         print("赋予插件目录和插件数据目录完全控制权(解决部分插件权限问题)")
@@ -485,9 +488,14 @@ def install_plugin_store(file_path):
         download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
         # 获取LITELOADERQQNT_PROFILE环境变量的值
         lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
+        lite_loader_temp = os.getenv("ML_LITELOADERQQNT_TEMP")
         if not lite_loader_profile:
-            print("环境变量 LITELOADERQQNT_PROFILE 未设置")
-            plugin_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
+            if lite_loader_temp:
+                print("未检测到环境变量 LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量")
+                plugin_path = os.path.join(lite_loader_temp, 'plugins')
+            else:
+                print("环境变量 LITELOADERQQNT_PROFILE 未设置")
+                plugin_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
         else:
             plugin_path = os.path.join(lite_loader_profile, 'plugins')
         existing_destination_path = os.path.join(plugin_path, 'list-viewer')
@@ -527,90 +535,62 @@ def get_working_proxy():
 
 
 def download_file(url: str, filename: str):
-    def download(url: str, filename: str):
-        try:
-            with open(filename, "wb") as file:
-                response = requests.get(url, timeout=10, stream=True)
-                for chunk in response.iter_content(chunk_size=4096):
-                    file.write(chunk)
-        except requests.RequestException as e:
-            raise Exception(f"下载 {url} 失败: {e}")
     try:
-        try:
-            if os.path.exists(url):
-                # 本地文件
-                print(f"内嵌文件路径{url}")
-                shutil.copy(url, filename)
-                return
-        except OSError as e:
-            raise Exception(f"处理本地文件 {url} 失败: {e}")
-        if can_connect_to_github():
-            print("网络良好，直连下载")
-            download_url = url
+        if os.path.exists(url):
+            # 本地文件
+            print(f"内嵌文件路径 {url}")
+            shutil.copy(url, filename)
+            return
         else:
-            proxy = get_working_proxy()
-            if proxy:
-                download_url = f"{proxy}/{url}"
-                print(f"当前使用的下载链接 {download_url}")
+            if can_connect_to_github():
+                print("网络良好，直连下载")
+                download_url = url
             else:
-                raise ValueError
-        download(download_url, filename)
+                proxy = get_working_proxy()
+                if proxy:
+                    download_url = f"{proxy}/{url}"
+                    print(f"当前使用的下载链接 {download_url}")
+                else:
+                    raise ValueError("无可用代理")
+            urllib.request.urlretrieve(download_url, filename)
     except Exception:
-        download_url = input("无法访问 GitHub 且无可用代理，请手动输入下载地址或本地文件路径（如 "
+        if get_external_data_path():
+            print("使用内嵌版本")
+            download_url = os.path.join(get_external_data_path(), filename)
+            download_file(download_url, filename)
+
+        else:
+            download_url = input("无法访问 GitHub 且无可用代理，请手动输入下载地址或本地文件路径（如 "
                             "https://mirror.ghproxy.com/https://github.com/Mzdyl/LiteLoaderQQNT_Install"
                             "/archive/master.zip 或 C:\\path\\to\\file.zip ）：")
-        if not download_url:
-            raise ValueError("没有输入有效的下载地址或本地文件路径")
-        download(download_url, filename)
+            if not download_url:
+                raise ValueError("没有输入有效的下载地址或本地文件路径")
+        download_file(download_url, filename)
 
 
 def download_and_extract_form_release(repos: str):
     temp_dir = tempfile.gettempdir()
     print(f"临时目录：{temp_dir}")
 
-    try:
-        response = requests.get(f"https://api.github.com/repos/{repos}/releases/latest", timeout=3)
-        response.raise_for_status()
-        latest_release = response.json()
-        assets = latest_release.get("assets", [])
-        download_url = assets[0].get("browser_download_url") if assets else None
-        if not download_url:
-            raise ValueError("未找到有效的下载链接")
-    except (requests.RequestException, ValueError) as e:
-        cached_names = {
-            "ltxhhz/LL-plugin-list-viewer": "list-viewer.zip",
-            "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip"
-            }
-        if get_external_data_path():
-            print("使用内嵌版本")
-            filename = cached_names[repos]
-            download_url= os.path.join(get_external_data_path(), filename)
-        else:
-            print(f"获取最新版本信息失败: {e}")
-            print("使用缓存下载链接")
+    cached_names = {
+        "ltxhhz/LL-plugin-list-viewer": "list-viewer.zip",
+        "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip"
+    }
 
-            versions = {
-                "ltxhhz/LL-plugin-list-viewer": list_view_version,
-                "LiteLoaderQQNT/LiteLoaderQQNT": liteloader_version
-            }
+    if repos not in cached_names:
+        print("仓库名称无效")
+        return
 
-            if repos not in cached_names:
-                print("发生错误")
-                return
-
-            filename = cached_names[repos]
-            version = versions[repos]
-            download_url = f"https://github.com/{repos}/releases/download/{version}/{filename}"
-
-    zip_name = "list-viewer.zip" if repos == "ltxhhz/LL-plugin-list-viewer" else "LiteLoader.zip"
-    zip_path = os.path.join(temp_dir, zip_name)
-    download_file(download_url, zip_path)
+    filename = cached_names[repos]
+    download_url = f"https://github.com/{repos}/releases/latest/download/{filename}"
+    zip_path = os.path.join(temp_dir, filename)
 
     try:
-        extract_dir = os.path.join(temp_dir, zip_name.split(".")[0])
+        download_file(download_url, zip_path)
+        extract_dir = os.path.join(temp_dir, filename.split(".")[0])
         shutil.unpack_archive(zip_path, extract_dir)
-    except shutil.ReadError as e:
-        print(f"解压文件失败: {e}")
+    except Exception as e:
+        print(f"下载并解压 {repos} 时发生错误: {e}")
 
 
 def get_external_data_path():
@@ -673,4 +653,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
