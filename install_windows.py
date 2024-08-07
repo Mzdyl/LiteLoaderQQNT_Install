@@ -444,7 +444,9 @@ def patch(file_path):
             if lite_loader_profile
             else default_path
         )
-
+        if not os.path.exists(lite_loader_profile):
+            os.makedirs(lite_loader_profile)
+            print(f"目标目录 {lite_loader_profile} 不存在，已创建。")
         # 打印或使用 plugin_path 变量
         print(f"你的插件路径是 {plugin_path}")
         print("赋予插件目录和插件数据目录完全控制权(解决部分插件权限问题)")
@@ -671,4 +673,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
     
