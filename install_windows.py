@@ -256,17 +256,17 @@ def install_liteloader(file_path):
                 except Exception as e2:
                     print(f"使用 shutil.move() 重命名失败: {e2}")
 
-        print(f"移动自: {os.path.join(temp_dir, 'LiteLoader')}")
+        print(f"移动自: {os.path.join(temp_dir, 'LiteLoaderQQNT')}")
         # 历史遗留问题，以前是直接拉取仓库代码，使用了 -main 后缀
         print(f"移动到: {source_dir}")
 
         try:
-            shutil.move(os.path.join(temp_dir, "LiteLoader"), source_dir)
+            shutil.move(os.path.join(temp_dir, "LiteLoaderQQNT"), source_dir)
         except Exception as e1:
             print(f"移动 LiteLoaderQQNT 失败, 尝试再次移动: {e1}")
             time.sleep(1)  # 等待一秒，防止文件被锁定
             try:
-                shutil.move(os.path.join(temp_dir, "LiteLoader"), source_dir)
+                shutil.move(os.path.join(temp_dir, "LiteLoaderQQNT"), source_dir)
             except Exception as e2:
                 print(f"再次尝试移动失败: {e2}")
 
