@@ -1,10 +1,11 @@
 # coding=utf-8
 import os
 import sys
-import ctypes
 import time
+import ctypes
 import winreg
 import shutil
+import urllib
 import struct
 import msvcrt
 import psutil
@@ -14,13 +15,10 @@ import traceback
 import subprocess
 import tkinter as tk
 from tkinter import filedialog
-from rich.console import Console
-from rich.markdown import Markdown
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 当前版本号
 current_version = "1.15"
-
 
 # 存储反代服务器的URL
 def get_github_proxy_urls():
@@ -155,13 +153,12 @@ def compare_versions(version1, version2):
 def check_for_updates():
     try:
         # 获取最新版本号
-        response = requests.get("https://api.github.com/repos/Mzdyl/LiteLoaderQQNT_Install/releases/latest", timeout=2)
-        latest_release = response.json()
-        tag_name, body = latest_release["tag_name"], latest_release["body"]
+        latest_url = "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest"
+        response = requests.get(latest_url, timeout=2)
+        latest_release = response.url.split('/')[-1]  # 获取重定向后的 URL 中的版本号
 
-        if compare_versions(tag_name, current_version):
-            print(f"发现新版本 {tag_name}！更新日志：\n")
-            Console().print(Markdown(body))
+        if compare_versions(latest_release, current_version):
+            print(f"发现新版本 {latest_release}！")
 
             # 提示用户是否下载更新
             print("是否要下载更新？输入 'y' 确认，5 秒内未输入则跳过更新。")
@@ -173,8 +170,8 @@ def check_for_updates():
                     break
 
             if user_input == 'y':
-                download_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{tag_name}/install_windows.exe"
-                download_file(download_url, f"install_windows-{tag_name}.exe")
+                download_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{latest_release}/install_windows.exe"
+                download_file(download_url, f"install_windows-{latest_release}.exe")
                 print("版本已更新，请重新运行最新脚本。")
                 input("按 回车键 退出")
                 sys.exit(0)
@@ -527,14 +524,6 @@ def get_working_proxy():
 
 
 def download_file(url: str, filename: str):
-    def download(url: str, filename: str):
-        try:
-            with open(filename, "wb") as file:
-                response = requests.get(url, timeout=10, stream=True)
-                for chunk in response.iter_content(chunk_size=4096):
-                    file.write(chunk)
-        except requests.RequestException as e:
-            raise Exception(f"下载 {url} 失败: {e}")
     try:
         if os.path.exists(url):
             # 本地文件
@@ -552,7 +541,7 @@ def download_file(url: str, filename: str):
                     print(f"当前使用的下载链接 {download_url}")
                 else:
                     raise ValueError("无可用代理")
-            download(download_url, filename)
+            urllib.request.urlretrieve(download_url, filename)
     except Exception:
         if get_external_data_path():
             print("使用内嵌版本")
