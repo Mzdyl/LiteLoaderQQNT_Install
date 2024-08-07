@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # 当前版本号
 current_version = "1.15"
 
+
 # 存储反代服务器的URL
 def get_github_proxy_urls():
     return [
@@ -333,6 +334,7 @@ def setup_environment_and_move_files(qq_exe_path):
                 lite_loader_profile = custom_path
             else:
                 lite_loader_profile = default_path
+            os.environ['ML_LITELOADERQQNT_TEMP'] = lite_loader_profile
 
             source_dir = os.path.join(os.path.dirname(qq_exe_path), "resources", "app", "LiteLoaderQQNT-main")
             folders = ["plugins", "data"]
@@ -433,14 +435,18 @@ def patch(file_path):
     try:
         # 获取LITELOADERQQNT_PROFILE环境变量的值
         lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
+        lite_loader_temp = os.getenv("ML_LITELOADERQQNT_TEMP")
 
         # 如果环境变量不存在，则使用默认路径
         default_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
-        plugin_path = (
-            os.path.join(lite_loader_profile, "plugins")
-            if lite_loader_profile
-            else default_path
-        )
+        if lite_loader_profile:
+            plugin_path = os.path.join(lite_loader_profile, "plugins")
+        elif lite_loader_temp:
+            print("未能检测到LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量")
+            plugin_path = os.path.join(lite_loader_temp, "plugins")
+        else:
+            print("未能检测到LITELOADERQQNT_PROFILE，使用默认路径")
+            plugin_path = default_path
         if not os.path.exists(lite_loader_profile):
             os.makedirs(lite_loader_profile)
             print(f"目标目录 {lite_loader_profile} 不存在，已创建。")
@@ -482,9 +488,14 @@ def install_plugin_store(file_path):
         download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
         # 获取LITELOADERQQNT_PROFILE环境变量的值
         lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
+        lite_loader_temp = os.getenv("ML_LITELOADERQQNT_TEMP")
         if not lite_loader_profile:
-            print("环境变量 LITELOADERQQNT_PROFILE 未设置")
-            plugin_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
+            if lite_loader_temp:
+                print("未检测到环境变量 LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量")
+                plugin_path = os.path.join(lite_loader_temp, 'plugins')
+            else:
+                print("环境变量 LITELOADERQQNT_PROFILE 未设置")
+                plugin_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
         else:
             plugin_path = os.path.join(lite_loader_profile, 'plugins')
         existing_destination_path = os.path.join(plugin_path, 'list-viewer')
@@ -642,4 +653,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
