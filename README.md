@@ -24,12 +24,16 @@ curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/downloa
 ### 测试版
 
 Win 用户可以通过 [Github Action](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions) 下载最新测试版本
+[![Install, Test and Release on Windows](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows.yml)
+[![Install and Test LL on Windows with Nuitka](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows_nuitka.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows_nuitka.yml)
 mac/linux 可以在终端中复制运行
 ```
 # Git通道(mac/linux)
 curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install.sh" -o /tmp/install_git.sh && bash /tmp/install_git.sh
 ```
 使用最新测试版本
+[![Install and Test LL on Linux](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/linux.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/linux.yml)
+[![Install and Test LL on macOS](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/macOS.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/macOS.yml)
 
 ## 版本支持
 
