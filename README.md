@@ -38,6 +38,7 @@ curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install.sh" -o
 ## 版本支持
 
 理论支持 QQNT 桌面端 全架构 全版本(NT 旧版本会存在显示错误，推荐使用较新版本)
+据反馈,在Windows10之前版本/Python3.9之前版本无法正常运行安装程序(action中采用的是Python3.9,py3.9不支持win10之前版本系统)
 
 ## 升级更新
 
