@@ -1,43 +1,57 @@
 from requests import get
 from sys import exit, argv
 
+
+# index2cdnjs
+def get1(r):
+    r = get(r).text
+    r = r[r.find("var rainbowConfigUrl") :]
+    r = r[r.find('"') + 1 :]
+    r = r[: r.find('"')]
+    return r
+
+
+# content2link
+def get2(r, key):
+    r = r[r.find(key) :]
+    r = r[r.find('"') + 1 :]
+    r = r[r.find('"') + 1 :]
+    r = r[: r.find('"')]
+    return r
+
+
+# get plat
 plat = argv[1]
 print("plat:%s" % plat)
+
+# get link
 if plat == "Windowsx64":
-    r = get(
-        "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/windowsDownloadUrl.js"
-    ).text
-    key = "ntDownloadX64Url"
+    r = get2(
+        get(get1("https://im.qq.com/pcqq/index.shtml")).text,
+        "ntDownloadX64Url",
+    )
     name = "QQInstaller.exe"
 elif plat == "Debianx64":
-    r = get(
-        "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxQQDownload.js"
-    ).text
+    r = get(get1("https://im.qq.com/linuxqq/index.shtml")).text
     r = r[r.find("x64DownloadUrl") :]
-    r = r[: r.find("}")]
-    key = "deb"
+    r = get2(r[: r.find("}")], "deb")
     name = "LinuxQQ.deb"
 elif plat == "Macos":
-    r = get(
-        "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/ntQQDownload.js"
-    ).text
-    key = "downloadUrl"
+    r = get2(
+        get(get1("https://im.qq.com/macqq/index.shtml")).text,
+        "DownloadUrl",
+    )
     name = "QQ.dmg"
 elif plat == "AppImage":
-    r = get(
-        "https://cdn-go.cn/qq-web/im.qq.com_new/latest/rainbow/linuxQQDownload.js"
-    ).text
+    r = get(get1("https://im.qq.com/linuxqq/index.shtml")).text
     r = r[r.find("x64DownloadUrl") :]
-    r = r[: r.find("}")]
-    key = "appimage"
+    r = get2(r[: r.find("}")], "appimage")
     name = "QQ.AppImage"
 else:
     exit(-1)
-r = r[r.find(key) :]
-r = r[r.find('"') + 1 :]
-r = r[r.find('"') + 1 :]
-r = r[: r.find('"')]
 print("url:%s" % r)
+
+# download
 with open(name, "wb") as QQ:
-    for chunk in get(r, stream=True).iter_content(chunk_size=4096):
+    for chunk in get(r, stream=True).iter_content():
         QQ.write(chunk)
