@@ -536,8 +536,8 @@ def get_working_proxy():
 
 def download_file(url: str, filename: str):
     try:
+        # 检查是否为本地文件
         if os.path.exists(url):
-            # 本地文件
             print(f"内嵌文件路径 {url}")
             shutil.copy(url, filename)
             return
@@ -553,12 +553,11 @@ def download_file(url: str, filename: str):
                 else:
                     raise ValueError("无可用代理")
             urllib.request.urlretrieve(download_url, filename)
-    except Exception:
+    except Exception as e:
+        print(f"联网下载发生错误: {e}")
         if get_external_data_path():
             print("使用内嵌版本")
             download_url = os.path.join(get_external_data_path(), filename)
-            download_file(download_url, filename)
-
         else:
             download_url = input("无法访问 GitHub 且无可用代理，请手动输入下载地址或本地文件路径（如 "
                             "https://mirror.ghproxy.com/https://github.com/Mzdyl/LiteLoaderQQNT_Install"
@@ -596,9 +595,10 @@ def download_and_extract_form_release(repos: str):
 def get_external_data_path():
     if hasattr(sys, '_MEIPASS'):
         # If running in a PyInstaller bundle
-        base_path = sys._MEIPASS
-        return os.path.join(base_path)
-
+        return os.path.join(sys._MEIPASS)
+    else:
+        return None
+    
 
 def main():
     try:
