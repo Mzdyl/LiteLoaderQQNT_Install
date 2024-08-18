@@ -226,25 +226,28 @@ function modify_plugins_directory() {
         echo "插件目录: $pluginsDir"
         
         # 检测当前 shell 类型
+        environment_variables="export LITELOADERQQNT_PROFILE="
         case "${SHELL##*/}" in
             zsh) config_file="$HOME/.zshrc" ;;
             bash) config_file="$HOME/.bashrc" ;;
-            *) echo "非bash或者zsh，跳过修改环境变量"
+            fish) environment_variables="set -gx LITELOADERQQNT_PROFILE "
+            config_file=$(fish -c 'printf $__fish_config_dir')"/config.fish";;
+            *) echo "非bash、zsh、fish，跳过修改环境变量"
             echo "请将用户目录下 .bashrc 文件内 LL 相关内容自行拷贝到相应配置文件中"
             config_file="$HOME/.bashrc" ;;
         esac
         
         # 检查是否已存在LITELOADERQQNT_PROFILE
-        if grep -q "export LITELOADERQQNT_PROFILE=" "$config_file"; then
+        if grep -q "$environment_variables" "$config_file"; then
             read -p "LITELOADERQQNT_PROFILE 已存在，是否要修改？ (y/N): " modify_choice
             if [[ "$modify_choice" =~ ^[Yy]$ ]]; then
-                sudo sed -i 's|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE="'$pluginsDir'"|' "$config_file"
+                sudo sed -i "s|$environment_variables.*|$environment_variables\"$pluginsDir\"|" "$config_file"
                 echo "LITELOADERQQNT_PROFILE 已修改为: $pluginsDir"
             else
                 echo "未修改 LITELOADERQQNT_PROFILE。"
             fi
         else
-            echo 'export LITELOADERQQNT_PROFILE="'$pluginsDir'"' >> "$config_file"
+            echo $environment_variables'"'$pluginsDir'"' >> "$config_file"
             echo "已添加 LITELOADERQQNT_PROFILE: $pluginsDir"
         fi
         source "$config_file"
@@ -280,7 +283,7 @@ function create_symlink_func() {
 function aur_install_func() {
     if [ -f /usr/bin/pacman ]; then
         # AUR 中的代码本身就需要对 GitHub 进行访问，故不添加网络判断了
-        if grep -q "Arch Linux" /etc/os-release; then
+        if grep -Eq "Arch Linux|ID_LIKE=\"arch\"" /etc/os-release; then
             echo "检测到系统是 Arch Linux"
             echo "3 秒后将使用 aur 中的 liteloader-qqnt-bin 进行安装"
             echo "或按任意键切换传统安装方式"
