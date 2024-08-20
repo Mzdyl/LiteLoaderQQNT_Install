@@ -39,7 +39,7 @@ elif plat == "Debianx64":
 elif plat == "Macos":
     r = get2(
         get(get1("https://im.qq.com/macqq/index.shtml")).text,
-        "DownloadUrl",
+        "downloadUrl",
     )
     name = "QQ.dmg"
 elif plat == "AppImage":
