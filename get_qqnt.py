@@ -53,5 +53,5 @@ print("url:%s" % r)
 
 # download
 with open(name, "wb") as QQ:
-    for chunk in get(r, stream=True).iter_content():
+    for chunk in get(r, stream=True).iter_content(chunk_size=4096):
         QQ.write(chunk)
