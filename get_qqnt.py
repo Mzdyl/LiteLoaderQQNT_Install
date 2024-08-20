@@ -39,7 +39,7 @@ elif plat == "Debianx64":
 elif plat == "Macos":
     r = get2(
         get(get1("https://im.qq.com/macqq/index.shtml")).text,
-        "DownloadUrl",
+        "downloadUrl",
     )
     name = "QQ.dmg"
 elif plat == "AppImage":
@@ -53,5 +53,5 @@ print("url:%s" % r)
 
 # download
 with open(name, "wb") as QQ:
-    for chunk in get(r, stream=True).iter_content():
+    for chunk in get(r, stream=True).iter_content(chunk_size=4096):
         QQ.write(chunk)
