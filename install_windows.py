@@ -484,30 +484,44 @@ def change_folder_permissions(folder_path, user, permissions):
 
 def install_plugin_store(file_path):
     try:
-        temp_dir = tempfile.gettempdir()
-        download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
         # 获取LITELOADERQQNT_PROFILE环境变量的值
         lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
         lite_loader_temp = os.getenv("ML_LITELOADERQQNT_TEMP")
+        
         if not lite_loader_profile:
             if lite_loader_temp:
                 print("未检测到环境变量 LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量")
                 plugin_path = os.path.join(lite_loader_temp, 'plugins')
             else:
-                print("环境变量 LITELOADERQQNT_PROFILE 未设置")
+                print("环境变量 LITELOADERQQNT_PROFILE 未设置，使用默认路径")
                 plugin_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
         else:
             plugin_path = os.path.join(lite_loader_profile, 'plugins')
+            
         existing_destination_path = os.path.join(plugin_path, 'list-viewer')
-
+        
+        temp_dir = tempfile.gettempdir()
+        download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
+        
         if not os.path.exists(existing_destination_path):
-            # 创建目标文件夹
             os.makedirs(plugin_path, exist_ok=True)
             print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
             print(f"移动到: {existing_destination_path}")
             shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
         else:
-            print("检测到已安装插件商店，不再重新安装")
+            index_js_path = os.path.join(existing_destination_path, 'main', 'index.js')
+            if not os.path.exists(index_js_path):
+                print("检测到已安装插件商店可能存在问题，即将重装")
+                print("更新和安装插件请使用 release 版本")
+                print("非 release 版本可能导致 QQ 无法正常启动")
+                shutil.rmtree(existing_destination_path)
+                os.makedirs(existing_destination_path, exist_ok=True)
+                print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
+                print(f"移动到: {existing_destination_path}")
+                shutil.move(os.path.join(temp_dir, "list-viewer"), existing_destination_path)
+            else:
+                print("检测到已安装插件商店，不在重新安装")
+                
     except Exception as e:
         print(f"安装插件商店发生错误: {e}\n请尝试手动安装")
 
@@ -653,3 +667,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
