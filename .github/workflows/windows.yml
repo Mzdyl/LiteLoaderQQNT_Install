@@ -115,18 +115,17 @@ jobs:
         }
       shell: pwsh
 
-    - name: Disable network
+    - name: Disable network and run install_windows_pyinstaller.exe
       run: |
         netsh interface set interface "Ethernet" admin=disable
+        start "" ".\dist\install_windows_pyinstaller.exe" > output.log 2>&1
+        timeout /t 10
+        netsh interface set interface "Ethernet" admin=enable
       shell: cmd
 
-    - name: ReRun install_windows_pyinstaller.exe
+    - name: Print output log
       run: |
-        .\dist\install_windows_pyinstaller.exe
-
-    - name: Re-enable network
-      run: |
-        netsh interface set interface "Ethernet" admin=enable
+        type output.log
       shell: cmd
 
     - name: Run QQ with logging
