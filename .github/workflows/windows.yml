@@ -62,7 +62,7 @@ jobs:
 
     - name: Check if LiteLoader plugins folder exists
       run: |
-        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\plugins") {
+        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\data\LiteLoader") {
           Write-Host "LiteLoader plugins folder found. Test passed."
         } else {
           Write-Host "LiteLoader plugins folder not found. Test failed."
@@ -83,8 +83,8 @@ jobs:
 
     - name: Block GitHub access by modifying hosts file
       run: |
-        echo 127.0.0.1 github.com | Out-File -Append -FilePath C:\Windows\System32\drivers\etc\hosts -Encoding ASCII
-        echo 127.0.0.1 api.github.com | Out-File -Append -FilePath C:\Windows\System32\drivers\etc\hosts -Encoding ASCII
+        netsh interface set interface "Ethernet" admin=disable
+      shell: cmd
 
     - name: ReRun install_windows_pyinstaller.exe
       run: |
@@ -96,7 +96,7 @@ jobs:
 
     - name: Check if LiteLoader plugins folder exists
       run: |
-        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\plugins") {
+        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\data\LiteLoader") {
           Write-Host "LiteLoader plugins folder found. Test passed."
         } else {
           Write-Host "LiteLoader plugins folder not found. Test failed."
