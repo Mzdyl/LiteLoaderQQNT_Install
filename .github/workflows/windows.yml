@@ -62,7 +62,7 @@ jobs:
 
     - name: Check if LiteLoader plugins folder exists
       run: |
-        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\plugins") {
+        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\data\LiteLoader") {
           Write-Host "LiteLoader plugins folder found. Test passed."
         } else {
           Write-Host "LiteLoader plugins folder not found. Test failed."
@@ -96,7 +96,7 @@ jobs:
 
     - name: Check if LiteLoader plugins folder exists
       run: |
-        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\plugins") {
+        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT-main\data\LiteLoader") {
           Write-Host "LiteLoader plugins folder found. Test passed."
         } else {
           Write-Host "LiteLoader plugins folder not found. Test failed."
