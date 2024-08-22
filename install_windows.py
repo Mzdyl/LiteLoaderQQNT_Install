@@ -548,37 +548,46 @@ def get_working_proxy():
     return None
 
 
-def download_file(url: str, filename: str):
+def download_file(url_or_path: str, filename: str):
     try:
-        # 检查是否为本地文件
-        if os.path.exists(url):
-            print(f"内嵌文件路径 {url}")
-            shutil.copy(url, filename)
+        # 检查是否为本地文件路径
+        if os.path.exists(url_or_path):
+            print(f"使用本地文件路径: {url_or_path}")
+            shutil.copy(url_or_path, filename)
             return
-        else:
+        elif url_or_path.startswith(('http://', 'https://')):
             if can_connect_to_github():
-                print("网络良好，直连下载")
-                download_url = url
+                print("网络良好，直接下载")
+                download_url = url_or_path
             else:
                 proxy = get_working_proxy()
                 if proxy:
-                    download_url = f"{proxy}/{url}"
-                    print(f"当前使用的下载链接 {download_url}")
+                    download_url = f"{proxy}/{url_or_path}"
+                    print(f"当前使用的下载链接: {download_url}")
                 else:
                     raise ValueError("无可用代理")
             urllib.request.urlretrieve(download_url, filename)
+        else:
+            raise ValueError(f"无效的路径或 URL: {url_or_path}")
+
     except Exception as e:
-        print(f"联网下载发生错误: {e}")
-        if get_external_data_path():
+        print(f"下载过程中发生错误: {e}")
+        external_data_path = get_external_data_path()
+        if external_data_path:
             print("使用内嵌版本")
-            download_url = os.path.join(get_external_data_path(), filename)
+            fallback_path = os.path.join(external_data_path, filename)
+            if os.path.exists(fallback_path):
+                shutil.copy(fallback_path, filename)
+            else:
+                raise ValueError(f"内嵌文件未找到: {fallback_path}")
         else:
             download_url = input("无法访问 GitHub 且无可用代理，请手动输入下载地址或本地文件路径（如 "
                             "https://mirror.ghproxy.com/https://github.com/Mzdyl/LiteLoaderQQNT_Install"
                             "/archive/master.zip 或 C:\\path\\to\\file.zip ）：")
             if not download_url:
-                raise ValueError("没有输入有效的下载地址或本地文件路径")
-        download_file(download_url, filename)
+                raise ValueError("未提供有效的下载地址或本地文件路径")
+            download_file(download_url, filename)
+
 
 
 def download_and_extract_form_release(repos: str):
@@ -612,7 +621,7 @@ def get_external_data_path():
         return os.path.join(sys._MEIPASS)
     else:
         return None
-    
+
 
 def main():
     try:
