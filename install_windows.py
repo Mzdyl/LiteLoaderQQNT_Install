@@ -433,7 +433,7 @@ def patch_index_js(file_path):
 
 def patch(file_path):
     try:
-        # 获取LITELOADERQQNT_PROFILE环境变量的值
+        # 获取LITELOADERQQNT_PROFILE和ML_LITELOADERQQNT_TEMP环境变量的值
         lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
         lite_loader_temp = os.getenv("ML_LITELOADERQQNT_TEMP")
 
@@ -442,20 +442,25 @@ def patch(file_path):
         if lite_loader_profile:
             plugin_path = os.path.join(lite_loader_profile, "plugins")
         elif lite_loader_temp:
-            print("未能检测到LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量")
+            print(
+                "未能检测到LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量")
             plugin_path = os.path.join(lite_loader_temp, "plugins")
         else:
             print("未能检测到LITELOADERQQNT_PROFILE，使用默认路径")
             plugin_path = default_path
-        if not os.path.exists(lite_loader_profile):
+
+        # 检查并创建插件目录
+        if lite_loader_profile and not os.path.exists(lite_loader_profile):
             os.makedirs(lite_loader_profile)
             print(f"目标目录 {lite_loader_profile} 不存在，已创建。")
+
         # 打印或使用 plugin_path 变量
         print(f"你的插件路径是 {plugin_path}")
         print("赋予插件目录和插件数据目录完全控制权(解决部分插件权限问题)")
         change_folder_permissions(plugin_path, "everyone", "(oi)(ci)(F)")
         plugin_data_dir = os.path.join(os.path.dirname(plugin_path), "data")
         change_folder_permissions(plugin_data_dir, "everyone", "(oi)(ci)(F)")
+
     except Exception as e:
         print(f"发生错误: {e}")
 
