@@ -450,9 +450,9 @@ def patch(file_path):
             plugin_path = default_path
 
         # 检查并创建插件目录
-        if lite_loader_profile and not os.path.exists(lite_loader_profile):
-            os.makedirs(lite_loader_profile)
-            print(f"目标目录 {lite_loader_profile} 不存在，已创建。")
+        if not os.path.exists(plugin_path):
+            os.makedirs(plugin_path)
+            print(f"插件目录 {plugin_path} 不存在，已创建。")
 
         # 打印或使用 plugin_path 变量
         print(f"你的插件路径是 {plugin_path}")
@@ -463,6 +463,7 @@ def patch(file_path):
 
     except Exception as e:
         print(f"发生错误: {e}")
+        print(f"大概率不影响安装，安装继续")
 
 
 def check_and_kill_qq(process_name):
