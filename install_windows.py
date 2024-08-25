@@ -18,7 +18,7 @@ from tkinter import filedialog
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 当前版本号
-current_version = "1.15"
+current_version = "1.16"
 
 
 # 存储反代服务器的URL
