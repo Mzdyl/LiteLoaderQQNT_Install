@@ -1,4 +1,4 @@
-name: Install and Test LL on macOS
+name: macOS
 
 on:
   push:

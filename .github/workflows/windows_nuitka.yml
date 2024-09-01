@@ -1,4 +1,4 @@
-name: Install and Test LL on Windows with Nuitka
+name: Windows with Nuitka
 
 on:
   push:

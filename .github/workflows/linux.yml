@@ -1,4 +1,4 @@
-name: Install and Test LL on Linux
+name: Linux
 
 on:
   push:

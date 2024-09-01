@@ -1,4 +1,4 @@
-name: Install, Test and Release on Windows
+name: Windows
 
 on:
   push:

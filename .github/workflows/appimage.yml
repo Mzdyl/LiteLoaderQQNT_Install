@@ -1,4 +1,4 @@
-name: Create and Test AppImage
+name: Linux AppImage
 
 on:
   push:
