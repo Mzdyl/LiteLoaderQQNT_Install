@@ -1,4 +1,17 @@
 # LiteLoaderQQNT_Install
+
+
+
+## LiteLoaderQQNT_Install 2.0 计划
+画大饼，更新慢慢来吧，考研期间确实没空（
+1.做成启动器格式
+运行时自动检测LL 是否安装或存在更新，未安装则自动安装
+LL 安装则调用QQ.exe 启动
+2.可以同步添加插件检测或者依赖检测
+读取启动时的错误信息自动修复常见错误
+3.适配一些需要修改数据的情况
+比如package.json 有时可能需要更改，但运行前又要复原
+
 针对 [LiteLoaderQQNT](https://liteloaderqqnt.github.io) 的安装脚本
 
 同时安装 ltxhhz 大佬编写的[插件列表查看](https://github.com/ltxhhz/LL-plugin-list-viewer/)
