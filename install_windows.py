@@ -246,7 +246,8 @@ def can_connect_to_github():
 def install_liteloader(file_path):
     try:
         temp_dir = tempfile.gettempdir()
-        download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
+#       download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
+        download_and_extract_from_git("LiteLoaderQQNT/LiteLoaderQQNT")
         print("下载完成，开始安装 LiteLoaderQQNT")
 
         source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
@@ -663,7 +664,41 @@ def download_and_extract_form_release(repos: str):
     except Exception as e:
         print(f"下载并解压 {repos} 时发生错误: {e}")
 
-
+        
+        
+def download_and_extract_from_git(repos: str):
+    temp_dir = tempfile.gettempdir()
+    print(f"临时目录：{temp_dir}")
+    
+    cached_names = {
+        "ltxhhz/LL-plugin-list-viewer": "list-viewer.zip",
+        "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip"
+    }
+    
+    if repos not in cached_names:
+        print("仓库名称无效")
+        return
+    
+    filename = cached_names[repos]
+    git_url = f"https://github.com/{repos}/archive/refs/heads/main.zip"
+    zip_path = os.path.join(temp_dir, filename)
+    
+    try:
+        print(f"下载最新 Git 版本的 {repos}")
+        download_file(git_url, zip_path)
+        extract_dir = os.path.join(temp_dir, filename.split(".")[0])
+        shutil.unpack_archive(zip_path, extract_dir)
+        for item in os.listdir(extract_dir):
+            item_path = os.path.join(extract_dir, item)
+            if os.path.isdir(item_path):
+                for sub_item in os.listdir(item_path):
+                    shutil.move(os.path.join(item_path, sub_item), extract_dir)
+                os.rmdir(item_path)
+    except Exception as e:
+        print(f"Git 版下载并解压 {repos} 时发生错误: {e}")
+        raise
+        
+        
 def get_external_data_path():
     if hasattr(sys, '_MEIPASS'):
         # If running in a PyInstaller bundle
