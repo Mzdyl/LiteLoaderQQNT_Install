@@ -105,7 +105,7 @@ def patch_package_json(file_path, latest_version):
         print(f"修补 package.json 时发生错误: {e}")
         traceback.print_exc()
 
-        
+
 def launch_qq(exe_path):
     """
     启动 QQ.exe，并附加参数 --enable-logging，同时打印启动过程中的输出内容。
@@ -120,7 +120,9 @@ def launch_qq(exe_path):
             [exe_path, '--enable-logging'],
             stdout=subprocess.PIPE,  # 捕获标准输出
             stderr=subprocess.PIPE,  # 捕获标准错误
-            text=True  # 以文本模式处理输出
+            text=True,               # 以文本模式处理输出
+            encoding='utf-8',        # 显式指定编码为 UTF-8
+            errors='replace'         # 替换无法解码的字节
         )
         
         # 实时打印标准输出和标准错误
@@ -138,8 +140,8 @@ def launch_qq(exe_path):
     except Exception as e:
         print(f"启动 QQ 失败: {e}")
         traceback.print_exc()
-        
-        
+
+
 def get_qq_path():
     try:
         hive, subkey, value = winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\QQ", "UninstallString"
@@ -150,7 +152,6 @@ def get_qq_path():
             
         qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
         print(f"QQNT 的安装目录为: {qq_exe_path}")
-    # except FileNotFoundError as e:
     except Exception as e:
         print(e)
         print("请手动选择 QQ.exe 文件 ")
@@ -178,5 +179,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-    

@@ -37,5 +37,5 @@ jobs:
     - name: Upload install_windows_pyinstaller.exe
       uses: actions/upload-artifact@v4
       with:
-        name: install_windows_pyinstaller
+        name: LaunchQQ
         path: dist/LaunchQQ.exe
