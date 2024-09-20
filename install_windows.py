@@ -439,7 +439,7 @@ def patch_index_js_next(file_path,version_path):
             f.write('fs.writeFileSync(package_path, JSON.stringify(package, null, 4), "utf-8");\n\n')
             
             f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n")
-            f.write("require('../major.node').load('internal_index', module);")
+            f.write("require('../major.node').load('internal_index', module);\n")
             
             f.write("setTimeout(() => {\n")
             f.write('    package.main = "./app_launcher/index.js";\n')
