@@ -424,6 +424,11 @@ def patch_index_js_temp(file_path,version_path):
             
             f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n")
             f.write("require('../major.node').load('internal_index', module);")
+            
+            f.write("setTimeout(() => {\n")
+            f.write('    package.main = "./app_launcher/index.js";\n')
+            f.write('    fs.writeFileSync(package_path, JSON.stringify(package, null, 4), "utf-8");\n')
+            f.write("}, 0);\n")
     except Exception as e:
         print(f"修补 index.js 时发生错误: {e}")        
 
