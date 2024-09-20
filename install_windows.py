@@ -18,7 +18,7 @@ from tkinter import filedialog
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 当前版本号
-current_version = "1.16"
+current_version = "1.17"
 
 
 # 存储反代服务器的URL
@@ -87,11 +87,19 @@ def get_pe_arch(pe_file):
 def patch_pe_file(file_path):
     # 存在 64 位系统安装 32 位 QQ 的可能，需考虑
     try:
-        save_path = file_path + ".bak"
-        os.rename(file_path, save_path)
-        print(f"已将原版备份在 : {save_path}")
-
-        with open(save_path, "rb") as file:
+        # 创建备份文件的路径
+        backup_path = file_path + ".bak"
+        
+        # 如果备份文件已存在，覆盖它
+        if os.path.exists(backup_path):
+            os.remove(backup_path)
+            print(f"已删除旧的备份文件: {backup_path}")
+            
+        # 创建新的备份
+        os.rename(file_path, backup_path)
+        print(f"已将原版备份在: {backup_path}")
+        
+        with open(backup_path, "rb") as file:
             pe_file = bytearray(file.read())
 
         machine = get_pe_arch(pe_file)
@@ -237,7 +245,8 @@ def can_connect_to_github():
 def install_liteloader(file_path):
     try:
         temp_dir = tempfile.gettempdir()
-        download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
+#       download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
+        download_and_extract_from_git("LiteLoaderQQNT/LiteLoaderQQNT")
         print("下载完成，开始安装 LiteLoaderQQNT")
 
         source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
@@ -272,27 +281,6 @@ def install_liteloader(file_path):
 
     except Exception as e:
         print(f"安装LL过程发生错误: {e}")
-
-
-def check_old_version(qq_exe_path):
-    # 检测是否安装过旧版 Liteloader
-    try:
-        file_path = os.path.dirname(qq_exe_path)
-        package_file_path = os.path.join(file_path, "resources", "app", "package.json")
-        replacement_line = '"main": "./app_launcher/index.js"'
-        target_line = '"main": "./LiteLoader"'
-        with open(package_file_path, "r") as file:
-            content = file.read()
-
-        if target_line in content:
-            print("检测到安装过旧版，执行复原 package.json")
-            content = content.replace(target_line, replacement_line)
-            with open(package_file_path, "w") as file:
-                file.write(content)
-            print(f"成功替换目标行: {target_line} -> {replacement_line}")
-            print("请根据需求自行删除 LiteloaderQQNT 0.x 版本本体以及 LITELOADERQQNT_PROFILE 环境变量以及对应目录")
-    except Exception as e:
-        print(f"检测是否安装过0.x版本时发生错误: {e}")
 
 
 def countdown_input(prompt, default='y', timeout=5):
@@ -387,7 +375,6 @@ def cleanup_old_bak(qq_exe_path):
 
 
 def prepare_for_installation(qq_exe_path):
-    check_old_version(qq_exe_path)
     cleanup_old_bak(qq_exe_path)
     setup_environment_and_move_files(qq_exe_path)
 
@@ -429,6 +416,36 @@ def patch_index_js(file_path):
             f.write("require('./launcher.node').load('external_index', module);")
     except Exception as e:
         print(f"修补 index.js 时发生错误: {e}")
+
+def patch_index_js_next(file_path,version_path):
+    try:
+        app_launcher_path = os.path.join(version_path, 'resources', 'app', 'app_launcher')# 临时代码，后续添加 version 的自动识别
+        os.chdir(app_launcher_path)
+        print("开始修补 index.js…")
+        index_path = os.path.join(app_launcher_path, "index.js")
+        # 备份原文件
+        print("已将旧版文件备份为 index.js.bak ")
+        bak_index_path = index_path + ".bak"
+        shutil.copyfile(index_path, bak_index_path)
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write('const fs = require("fs");\n')
+            f.write('const path = require("path");\n')
+            
+            f.write('const package_path = path.join(process.resourcesPath, "app/package.json");\n')
+            f.write('const package = require(package_path);\n')
+            
+            f.write('package.main = "./application/app_launcher/index.js";\n')
+            f.write('fs.writeFileSync(package_path, JSON.stringify(package, null, 4), "utf-8");\n\n')
+            
+            f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n")
+            f.write("require('../major.node').load('internal_index', module);")
+            
+            f.write("setTimeout(() => {\n")
+            f.write('    package.main = "./app_launcher/index.js";\n')
+            f.write('    fs.writeFileSync(package_path, JSON.stringify(package, null, 4), "utf-8");\n')
+            f.write("}, 0);\n")
+    except Exception as e:
+        print(f"修补 index.js 时发生错误: {e}")   
 
 
 def patch(file_path):
@@ -595,6 +612,28 @@ def download_file(url_or_path: str, filename: str):
             download_file(download_url, filename)
 
 
+def get_latest_version(file_path):
+    """
+    获取最新的版本目录。
+
+    :param file_path: QQ.exe 的安装目录路径
+    :return: 最新版本目录名称
+    :raises FileNotFoundError: 如果无法找到 versions 目录或版本文件夹
+    """
+    versions_dir = os.path.join(file_path, 'versions')
+    if not os.path.isdir(versions_dir):
+        raise FileNotFoundError(f"无法找到 versions 目录: {versions_dir}")
+        
+    # 获取所有版本目录名称
+    version_names = [d for d in os.listdir(versions_dir) if os.path.isdir(os.path.join(versions_dir, d))]
+    if not version_names:
+        raise FileNotFoundError("在 versions 目录下未找到任何版本文件夹")
+        
+    # 假设版本号格式为 'x.x.x-xxxxx'，通过排序选择最新版本
+    latest_version = sorted(version_names, reverse=True)[0]
+    print(f"检测到最新版本目录: {latest_version}")
+    
+    return latest_version
 
 def download_and_extract_form_release(repos: str):
     temp_dir = tempfile.gettempdir()
@@ -620,7 +659,41 @@ def download_and_extract_form_release(repos: str):
     except Exception as e:
         print(f"下载并解压 {repos} 时发生错误: {e}")
 
-
+        
+        
+def download_and_extract_from_git(repos: str):
+    temp_dir = tempfile.gettempdir()
+    print(f"临时目录：{temp_dir}")
+    
+    cached_names = {
+        "ltxhhz/LL-plugin-list-viewer": "list-viewer.zip",
+        "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip"
+    }
+    
+    if repos not in cached_names:
+        print("仓库名称无效")
+        return
+    
+    filename = cached_names[repos]
+    git_url = f"https://github.com/{repos}/archive/refs/heads/main.zip"
+    zip_path = os.path.join(temp_dir, filename)
+    
+    try:
+        print(f"下载最新 Git 版本的 {repos}")
+        download_file(git_url, zip_path)
+        extract_dir = os.path.join(temp_dir, filename.split(".")[0])
+        shutil.unpack_archive(zip_path, extract_dir)
+        for item in os.listdir(extract_dir):
+            item_path = os.path.join(extract_dir, item)
+            if os.path.isdir(item_path):
+                for sub_item in os.listdir(item_path):
+                    shutil.move(os.path.join(item_path, sub_item), extract_dir)
+                os.rmdir(item_path)
+    except Exception as e:
+        print(f"Git 版下载并解压 {repos} 时发生错误: {e}")
+        raise
+        
+        
 def get_external_data_path():
     if hasattr(sys, '_MEIPASS'):
         # If running in a PyInstaller bundle
@@ -652,16 +725,29 @@ def main():
         else:
             cleanup_old_bak(qq_exe_path)
 
+        qq_file_size_bytes = os.path.getsize(qq_exe_path)
+        qq_file_size_mb = qq_file_size_bytes / (1024 * 1024)
+        if qq_file_size_mb < 10:
+            print("QQ大小小于 10MB，判断为新版")
+            latest_version = get_latest_version(file_path)
+            version_path = os.path.join(file_path, "versions", latest_version)
+            qq_dll_path = os.path.join(version_path, 'QQNT.dll') 
+            patch_index_js_next(file_path, version_path)
+        else:
+            print("QQ大小大于 10MB，判断为旧版")
+            patch_index_js(file_path)
+            
         if os.path.exists(os.path.join(file_path, "dbghelp.dll")):
             print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")
         else:
-            patch_pe_file(qq_exe_path)
+            if qq_file_size_mb < 10:
+                patch_pe_file(qq_dll_path) 
+            else:
+                patch_pe_file(qq_exe_path)
+        
         install_liteloader(file_path)
-        # copy_old_files(file_path)
-        patch_index_js(file_path)
         patch(file_path)
 
-        # print("LiteLoaderQQNT 安装完成！插件商店作者不维护删库了，安装到此结束")
         print("LiteLoaderQQNT 安装完成！接下来进行插件列表安装")
         install_plugin_store(file_path)
 
