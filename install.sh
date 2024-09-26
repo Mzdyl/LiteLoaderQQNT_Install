@@ -108,7 +108,8 @@ function pull_liteloader() {
 
 }
 
-# 安装 LiteLoader
+                
+# 安装 LiteLoader 的函数
 function install_liteloader() {
     echo "拉取完成，正在安装 LiteLoader..."
     if [ "$platform" == "linux" ]; then
@@ -120,66 +121,69 @@ function install_liteloader() {
         ll_path="$HOME/Library/Containers/com.tencent.qq/Data/Documents"
         sudo_cmd=""
     fi
-
+    
     # 如果目标目录存在且不为空，则先备份处理
     if [ -e "$ll_path/LiteLoader" ]; then
         $sudo_cmd rm -rf "$ll_path/LiteLoader_bak"
         $sudo_cmd mv "$ll_path/LiteLoader" "$ll_path/LiteLoader_bak"
         echo "已将原LiteLoader目录备份为LiteLoader_bak"
     fi
-
+    
     $sudo_cmd mv -f LiteLoader "$ll_path"
-
-    $sudo_cmd cp -f "$ll_path"/LiteLoader/src/preload.js $qq_path/app/application/preload.js
-
+    
     # 恢复插件和数据
     if [ -d "$ll_path/LiteLoader_bak/plugins" ]; then
-        if [ "$platform" == "macos" ]; then
+        if [ "$platform" == "macos" ];then
             echo "正在恢复插件数据..."
             echo "PS:由于macOS限制，对Sandbox目录操作预计耗时数分钟左右"
         fi
         $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/plugins" "$ll_path/LiteLoader/" | grep -E '^[0-9]+%|^ '
         echo "已将 LiteLoader_bak 中的旧插件复制到新的 LiteLoader 目录"
     fi
-
-    if [ -d "$ll_path/LiteLoader_bak/data" ]; then
-        $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/data" "$ll_path/LiteLoader/"  | grep -E '^[0-9]+%|^ '
+    
+    if [ -d "$ll_path/LiteLoader_bak/data" ];then
+        $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/data" "$ll_path/LiteLoader/" | grep -E '^[0-9]+%|^ '
         echo "已将 LiteLoader_bak 中的数据文件复制到新的 LiteLoader 目录"
     fi
-
-    cd $qq_path/app/app_launcher || { echo "无法进入安装目录"; exit 1; }
-    echo "开始修补 index.js..."
     
-    if grep -q "require('$ll_path/LiteLoader');" index.js; then
-        echo "index.js 已包含相同的修改，无需再次修改。"
-    else
-        sudo sed -i '' -e "1i\\
-require('$ll_path/LiteLoader');\
-" -e '$a\' index.js
-        echo "已修补 index.js。"
-    fi
-    # 针对macOS 官网版热更新适配
+    # 修补主目录下的 index.js
+    patch_index_js "$qq_path/app/app_launcher"
+    
+    # 针对 macOS 官网版热更新适配
     if [ "$platform" == "macos" ]; then
-        # 修补每个 QQ 版本中的 index.js
         versions_path="$HOME/Library/Containers/com.tencent.qq/Data/Library/Application Support/QQ/versions"
         for version_dir in "$versions_path"/*; do
             if [ -d "$version_dir/QQUpdate.app/Contents/Resources/app/app_launcher" ]; then
-                echo "尝试修补 $version_dir 中的 index.js..."
-                (cd "$version_dir/QQUpdate.app/Contents/Resources/app/app_launcher" && {
-                    if grep -q "require('$ll_path/LiteLoader');" index.js; then
-                        echo "$version_dir/index.js 已包含相同的修改，无需再次修改。"
-                    else
-                        $sudo_cmd sed -i '' -e "1i\\
-require('$ll_path/LiteLoader');\
-" -e '$a\' index.js
-                        echo "已修补 $version_dir/index.js。"
-                    fi
-                }) || { echo "无法修补 $version_dir 中的 index.js，继续下一个版本。"; }
+                patch_index_js "$version_dir/QQUpdate.app/Contents/Resources/app/app_launcher"
             fi
         done
     fi
 }
-
+                
+# 修补 index.js 的函数，创建 *.js 文件，并修改 package.json
+function patch_index_js() {
+    local path=$1
+    local file_name="ml_install.js"  # 这里的文件名可以随意设置
+    
+    echo "正在创建 $path/$file_name..."
+    
+    # 写入 require(String.raw`*`) 到 *.js 文件
+    echo "require(String.raw\`$ll_path/LiteLoader\`);" > "$path/$file_name"
+    echo "已创建 $path/$file_name，内容为 require(String.raw\`$ll_path/LiteLoader\`)"
+    
+    # 检查 package.json 文件是否存在
+    local package_json="$path/../package.json"
+    if [ -f "$package_json" ]; then
+        echo "正在修改 $package_json 的 main 字段..."
+        
+        # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
+        $sudo_cmd sed -i '' 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
+        
+        echo "已将 $package_json 中的 main 字段修改为 ./app_launcher/$file_name"
+    else
+        echo "未找到 $path/../package.json，跳过修改"
+    fi
+}
 
 function install_plugin_store() {
     download_url=https://github.com/ltxhhz/LL-plugin-list-viewer/releases/latest/download/list-viewer.zip
