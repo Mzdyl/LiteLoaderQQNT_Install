@@ -1,0 +1,144 @@
+name: macOS and Linux
+
+on:
+  push:
+    paths:
+      - 'install.sh'
+      - '.github/workflows/unix.yml'
+  pull_request:
+    paths:
+      - 'install.sh'
+      - '.github/workflows/unix.yml'
+  workflow_dispatch:
+
+jobs:
+  install_and_test:
+    runs:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9  # 指定 Python 3 版本
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install -r requirements.txt
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          sudo apt-get install -f
+          sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
+        fi
+
+    - name: Download and Install QQ Software
+      run: |
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          python3 get_qqnt.py Debianx64
+          sudo dpkg -i LinuxQQ.deb
+        elif [[ "$RUNNER_OS" == "macos-latest" ]]; then
+          python3 get_qqnt.py Macos
+          hdiutil attach QQ.dmg
+          cp -R /Volumes/QQ/QQ.app /Applications
+          hdiutil detach /Volumes/QQ
+        fi
+
+    - name: Run install.sh
+      run: |
+        chmod +x install.sh
+        ./install.sh
+
+    - name: Check LiteLoader
+      run: |
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          if ! (/opt/QQ/qq --logging-enable | grep -q "[LiteLoader]") || [ ! -d "/opt/LiteLoader/data" ]; then
+            echo "LiteLoader not found in output or /opt/LiteLoader/data directory does not exist. Test failed."
+            exit 1
+          else
+            echo "LiteLoader found in output and /opt/LiteLoader/data directory exists. Test succeeded."
+          fi
+        elif [[ "$RUNNER_OS" == "macos-latest" ]]; then
+          /Applications/QQ.app/Contents/MacOS/QQ &  # 启动 QQ，放入后台
+          sleep 3  # 等待 3 秒
+          pkill QQ  # 关闭 QQ 应用程序
+
+          if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/data" ]; then
+            echo "LiteLoader data folder exists. Test succeeded."
+          else
+            echo "LiteLoader data folder does not exist. Test failed."
+            exit 1
+          fi
+        fi
+
+    - name: Set up iptables rules
+      if: runner.os == 'Linux'
+      run: |
+        sudo iptables -A OUTPUT -d github.com -j REJECT
+
+    - name: ReRun install.sh
+      run: |
+        ./install.sh
+
+  release:
+    runs-on: ubuntu-latest
+    needs: install_and_test
+    if: github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get recent commit messages
+        id: get_commit_messages
+        run: echo "::set-output name=commit_messages::$(git log -5 --pretty=format:'%h - %s')"
+
+      - name: Create release body
+        id: create_release_body
+        run: |
+          echo "Recent Commits:" >> release_body.txt
+          echo "${{ steps.get_commit_messages.outputs.commit_messages }}" >> release_body.txt
+        shell: bash
+
+      - name: Check if release exists
+        id: check_release
+        run: |
+          if gh release view "pro-release" > /dev/null 2>&1; then
+            echo "::set-output name=release_exists::true"
+          else
+            echo "::set-output name=release_exists::false"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
+
+      - name: Get existing release body
+        if: steps.check_release.outputs.release_exists == 'true'
+        id: get_existing_body
+        run: |
+          gh release view "pro-release" --json body --jq .body > existing_body.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
+
+      - name: Combine release body
+        if: steps.check_release.outputs.release_exists == 'true'
+        run: |
+          cat existing_body.txt >> release_body.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pro-release
+          draft: false
+          prerelease: true
+          body_path: release_body.txt
+          files: |
+            install.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
