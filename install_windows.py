@@ -245,8 +245,8 @@ def can_connect_to_github():
 def install_liteloader(file_path):
     try:
         temp_dir = tempfile.gettempdir()
-#       download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
-        download_and_extract_from_git("LiteLoaderQQNT/LiteLoaderQQNT")
+        download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
+#       download_and_extract_from_git("LiteLoaderQQNT/LiteLoaderQQNT")
         print("下载完成，开始安装 LiteLoaderQQNT")
 
         source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT")
@@ -266,7 +266,6 @@ def install_liteloader(file_path):
                     print(f"使用 shutil.move() 重命名失败: {e2}")
 
         print(f"移动自: {os.path.join(temp_dir, 'LiteLoaderQQNT')}")
-        # 历史遗留问题，以前是直接拉取仓库代码，使用了 -main 后缀
         print(f"移动到: {source_dir}")
 
         try:
@@ -298,13 +297,13 @@ def setup_environment_and_move_files(qq_exe_path):
     try:
         lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
         if lite_loader_profile:
-            modify_change = countdown_input(f"检测到数据目录为 {lite_loader_profile}，是否修改(y/n): ")
+            modify_change = countdown_input(f"检测到数据目录为 {lite_loader_profile}，是否修改(y/N): ", 'n')
         else:
-            modify_change = countdown_input("检测到未设置 LITELOADERQQNT_PROFILE 环境变量，是否设置环境变量？(y/n): ")
+            modify_change = countdown_input("检测到未设置 LITELOADERQQNT_PROFILE 环境变量，是否设置环境变量？(Y/n): ")
 
         if modify_change == 'y':
             print("默认将为你修改为用户目录下 Documents 文件夹内")
-            custom_path_choice = countdown_input("是否使用自定义路径？(y/n): ", 'n')
+            custom_path_choice = countdown_input("是否使用自定义路径？(y/N): ", 'n')
             if custom_path_choice == 'y':
                 root = tk.Tk()
                 root.withdraw()
@@ -372,33 +371,6 @@ def cleanup_old_bak(qq_exe_path):
 
     except Exception as e:
         print(f"移除旧版备份时发生错误: {e}")
-
-
-def prepare_for_installation(qq_exe_path):
-    cleanup_old_bak(qq_exe_path)
-    setup_environment_and_move_files(qq_exe_path)
-
-
-def copy_old_files(file_path):
-    old_plugins_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak", "plugins")
-    new_liteloader_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT")
-    # 复制 LiteLoader_bak 中的插件到新的 LiteLoader 目录
-    if os.path.exists(old_plugins_path):
-        shutil.copytree(
-            old_plugins_path,
-            os.path.join(new_liteloader_path, "plugins"),
-            dirs_exist_ok=True,
-        )
-        print("已将 LiteLoader_bak 中旧插件 Plugins 复制到新的 LiteLoader 目录")
-    # 复制 LiteLoader_bak 中的数据文件到新的 LiteLoader 目录
-    old_data_path = os.path.join(
-        file_path, "resources", "app", "LiteLoaderQQNT_bak", "data"
-    )
-    if os.path.exists(old_data_path):
-        shutil.copytree(
-            old_data_path, os.path.join(new_liteloader_path, "data"), dirs_exist_ok=True
-        )
-        print("已将 LiteLoader_bak 中旧数据文件 data 复制到新的 LiteLoader 目录")
 
 
 def patch_index_js(file_path):
@@ -739,7 +711,8 @@ def main():
 
         check_and_kill_qq("QQ.exe")
         if not github_actions:
-            prepare_for_installation(qq_exe_path)
+            cleanup_old_bak(qq_exe_path)
+            setup_environment_and_move_files(qq_exe_path)
         else:
             cleanup_old_bak(qq_exe_path)
 
