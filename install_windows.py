@@ -204,7 +204,6 @@ def get_qq_path():
 
         qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
         print(f"QQNT 的安装目录为: {qq_exe_path}")
-    # except FileNotFoundError as e:
     except Exception as e:
         print(e)
         print("请手动选择 QQ.exe 文件 ")
@@ -250,7 +249,7 @@ def install_liteloader(file_path):
         download_and_extract_from_git("LiteLoaderQQNT/LiteLoaderQQNT")
         print("下载完成，开始安装 LiteLoaderQQNT")
 
-        source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
+        source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT")
         destination_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")
 
         if os.path.exists(source_dir):
@@ -325,7 +324,7 @@ def setup_environment_and_move_files(qq_exe_path):
                 lite_loader_profile = default_path
             os.environ['ML_LITELOADERQQNT_TEMP'] = lite_loader_profile
 
-            source_dir = os.path.join(os.path.dirname(qq_exe_path), "resources", "app", "LiteLoaderQQNT-main")
+            source_dir = os.path.join(os.path.dirname(qq_exe_path), "resources", "app", "LiteLoaderQQNT")
             folders = ["plugins", "data"]
             if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
                 for folder in folders:
@@ -350,7 +349,7 @@ def cleanup_old_bak(qq_exe_path):
         # 访问LiteLoaderQQNT目录并更改目录和文件权限
         lite_loader_qqnt_paths = [
             os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak"),
-            os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
+            os.path.join(file_path, "resources", "app", "LiteLoaderQQNT")
         ]
 
         for path in lite_loader_qqnt_paths:
@@ -382,7 +381,7 @@ def prepare_for_installation(qq_exe_path):
 
 def copy_old_files(file_path):
     old_plugins_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak", "plugins")
-    new_liteloader_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main")
+    new_liteloader_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT")
     # 复制 LiteLoader_bak 中的插件到新的 LiteLoader 目录
     if os.path.exists(old_plugins_path):
         shutil.copytree(
@@ -413,61 +412,56 @@ def patch_index_js(file_path):
         bak_index_path = index_path + ".bak"
         shutil.copyfile(index_path, bak_index_path)
         with open(index_path, "w", encoding="utf-8") as f:
-            f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n")
+            f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT').replace(os.sep, '/')}');\n")
             f.write("require('./launcher.node').load('external_index', module);")
     except Exception as e:
         print(f"修补 index.js 时发生错误: {e}")
 
-def patch_index_js_next(file_path,version_path):
+        
+def create_launcher_js(file_path, version_path, launcher_name="ml_install.js"):
     try:
-        app_launcher_path = os.path.join(version_path, 'resources', 'app', 'app_launcher')# 临时代码，后续添加 version 的自动识别
-        os.chdir(app_launcher_path)
-        print("开始修补 index.js…")
-        index_path = os.path.join(app_launcher_path, "index.js")
-        # 备份原文件
-        print("已将旧版文件备份为 index.js.bak ")
-        bak_index_path = index_path + ".bak"
-        shutil.copyfile(index_path, bak_index_path)
-        with open(index_path, "w", encoding="utf-8") as f:
-            f.write('const fs = require("fs");\n')
-            f.write('const path = require("path");\n')
+        # 设置 app_launcher 目录路径
+        app_launcher_path = os.path.join(version_path, 'resources', 'app', 'app_launcher')
+        os.makedirs(app_launcher_path, exist_ok=True)  # 确保目录存在
+        
+        # 新建 launcher 文件
+        launcher_js_path = os.path.join(app_launcher_path, launcher_name)
+        print(f"开始创建 {launcher_js_path}...")
+        
+        with open(launcher_js_path, "w", encoding="utf-8") as f:
+            f.write(f"require(String.raw`{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT').replace(os.sep, '/')}`);\n")
             
-            f.write('const package_path = path.join(process.resourcesPath, "app/package.json");\n')
-            f.write('const package = require(package_path);\n')
-            
-            f.write('package.main = "./application/app_launcher/index.js";\n')
-            f.write('fs.writeFileSync(package_path, JSON.stringify(package, null, 4), "utf-8");\n\n')
-            
-            f.write(f"require('{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT-main').replace(os.sep, '/')}');\n")
-            f.write("require('../major.node').load('internal_index', module);\n")
-            
-            f.write("setTimeout(() => {\n")
-            f.write('    package.main = "./app_launcher/index.js";\n')
-            f.write('    fs.writeFileSync(package_path, JSON.stringify(package, null, 4), "utf-8");\n')
-            f.write("}, 0);\n")
+        print(f"已创建 {launcher_name} 文件，路径为: {launcher_js_path}")
+        return launcher_js_path
+    
     except Exception as e:
-        print(f"修补 index.js 时发生错误: {e}")   
-def patch_package_json(version_path):
+        print(f"创建 launcher 文件时发生错误: {e}")
+        return None
+    
+def patch_package_json(version_path, launcher_name="ml_install.js"):
     try:
-        app_launcher_path = os.path.join(version_path, 'resources', 'app')# 临时代码，后续添加 version 的自动识别
-        os.chdir(app_launcher_path)
+        app_launcher_path = os.path.join(version_path, 'resources', 'app')
         print("开始修补 package.json…")
+        
         package_path = os.path.join(app_launcher_path, "package.json")
         # 备份原文件
         print("已将旧版文件备份为 package.json.bak ")
         bak_package_path = package_path + ".bak"
         shutil.copyfile(package_path, bak_package_path)
+        
+        # 读取并修改 package.json
         with open(package_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
             
-            # 修改 "main" 字段的值
-        data["main"] = r"./app_launcher/index.js"
-            
-            # 将修改后的内容写回 package.json 文件
+        # 修改 main 字段的值为新创建的 launcher 文件路径
+        data["main"] = f"./app_launcher/{launcher_name}"
+        
+        # 将修改后的内容写回 package.json 文件
         with open(package_path, 'w', encoding='utf-8') as file:
             json.dump(data, file, indent=4, ensure_ascii=False)
-                
-            print(f'"main" 字段已修改为: {data["main"]}')
+            
+        print(f'"main" 字段已修改为: {data["main"]}')
+        
     except Exception as e:
         print(f"修补 package.json 时发生错误: {e}")
 
@@ -479,7 +473,7 @@ def patch(file_path):
         lite_loader_temp = os.getenv("ML_LITELOADERQQNT_TEMP")
 
         # 如果环境变量不存在，则使用默认路径
-        default_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
+        default_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT", "plugins")
         if lite_loader_profile:
             plugin_path = os.path.join(lite_loader_profile, "plugins")
         elif lite_loader_temp:
@@ -541,7 +535,7 @@ def install_plugin_store(file_path):
                 plugin_path = os.path.join(lite_loader_temp, 'plugins')
             else:
                 print("环境变量 LITELOADERQQNT_PROFILE 未设置，使用默认路径")
-                plugin_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT-main", "plugins")
+                plugin_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT", "plugins")
         else:
             plugin_path = os.path.join(lite_loader_profile, 'plugins')
             
@@ -756,7 +750,7 @@ def main():
             latest_version = get_latest_version(file_path)
             version_path = os.path.join(file_path, "versions", latest_version)
             qq_dll_path = os.path.join(version_path, 'QQNT.dll') 
-            patch_index_js_next(file_path, version_path)
+            create_launcher_js(file_path, version_path)
             patch_package_json(version_path)
         else:
             print("QQ大小大于 10MB，判断为旧版")
