@@ -8,8 +8,8 @@ function patch_index_js() {
     echo "正在创建 $path/$file_name..."
     
     # 写入 require(String.raw`*`) 到 *.js 文件
-    echo "require(String.raw\`/opt/LiteLoader\`);" > "$path/$file_name"
-    echo "已创建 $path/$file_name，内容为 require(String.raw\`/opt/LiteLoader\`)"
+    echo 'require("./LiteLoader");' > "$path/$file_name"
+    echo "已创建 $path/$file_name，内容为 require("./LiteLoader")"
     
     # 检查 package.json 文件是否存在
     local package_json="$path/../package.json"
@@ -17,8 +17,7 @@ function patch_index_js() {
         echo "正在修改 $package_json 的 main 字段..."
         
         # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
-        $sudo_cmd sed -i '' 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
-        
+        $sudo_cmd sed -i 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
         echo "已将 $package_json 中的 main 字段修改为 ./app_launcher/$file_name"
     else
         echo "未找到 $path/../package.json，跳过修改"
@@ -75,9 +74,9 @@ echo "拉取完成，正在安装LiteLoader..."
 mv -f LiteLoader "$install_dir/LiteLoader"
 
 # 修改index.js
-echo "正在修补index.js... $appimage_path"
+echo "正在修补index.js... $install_dir"
 
-patch_index_js "$install_dir/app/app_launcher"
+patch_index_js "$install_dir"
 
 
 chmod -R 0777 $install_dir
