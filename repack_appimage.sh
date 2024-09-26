@@ -1,4 +1,30 @@
 #!/bin/bash
+
+# 修补 index.js 的函数，创建 *.js 文件，并修改 package.json
+function patch_index_js() {
+    local path=$1
+    local file_name="ml_install.js"  # 这里的文件名可以随意设置
+    
+    echo "正在创建 $path/$file_name..."
+    
+    # 写入 require(String.raw`*`) 到 *.js 文件
+    echo "require(String.raw\`/opt/LiteLoader\`);" > "$path/$file_name"
+    echo "已创建 $path/$file_name，内容为 require(String.raw\`/opt/LiteLoader\`)"
+    
+    # 检查 package.json 文件是否存在
+    local package_json="$path/../package.json"
+    if [ -f "$package_json" ]; then
+        echo "正在修改 $package_json 的 main 字段..."
+        
+        # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
+        $sudo_cmd sed -i '' 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
+        
+        echo "已将 $package_json 中的 main 字段修改为 ./app_launcher/$file_name"
+    else
+        echo "未找到 $path/../package.json，跳过修改"
+    fi
+}
+
 if [ $# -eq 0 ]; then
     echo "未提供 QQ.AppImage 文件的路径，默认使用当前目录下的 QQ.AppImage"
     appimage_path="$PWD/QQ.AppImage"
@@ -44,26 +70,15 @@ git clone https://github.com/LiteLoaderQQNT/LiteLoaderQQNT.git LiteLoader
 
 # 移动到安装目录
 echo "拉取完成，正在安装LiteLoader..."
-cp -f LiteLoader/src/preload.js $target_dir/resources/app/application/preload.js
 
 # 移动LiteLoader
 mv -f LiteLoader "$install_dir/LiteLoader"
 
-# 进入安装目录
-cd "$install_dir"
-
 # 修改index.js
-echo "正在修补index.js...$appimage_path"
+echo "正在修补index.js... $appimage_path"
 
-# 检查是否已存在相同的修改
-if grep -q "require('./LiteLoader');" index.js; then
-    echo "index.js 已包含相同的修改，无需再次修改。"
-else
-    # 如果不存在，则进行修改
-sed -i -e "1i\\
-require('./LiteLoader');" -e '$a\' index.js
-    echo "已修补 index.js。"
-fi
+patch_index_js "$install_dir/app/app_launcher"
+
 
 chmod -R 0777 $install_dir
 
