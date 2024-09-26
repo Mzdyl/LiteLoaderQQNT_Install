@@ -56,9 +56,12 @@ jobs:
       run: |
         .\dist\install_windows_pyinstaller.exe
 
-    - name: Run QQ with logging
+    - name: Check QQNT Process
+      shell: pwsh
       run: |
-        start "" "C:\Program Files\Tencent\QQNT\QQ.exe" --enable-logging
+        Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging' -NoNewWindow
+        Start-Sleep -Seconds 5  # 等待 5 秒
+        Get-Process -Name "QQ"  # 检查 QQ 进程是否在运行
 
     - name: Check if LiteLoader plugins folder exists
       run: |
@@ -69,6 +72,17 @@ jobs:
           exit 1
         }
 
+    - name: Delete LiteLoaderQQNT-main directory
+      run: |
+        # 检查目录是否存在
+        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT") {
+          # 删除目录
+          Remove-Item -Recurse -Force "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT"
+          Write-Output "Deleted: C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT"
+        } else {
+          Write-Output "Directory does not exist."
+        }
+      shell: pwsh
     - name: Block GitHub access by modifying hosts file
       run: |
         echo 127.0.0.1 github.com | Out-File -Append -FilePath C:\Windows\System32\drivers\etc\hosts -Encoding ASCII
@@ -77,6 +91,10 @@ jobs:
     - name: ReRun install_windows_pyinstaller.exe
       run: |
         .\dist\install_windows_pyinstaller.exe
+    - name: Start QQNT
+      shell: pwsh  # 确保使用 PowerShell
+      run: |
+        Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging'
 
     - name: Create release body
       if: github.event_name == 'push'
@@ -123,3 +141,4 @@ jobs:
           dist/install_windows_pyinstaller.exe
       env:
         GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
+        

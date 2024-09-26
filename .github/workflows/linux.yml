@@ -43,11 +43,11 @@ jobs:
 
     - name: Check output and directory existence
       run: |
-        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]" || [ ! -d "/opt/LiteLoader/plugins" ]; then
-          echo "LiteLoader not found in output or /opt/LiteLoader/plugins directory does not exist. Test failed."
+        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]" || [ ! -d "/opt/LiteLoader/data" ]; then
+          echo "LiteLoader not found in output or /opt/LiteLoader/data directory does not exist. Test failed."
           exit 1
         else
-          echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
+          echo "LiteLoader found in output and /opt/LiteLoader/data directory exists. Test succeeded."
         fi
 
     - name: Set up iptables rules
@@ -71,11 +71,11 @@ jobs:
 
     - name: Check output again
       run: |
-        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]" || [ ! -d "/opt/LiteLoader/plugins" ]; then
-          echo "LiteLoader not found in output or /opt/LiteLoader/plugins directory does not exist. Test failed."
+        if ! /opt/QQ/qq --logging-enable | grep -q "[LiteLoader]" || [ ! -d "/opt/LiteLoader/data" ]; then
+          echo "LiteLoader not found in output or /opt/LiteLoader/data directory does not exist. Test failed."
           exit 1
         else
-          echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
+          echo "LiteLoader found in output and /opt/LiteLoader/data directory exists. Test succeeded."
         fi
 
   release:

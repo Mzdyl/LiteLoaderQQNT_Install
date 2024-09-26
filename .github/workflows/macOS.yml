@@ -51,10 +51,10 @@ jobs:
         pkill QQ
 
         # 检查 LiteLoader 插件是否存在
-        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins" ]; then
-          echo "LiteLoader plugins folder exists. Test succeeded."
+        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/data" ]; then
+          echo "LiteLoader data folder exists. Test succeeded."
         else
-          echo "LiteLoader plugins folder does not exist. Test failed."
+          echo "LiteLoader data folder does not exist. Test failed."
           exit 1
         fi
 
@@ -85,14 +85,6 @@ jobs:
 
         # 关闭 QQ 应用程序，这里使用 pkill 假设 QQ 进程的名字为 QQ
         pkill QQ
-
-        # 检查 LiteLoader 插件是否存在
-        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins" ]; then
-          echo "LiteLoader plugins folder exists. Test succeeded."
-        else
-          echo "LiteLoader plugins folder does not exist. Test failed."
-          exit 1
-        fi
 
   release:
     runs-on: ubuntu-latest

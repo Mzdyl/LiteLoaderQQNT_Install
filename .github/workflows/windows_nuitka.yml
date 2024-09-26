@@ -57,9 +57,12 @@ jobs:
       run: |
         .\build\install_windows_nuitka.exe
 
-    - name: Run QQ with logging
+    - name: Check QQNT Process
+      shell: pwsh
       run: |
-        start "" "C:\Program Files\Tencent\QQNT\QQ.exe" --enable-logging
+        Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging' -NoNewWindow
+        Start-Sleep -Seconds 5  # 等待 5 秒
+        Get-Process -Name "QQ"  # 检查 QQ 进程是否在运行
 
     - name: Check if LiteLoader plugins folder exists
       run: |
