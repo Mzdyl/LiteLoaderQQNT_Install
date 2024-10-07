@@ -561,7 +561,7 @@ def get_working_proxy():
     return None
 
 
-def download_file(url_or_path: str, filename: str):
+def download_file(url_or_path: str, filename: str, timeout: int = 10):
     try:
         # 检查是否为本地文件路径
         if os.path.exists(url_or_path):
@@ -569,20 +569,33 @@ def download_file(url_or_path: str, filename: str):
             shutil.copy(url_or_path, filename)
             return
         elif url_or_path.startswith(('http://', 'https://')):
-            if can_connect_to_github():
-                print("网络良好，直接下载")
-                download_url = url_or_path
-            else:
+            download_url = url_or_path if can_connect_to_github() else f"{get_working_proxy()}/{url_or_path}"
+            print(f"当前使用的下载链接: {download_url}")
+            
+            # 尝试下载文件
+            try:
+                # 使用 urlopen 方法来设置超时
+                with urllib.request.urlopen(download_url, timeout=timeout) as response:
+                    with open(filename, 'wb') as out_file:
+                        out_file.write(response.read())
+                return
+            except urllib.error.URLError as e:
+                print(f"下载失败，错误信息: {e}\n尝试使用代理进行下载")
                 proxy = get_working_proxy()
                 if proxy:
                     download_url = f"{proxy}/{url_or_path}"
                     print(f"当前使用的下载链接: {download_url}")
                 else:
                     raise ValueError("无可用代理")
-            urllib.request.urlretrieve(download_url, filename)
+                    
         else:
             raise ValueError(f"无效的路径或 URL: {url_or_path}")
-
+            
+        # 再次尝试下载文件
+        with urllib.request.urlopen(download_url, timeout=timeout) as response:
+            with open(filename, 'wb') as out_file:
+                out_file.write(response.read())
+                
     except Exception as e:
         print(f"下载过程中发生错误: {e}")
         external_data_path = get_external_data_path()
