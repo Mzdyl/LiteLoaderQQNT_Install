@@ -13,9 +13,7 @@ on:
 
 jobs:
   install_and_test:
-    runs:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
