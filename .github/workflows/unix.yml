@@ -47,7 +47,7 @@ jobs:
           hdiutil attach QQ.dmg
           cp -R /Volumes/QQ/QQ.app /Applications
           hdiutil detach /Volumes/QQ
-	  open /Applications/QQ.app/ &
+          open /Applications/QQ.app/ &
         fi
 
     - name: Run install.sh
