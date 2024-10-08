@@ -168,8 +168,7 @@ function patch_index_js() {
     echo "正在创建 $path/$file_name..."
     
     # 写入 require(String.raw`*`) 到 *.js 文件
-#   $sudo_cmd echo "require(String.raw\`$ll_path/LiteLoader\`);" > "$path/$file_name"
-    echo "require(String.raw\`$ll_path/LiteLoader\`);" | $sudo_cmd tee "$path/$file_name" > /dev/null
+    echo "require(String.raw\`$ll_path/LiteLoader\`);" | sudo tee "$path/$file_name" > /dev/null
     echo "已创建 $path/$file_name，内容为 require(String.raw\`$ll_path/LiteLoader\`)"
     
     # 检查 package.json 文件是否存在
@@ -178,10 +177,10 @@ function patch_index_js() {
         echo "正在修改 $package_json 的 main 字段..."
         
         if [ "$platform" == "linux" ]; then
-            $sudo_cmd sed -i 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
+            sudo sed -i 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
         elif [ "$platform" == "macos" ]; then
             # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
-            $sudo_cmd sed -i '' 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
+            sudo sed -i '' 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
         fi
         
         echo "已将 $package_json 中的 main 字段修改为 ./app_launcher/$file_name"
