@@ -39,14 +39,16 @@ jobs:
 
     - name: Download and Install QQ Software
       run: |
+        echo "当前 RUNNER_OS: $RUNNER_OS"
         if [[ "$RUNNER_OS" == "Linux" ]]; then
           python3 get_qqnt.py Debianx64
           sudo dpkg -i LinuxQQ.deb
-        elif [[ "$RUNNER_OS" == "macos-latest" ]]; then
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
           python3 get_qqnt.py Macos
           hdiutil attach QQ.dmg
           cp -R /Volumes/QQ/QQ.app /Applications
           hdiutil detach /Volumes/QQ
+          open /Applications/QQ.app/ & # 运行 QQ 以创建沙盒内文件夹
         fi
 
     - name: Run install.sh
@@ -63,7 +65,7 @@ jobs:
           else
             echo "LiteLoader found in output and /opt/LiteLoader/data directory exists. Test succeeded."
           fi
-        elif [[ "$RUNNER_OS" == "macos-latest" ]]; then
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
           /Applications/QQ.app/Contents/MacOS/QQ &  # 启动 QQ，放入后台
           sleep 3  # 等待 3 秒
           pkill QQ  # 关闭 QQ 应用程序

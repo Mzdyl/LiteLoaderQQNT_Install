@@ -112,6 +112,8 @@ function pull_liteloader() {
 # 安装 LiteLoader 的函数
 function install_liteloader() {
     echo "拉取完成，正在安装 LiteLoader..."
+    
+    # 设置路径和命令
     if [ "$platform" == "linux" ]; then
         qq_path="/opt/QQ/resources"
         ll_path="/opt"
@@ -120,34 +122,63 @@ function install_liteloader() {
         qq_path="/Applications/QQ.app/Contents/Resources"
         ll_path="$HOME/Library/Containers/com.tencent.qq/Data/Documents"
         sudo_cmd=""
+    else
+        echo "不支持的平台: $platform，退出..."
+        return 1
     fi
     
     # 如果目标目录存在且不为空，则先备份处理
     if [ -e "$ll_path/LiteLoader" ]; then
         $sudo_cmd rm -rf "$ll_path/LiteLoader_bak"
+        if [ $? -ne 0 ]; then
+            echo "备份 LiteLoader 失败，退出..."
+            return 1
+        fi
+        
         $sudo_cmd mv "$ll_path/LiteLoader" "$ll_path/LiteLoader_bak"
-        echo "已将原LiteLoader目录备份为LiteLoader_bak"
+        if [ $? -ne 0 ]; then
+            echo "移动 LiteLoader 到备份目录失败，退出..."
+            return 1
+        fi
+        echo "已将原 LiteLoader 目录备份为 LiteLoader_bak"
     fi
     
     $sudo_cmd mv -f LiteLoader "$ll_path"
+    if [ $? -ne 0 ]; then
+        echo "移动 LiteLoader 到目标目录失败，退出..."
+        return 1
+    fi
     
     # 恢复插件和数据
     if [ -d "$ll_path/LiteLoader_bak/plugins" ]; then
-        if [ "$platform" == "macos" ];then
+        if [ "$platform" == "macos" ]; then
             echo "正在恢复插件数据..."
-            echo "PS:由于macOS限制，对Sandbox目录操作预计耗时数分钟左右"
+            echo "PS:由于 macOS 限制，对 Sandbox 目录操作预计耗时数分钟左右"
         fi
+        
         $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/plugins" "$ll_path/LiteLoader/" | grep -E '^[0-9]+%|^ '
+        if [ $? -ne 0 ]; then
+            echo "恢复插件数据失败，退出..."
+            return 1
+        fi
         echo "已将 LiteLoader_bak 中的旧插件复制到新的 LiteLoader 目录"
     fi
     
-    if [ -d "$ll_path/LiteLoader_bak/data" ];then
+    if [ -d "$ll_path/LiteLoader_bak/data" ]; then
         $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/data" "$ll_path/LiteLoader/" | grep -E '^[0-9]+%|^ '
+        if [ $? -ne 0 ]; then
+            echo "恢复数据文件失败，退出..."
+            return 1
+        fi
         echo "已将 LiteLoader_bak 中的数据文件复制到新的 LiteLoader 目录"
     fi
     
     # 修补主目录下的 index.js
     patch_index_js "$qq_path/app/app_launcher"
+    if [ $? -ne 0 ]; then
+        echo "修补 index.js 失败，退出..."
+        return 1
+    fi
     
     # 针对 macOS 官网版热更新适配
     if [ "$platform" == "macos" ]; then
@@ -155,6 +186,9 @@ function install_liteloader() {
         for version_dir in "$versions_path"/*; do
             if [ -d "$version_dir/QQUpdate.app/Contents/Resources/app/app_launcher" ]; then
                 patch_index_js "$version_dir/QQUpdate.app/Contents/Resources/app/app_launcher"
+                if [ $? -ne 0 ]; then
+                    echo "修补 $version_dir/QQUpdate.app/Contents/Resources/app/app_launcher 的 index.js 失败"
+                fi
             fi
         done
     fi
@@ -169,6 +203,10 @@ function patch_index_js() {
     
     # 写入 require(String.raw`*`) 到 *.js 文件
     echo "require(String.raw\`$ll_path/LiteLoader\`);" | sudo tee "$path/$file_name" > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "创建文件 $path/$file_name 失败，退出..."
+        return 1  # 返回非零状态以指示失败
+    fi
     echo "已创建 $path/$file_name，内容为 require(String.raw\`$ll_path/LiteLoader\`)"
     
     # 检查 package.json 文件是否存在
@@ -181,6 +219,11 @@ function patch_index_js() {
         elif [ "$platform" == "macos" ]; then
             # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
             sudo sed -i '' 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
+        fi
+        
+        if [ $? -ne 0 ]; then
+            echo "修改 $package_json 失败，退出..."
+            return 1  # 返回非零状态以指示失败
         fi
         
         echo "已将 $package_json 中的 main 字段修改为 ./app_launcher/$file_name"
