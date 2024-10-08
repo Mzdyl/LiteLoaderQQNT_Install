@@ -1,0 +1,28 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  windows-build:
+    uses: Mzdyl/LiteLoaderQQNT_Install/.github/workflows/windows.yml@main
+  release:
+    needs: windows-build
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Get Artifact
+      uses: actions/download-artifact@v4.1.7
+      with:
+        name: install_windows_pyinstaller.exe
+    - name: Create release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          install_windows_pyinstaller.exe
+          install_linux.sh
+          install_mac.sh
+          
