@@ -39,6 +39,7 @@ jobs:
 
     - name: Download and Install QQ Software
       run: |
+        echo "当前 RUNNER_OS: $RUNNER_OS"
         if [[ "$RUNNER_OS" == "Linux" ]]; then
           python3 get_qqnt.py Debianx64
           sudo dpkg -i LinuxQQ.deb
@@ -47,7 +48,7 @@ jobs:
           hdiutil attach QQ.dmg
           cp -R /Volumes/QQ/QQ.app /Applications
           hdiutil detach /Volumes/QQ
-          open /Applications/QQ.app/ &
+          open /Applications/QQ.app/ & # 运行 QQ 以创建沙盒内文件夹
         fi
 
     - name: Run install.sh
