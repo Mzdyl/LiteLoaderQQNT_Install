@@ -87,6 +87,46 @@ jobs:
       run: |
         ./install.sh
 
+  
+  check_flatpak_qq:
+    runs-on: ubuntu-latest  # 使用 Ubuntu 运行 Flatpak 版本测试
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Flatpak
+      run: |
+        sudo apt-get install xvfb # 虚拟显示
+        sudo apt-get update
+        sudo apt-get install -y flatpak
+        sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+    - name: Install Flatpak QQ
+      run: |
+        sudo flatpak install -y flathub com.qq.QQ
+
+    - name: Run install.sh
+      run: |
+        chmod +x install.sh
+        ./install.sh
+
+    - name: Check LiteLoader
+      run: |
+        sudo flatpak override --filesystem=home com.qq.QQ
+        # 启动应用并获取进程 ID
+        xvfb-run flatpak run com.qq.QQ --logging-enable | tee output.log &
+        APP_PID=$!
+        sleep 3
+        kill -9 $APP_PID
+        
+        # 检查日志输出
+        if grep -q "[LiteLoader]" output.log; then
+          echo "Flatpak 版 QQ LiteLoader 测试成功"
+        else
+          echo "Flatpak 版 QQ LiteLoader 测试失败"
+          exit 1
+        fi
+
   release:
     runs-on: ubuntu-latest
     needs: install_and_test
