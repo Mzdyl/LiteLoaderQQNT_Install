@@ -49,7 +49,20 @@ def get_github_proxy_urls():
         "https://gitclone.com",
         "https://hub.incept.pw",
         "https://github.moeyy.xyz",
-        "https://mirror.ghproxy.com"
+        "https://gh.xiu2.us.kg",
+        "https://dl.ghpig.top",
+        "https://gh-proxy.com",
+        "https://cors.isteed.cc",
+        "https://sciproxy.com",
+        "https://github.site",
+        "https://github.store",
+        "https://github.tmby.shop",
+        "https://hub.whtrys.space",
+        "https://gh-proxy.ygxz.in",
+        "https://gitdl.cn",
+        "https://ghp.ci",
+        "https://githubfast.com",
+        "https://ghproxy.net"
     ]
 
 
@@ -600,7 +613,7 @@ def download_file(url_or_path: str, filename: str, timeout: int = 10):
         print(f"下载过程中发生错误: {e}")
         external_data_path = get_external_data_path()
         if external_data_path:
-            print("使用内嵌版本")
+            print(f"使用内嵌版本，路径{external_data_path}")
             fallback_path = os.path.join(external_data_path, filename)
             if os.path.exists(fallback_path):
                 shutil.copy(fallback_path, filename)
