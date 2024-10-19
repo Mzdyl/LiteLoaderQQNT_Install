@@ -574,12 +574,12 @@ def get_working_proxy():
     return None
 
 
-def download_file(url_or_path: str, filename: str, timeout: int = 10):
+def download_file(url_or_path: str, filepath: str, timeout: int = 10):
     try:
         # 检查是否为本地文件路径
         if os.path.exists(url_or_path):
             print(f"使用本地文件路径: {url_or_path}")
-            shutil.copy(url_or_path, filename)
+            shutil.copy(url_or_path, filepath)
             return
         elif url_or_path.startswith(('http://', 'https://')):
             download_url = url_or_path if can_connect_to_github() else f"{get_working_proxy()}/{url_or_path}"
@@ -589,7 +589,7 @@ def download_file(url_or_path: str, filename: str, timeout: int = 10):
             try:
                 # 使用 urlopen 方法来设置超时
                 with urllib.request.urlopen(download_url, timeout=timeout) as response:
-                    with open(filename, 'wb') as out_file:
+                    with open(filepath, 'wb') as out_file:
                         out_file.write(response.read())
                 return
             except urllib.error.URLError as e:
@@ -606,7 +606,7 @@ def download_file(url_or_path: str, filename: str, timeout: int = 10):
             
         # 再次尝试下载文件
         with urllib.request.urlopen(download_url, timeout=timeout) as response:
-            with open(filename, 'wb') as out_file:
+            with open(filepath, 'wb') as out_file:
                 out_file.write(response.read())
                 
     except Exception as e:
@@ -614,9 +614,10 @@ def download_file(url_or_path: str, filename: str, timeout: int = 10):
         external_data_path = get_external_data_path()
         if external_data_path:
             print(f"使用内嵌版本，路径{external_data_path}")
+            filename = os.path.basename(filepath)
             fallback_path = os.path.join(external_data_path, filename)
             if os.path.exists(fallback_path):
-                shutil.copy(fallback_path, filename)
+                shutil.copy(fallback_path, filepath)
             else:
                 raise ValueError(f"内嵌文件未找到: {fallback_path}")
         else:
@@ -625,7 +626,7 @@ def download_file(url_or_path: str, filename: str, timeout: int = 10):
                             "/archive/master.zip 或 C:\\path\\to\\file.zip ）：")
             if not download_url:
                 raise ValueError("未提供有效的下载地址或本地文件路径")
-            download_file(download_url, filename)
+            download_file(download_url, filepath)
 
 
 def get_latest_version(file_path):
