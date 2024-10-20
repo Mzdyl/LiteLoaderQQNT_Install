@@ -1,4 +1,4 @@
-name: Windows
+name: Windows Continuous Build
 
 on:
   push:
@@ -49,7 +49,7 @@ jobs:
       - name: Deploy continuous
         uses: crowbarmaster/GH-Automatic-Releases@latest
         with:
-          repo_token: "${{ secrets.DEPLOY_TOKEN }}"
+          repo_token: "${{ secrets.AC_TOKEN }}"
           automatic_release_tag: "continuous"
           prerelease: false
           title: "Continuous Build"
