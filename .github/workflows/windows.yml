@@ -11,6 +11,10 @@ on:
       - ".github/workflows/windows.yml"
   workflow_dispatch:
 
+concurrency:
+  group: windows
+  cancel-in-progress: false
+
 jobs:
   build-test:
     strategy:
@@ -37,14 +41,29 @@ jobs:
           curl -L -o LiteLoaderQQNT.zip https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip
           curl -L -o list-viewer.zip https://github.com/ltxhhz/LL-plugin-list-viewer/releases/latest/download/list-viewer.zip
 
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        if: matrix.builder == 'nuitka'
+        with:
+          path: nuitka_cache
+          key: nuitka-cache
+          restore-keys: nuitka-
+
       - name: Build by ${{ matrix.builder }}
         run: |
           python -m pip install ${{ matrix.builder }}
           if ('${{ matrix.builder }}' -eq 'nuitka') {
+            $env:NUITKA_CACHE_DIR = "nuitka_cache"
             nuitka --onefile --windows-uac-admin --include-data-files="LiteLoaderQQNT.zip"="./" --include-data-files="list-viewer.zip"="./" install_windows.py  --output-dir="dist" --output-file="install_windows_nuitka" --assume-yes-for-downloads --enable-plugins="tk-inter" --enable-console --mingw64
           } else {
             pyinstaller --onefile --uac-admin --add-data "LiteLoaderQQNT.zip:." --add-data "list-viewer.zip:." install_windows.py --distpath dist --name install_windows_pyinstaller
           }
+      - name: Save Cache
+        uses: actions/cache/save@v4
+        if: matrix.builder == 'nuitka'
+        with:
+          path: nuitka_cache
+          key: nuitka-cache
 
       - name: Upload install_windows_${{ matrix.builder }}.exe
         uses: actions/upload-artifact@v4
@@ -66,7 +85,7 @@ jobs:
 
       - name: Check QQNT Process
         run: |
-          Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging' -NoNewWindow >> $GITHUB_OUTPUT
+          Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging' -NoNewWindow
           Start-Sleep -Seconds 5  # 等待 5 秒
           Get-Process -Name "QQ"  # 检查 QQ 进程是否在运行
 
@@ -101,7 +120,7 @@ jobs:
 
       - name: Check QQNT Process
         run: |
-          Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging' -NoNewWindow >> $GITHUB_OUTPUT
+          Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging' -NoNewWindow
           Start-Sleep -Seconds 5  # 等待 5 秒
           Get-Process -Name "QQ"  # 检查 QQ 进程是否在运行
 
