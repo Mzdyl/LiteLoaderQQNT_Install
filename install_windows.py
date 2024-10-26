@@ -527,14 +527,15 @@ def install_plugin_store(file_path):
         existing_destination_path = os.path.join(plugin_path, 'list-viewer')
         
         temp_dir = tempfile.gettempdir()
-        download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
         
         if not os.path.exists(existing_destination_path):
+            download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
             os.makedirs(plugin_path, exist_ok=True)
             print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
             print(f"移动到: {existing_destination_path}")
             shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
         else:
+            download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
             index_js_path = os.path.join(existing_destination_path, 'main', 'index.js')
             if not os.path.exists(index_js_path):
                 print("检测到已安装插件商店可能存在问题，即将重装")
