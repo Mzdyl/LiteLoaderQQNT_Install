@@ -3,142 +3,175 @@ name: Windows
 on:
   push:
     paths:
-      - 'install_windows.py'
-      - '.github/workflows/windows.yml'
+      - "install_windows.py"
+      - ".github/workflows/windows.yml"
   pull_request:
     paths:
-      - 'install_windows.py'
-      - '.github/workflows/windows.yml'
+      - "install_windows.py"
+      - ".github/workflows/windows.yml"
   workflow_dispatch:
 
+concurrency:
+  group: windows
+  cancel-in-progress: false
+
 jobs:
-  install_test_and_release:
+  build-test:
+    strategy:
+      matrix:
+        builder: [pyinstaller, nuitka]
     runs-on: windows-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: 3.9  # 指定 Python 3 版本
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+          cache: pip
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Download External Data Release
-      run: |
-        curl -L -o LiteLoaderQQNT.zip https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip
-        curl -L -o list-viewer.zip https://github.com/ltxhhz/LL-plugin-list-viewer/releases/latest/download/list-viewer.zip
+      - name: Download External Data Release
+        run: |
+          curl -L -o LiteLoaderQQNT.zip https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip
+          curl -L -o list-viewer.zip https://github.com/ltxhhz/LL-plugin-list-viewer/releases/latest/download/list-viewer.zip
 
-    - name: Install pyinstaller & Build install_windows_pyinstaller.exe
-      run: |
-        python -m pip install pyinstaller
-        pyinstaller --onefile --uac-admin --add-data "LiteLoaderQQNT.zip:." --add-data "list-viewer.zip:." install_windows.py -n install_windows_pyinstaller
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        if: matrix.builder == 'nuitka'
+        with:
+          path: nuitka_cache
+          key: nuitka-cache
+          restore-keys: nuitka-
 
-    - name: Upload install_windows_pyinstaller.exe
-      uses: actions/upload-artifact@v4
-      with:
-        name: install_windows_pyinstaller
-        path: dist/install_windows_pyinstaller.exe
+      - name: Build by ${{ matrix.builder }}
+        run: |
+          python -m pip install ${{ matrix.builder }}
+          if ('${{ matrix.builder }}' -eq 'nuitka') {
+            $env:NUITKA_CACHE_DIR = "nuitka_cache"
+            nuitka --onefile --windows-uac-admin --include-data-files="LiteLoaderQQNT.zip"="./" --include-data-files="list-viewer.zip"="./" install_windows.py  --output-dir="dist" --output-file="install_windows_nuitka" --assume-yes-for-downloads --enable-plugins="tk-inter" --enable-console --mingw64
+          } else {
+            pyinstaller --onefile --uac-admin --add-data "LiteLoaderQQNT.zip:." --add-data "list-viewer.zip:." install_windows.py --distpath dist --name install_windows_pyinstaller
+          }
+      - name: Save Cache
+        uses: actions/cache/save@v4
+        if: matrix.builder == 'nuitka'
+        with:
+          path: nuitka_cache
+          key: nuitka-cache
 
-    - name: Download and Install QQ Software
-      run: |
-        # Download QQ software
-        python get_qqnt.py Windowsx64
-        # Install QQ silently
-        Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
+      - name: Upload install_windows_${{ matrix.builder }}.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.builder }}
+          path: dist/install_windows_${{ matrix.builder }}.exe
 
-    - name: Run install_windows_pyinstaller.exe
-      run: |
-        .\dist\install_windows_pyinstaller.exe
+      - name: Download and Install QQ Software
+        run: |
+          # Download QQ software
+          python -m pip install requests
+          python get_qqnt.py Windowsx64
+          # Install QQ silently
+          Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
 
-    - name: Check QQNT Process
-      shell: pwsh
-      run: |
-        Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging' -NoNewWindow
-        Start-Sleep -Seconds 5  # 等待 5 秒
-        Get-Process -Name "QQ"  # 检查 QQ 进程是否在运行
+      - name: Run install_windows_${{ matrix.builder }}.exe
+        run: |
+          .\dist\install_windows_${{ matrix.builder }}.exe
 
-    - name: Check if LiteLoader plugins folder exists
-      run: |
-        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT\data") {
-          Write-Host "LiteLoader folder found. Test passed."
-        } else {
-          Write-Host "LiteLoader folder not found. Test failed."
-          exit 1
-        }
+      - name: Check QQNT Process
+        run: |
+          Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging' -NoNewWindow
+          Start-Sleep -Seconds 5  # 等待 5 秒
+          Get-Process -Name "QQ"  # 检查 QQ 进程是否在运行
 
-    - name: Delete LiteLoaderQQNT-main directory
-      run: |
-        # 检查目录是否存在
-        if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT") {
-          # 删除目录
-          Remove-Item -Recurse -Force "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT"
-          Write-Output "Deleted: C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT"
-        } else {
-          Write-Output "Directory does not exist."
-        }
-      shell: pwsh
-    - name: Block GitHub access by modifying hosts file
-      run: |
-        echo 127.0.0.1 github.com | Out-File -Append -FilePath C:\Windows\System32\drivers\etc\hosts -Encoding ASCII
-        echo 127.0.0.1 api.github.com | Out-File -Append -FilePath C:\Windows\System32\drivers\etc\hosts -Encoding ASCII
+      - name: Check if LiteLoader plugins folder exists
+        run: |
+          if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT\data") {
+            Write-Host "LiteLoader folder found. Test passed."
+          } else {
+            Write-Host "LiteLoader folder not found. Test failed."
+            exit 1
+          }
 
-    - name: ReRun install_windows_pyinstaller.exe
-      run: |
-        .\dist\install_windows_pyinstaller.exe
-    - name: Start QQNT
-      shell: pwsh  # 确保使用 PowerShell
-      run: |
-        Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging'
+      - name: Delete LiteLoaderQQNT-main directory
+        run: |
+          # 检查目录是否存在
+          if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT") {
+            # 删除目录
+            Remove-Item -Recurse -Force "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT"
+            Write-Output "Deleted: C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT"
+          } else {
+            Write-Output "Directory does not exist."
+          }
 
-    - name: Create release body
-      if: github.event_name == 'push'
-      id: create_release_body
-      run: |
-        echo "Recent Commits:" > release_body.txt
-        git log -5 --pretty=format:'%h - %s' >> release_body.txt
+      - name: Block GitHub access
+        run: |
+          # hosts 禁止容易不生效，直接禁止应用联网
+          New-NetFirewallRule -DisplayName "Block install_windows_${{ matrix.builder }}.exe" -Direction Outbound -Program "$PWD\dist\install_windows_${{ matrix.builder }}.exe" -Action Block -Profile Domain,Private,Public
 
-    - name: Check if release exists
-      if: github.event_name == 'push'
-      id: check_release
-      run: |
-        if (gh release view "pro-release" > $null) {
-          echo "::set-output name=release_exists::true"
-        } else {
-          echo "::set-output name=release_exists::false"
-        }
-      shell: pwsh
-      env:
-        GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
+      - name: ReRun install_windows_${{ matrix.builder }}.exe
+        run: |
+          .\dist\install_windows_${{ matrix.builder }}.exe
 
-    - name: Get existing release body
-      if: github.event_name == 'push'
-      id: get_existing_body
-      run: |
-        gh release view "pro-release" --json body --jq .body > existing_body.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
+      - name: Check QQNT Process
+        run: |
+          Start-Process -FilePath "C:\Program Files\Tencent\QQNT\QQ.exe" -ArgumentList '--enable-logging' -NoNewWindow
+          Start-Sleep -Seconds 5  # 等待 5 秒
+          Get-Process -Name "QQ"  # 检查 QQ 进程是否在运行
 
-    - name: Combine release body
-      if: github.event_name == 'push'
-      run: |
-        Get-Content existing_body.txt | Add-Content release_body.txt
+      - name: Check if LiteLoader plugins folder exists
+        run: |
+          if (Test-Path "C:\Program Files\Tencent\QQNT\resources\app\LiteLoaderQQNT\data") {
+            Write-Host "LiteLoader folder found. Test passed."
+          } else {
+            Write-Host "LiteLoader folder not found. Test failed."
+            exit 1
+          }
 
-    - name: Create GitHub Release
-      if: github.event_name == 'push'
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: pro-release
-        draft: false
-        prerelease: true
-        body_path: release_body.txt
-        files: |
-          dist/install_windows_pyinstaller.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.AC_TOKEN }}
-        
+  release:
+    if: contains(github.event.head_commit.message, 'pre-release')
+    permissions:
+      contents: write
+    needs: [build-test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download
+        uses: actions/download-artifact@v4
+
+      - name: Create notes
+        run: git log --pretty=format:"* %h %s by @%an" "$(git tag -l --column=plain --sort=-creatordate "[0-9]*.[0-9]*" | head -1)..HEAD" > body.txt
+
+      - name: Delete Alpha
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if
+            gh release view Alpha-windows
+          then
+            gh release delete Alpha-windows -y
+          fi
+          if
+            git tag -d Alpha-windows
+          then
+            git push origin :refs/tags/Alpha-windows
+          fi
+
+      - name: Prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: Alpha-windows
+          prerelease: true
+          body_path: body.txt
+          files: |
+            pyinstaller/install_windows_pyinstaller.exe
+            nuitka/install_windows_nuitka.exe
