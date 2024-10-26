@@ -109,10 +109,10 @@ jobs:
             Write-Output "Directory does not exist."
           }
 
-      - name: Block GitHub access by modifying hosts file
+      - name: Block GitHub access
         run: |
-          echo 127.0.0.1 github.com | Out-File -Append -FilePath C:\Windows\System32\drivers\etc\hosts -Encoding ASCII
-          echo 127.0.0.1 api.github.com | Out-File -Append -FilePath C:\Windows\System32\drivers\etc\hosts -Encoding ASCII
+          # hosts 禁止容易不生效，直接禁止应用联网
+          New-NetFirewallRule -DisplayName "Block install_windows_${{ matrix.builder }}.exe" -Direction Outbound -Program "$PWD\dist\install_windows_${{ matrix.builder }}.exe" -Action Block -Profile Domain,Private,Public
 
       - name: ReRun install_windows_${{ matrix.builder }}.exe
         run: |
@@ -134,7 +134,7 @@ jobs:
           }
 
   release:
-    if: github.event_name == 'push' && contains(github.ref, 'refs/heads/main')
+    if: contains(github.event.head_commit.message, 'pre-release')
     permissions:
       contents: write
     needs: [build-test]
@@ -158,7 +158,7 @@ jobs:
           if
             gh release view Alpha-windows
           then
-            gh release delete Alpha-windows
+            gh release delete Alpha-windows -y
           fi
           if
             git tag -d Alpha-windows
