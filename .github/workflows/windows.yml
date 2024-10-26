@@ -2,6 +2,7 @@ name: Windows
 
 on:
   push:
+    if: contains(github.event.head_commit.message, 'pre-release')    
     paths:
       - "install_windows.py"
       - ".github/workflows/windows.yml"

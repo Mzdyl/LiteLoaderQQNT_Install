@@ -9,11 +9,10 @@
 
 ## 最新版本支持
 
-[![Install, Test and Release on Windows](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows.yml)
-[![Install and Test LL on Windows with Nuitka](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows_nuitka.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows_nuitka.yml)
-[![Install and Test LL on Linux](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/linux.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/linux.yml)
-[![Install and Test LL on macOS](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/macOS.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/macOS.yml)
-[![Create and Test AppImage](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/appimage.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/appimage.yml)
+[![Windows](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows.yml)
+[![Linux](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/linux.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/linux.yml)
+[![macOS](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/macOS.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/macOS.yml)
+[![AppImage](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/appimage.yml/badge.svg)](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/appimage.yml)
 
 
 ## 使用方法
