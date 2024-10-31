@@ -570,6 +570,13 @@ def get_working_proxy():
                 return result
     return None
 
+def get_download_url(url: str) -> str:
+    if can_connect(url):
+        return url
+    proxy = get_working_proxy()
+    if not proxy:
+        raise ValueError("无可用代理")
+    return f"{proxy}/{url}"
 
 def download_file(url_or_path: str, filepath: str, timeout: int = 10):
     try:
@@ -578,42 +585,27 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
             print(f"使用本地文件路径: {url_or_path}")
             shutil.copy(url_or_path, filepath)
             return
-        elif url_or_path.startswith(('http://', 'https://')):
-            
-            if can_connect(url_or_path):
-                download_url = url_or_path
-            else:
-                proxy = get_working_proxy()
-                if proxy:
-                    download_url = f"{proxy}/{url_or_path}"
-                else:
-                    raise ValueError("无可用代理")
-                
-            print(f"当前使用的下载链接: {download_url}")
-            
-            # 尝试下载文件
-            try:
-                # 使用 urlopen 方法来设置超时
-                with urllib.request.urlopen(download_url, timeout=timeout) as response:
-                    with open(filepath, 'wb') as out_file:
-                        out_file.write(response.read())
-                return
-            except urllib.error.URLError as e:
-                print(f"下载失败，错误信息: {e}\n尝试再次使用代理进行下载")
-                proxy = get_working_proxy()
-                if proxy:
-                    download_url = f"{proxy}/{url_or_path}"
-                    print(f"当前使用的下载链接: {download_url}")
-                else:
-                    raise ValueError("无可用代理")
-                    
-        else:
+        if not url_or_path.startswith(('http://', 'https://')):
             raise ValueError(f"无效的路径或 URL: {url_or_path}")
             
-        # 再次尝试下载文件
-        with urllib.request.urlopen(download_url, timeout=timeout) as response:
-            with open(filepath, 'wb') as out_file:
-                out_file.write(response.read())
+        download_url = get_download_url(url_or_path)
+        print(f"当前使用的下载链接: {download_url}")
+        
+        try:
+            # 使用 urlopen 方法来设置超时
+            with urllib.request.urlopen(download_url, timeout=timeout) as response:
+                with open(filepath, 'wb') as out_file:
+                    out_file.write(response.read())
+            return
+        except urllib.error.URLError as e:
+            print(f"下载失败，错误信息: {e}\n尝试再次进行下载")
+            download_url = get_download_url(url_or_path)              
+            print(f"当前使用的下载链接: {download_url}")
+
+            # 再次尝试下载文件
+            with urllib.request.urlopen(download_url, timeout=timeout) as response:
+                with open(filepath, 'wb') as out_file:
+                    out_file.write(response.read())
                 
     except Exception as e:
         print(f"下载过程中发生错误: {e}")
