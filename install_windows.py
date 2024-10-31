@@ -528,26 +528,22 @@ def install_plugin_store(file_path):
         
         temp_dir = tempfile.gettempdir()
         
-        if not os.path.exists(existing_destination_path):
+        if not os.path.exists(existing_destination_path) or not os.path.exists(os.path.join(existing_destination_path, 'main', 'index.js')):
+            if not os.path.exists(existing_destination_path):
+                os.makedirs(plugin_path, exist_ok=True)
+            else:
+                print("检测到已安装插件商店可能存在问题，即将重装")
+                shutil.rmtree(existing_destination_path)                
+            print("更新和安装插件请使用 release 版本")
+            print("非 release 版本可能导致 QQ 无法正常启动")
+            
+            # 下载并解压插件
             download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
-            os.makedirs(plugin_path, exist_ok=True)
             print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
             print(f"移动到: {existing_destination_path}")
             shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
         else:
-            download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
-            index_js_path = os.path.join(existing_destination_path, 'main', 'index.js')
-            if not os.path.exists(index_js_path):
-                print("检测到已安装插件商店可能存在问题，即将重装")
-                print("更新和安装插件请使用 release 版本")
-                print("非 release 版本可能导致 QQ 无法正常启动")
-                shutil.rmtree(existing_destination_path)
-                os.makedirs(existing_destination_path, exist_ok=True)
-                print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
-                print(f"移动到: {existing_destination_path}")
-                shutil.move(os.path.join(temp_dir, "list-viewer"), existing_destination_path)
-            else:
-                print("检测到已安装插件商店，不在重新安装")
+            print("检测到已安装插件商店，不再重新安装")
                 
     except Exception as e:
         print(f"安装插件商店发生错误: {e}\n请尝试手动安装")
