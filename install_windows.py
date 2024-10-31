@@ -19,7 +19,8 @@ from tkinter import filedialog
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 当前版本号
-current_version = "1.18"
+current_version = "1.18.1"
+
 
 
 # 存储反代服务器的URL
@@ -250,7 +251,7 @@ def get_document_path() -> str:
 def can_connect(url, timeout=2):
     try:
         response = requests.head(url, timeout=timeout)
-        return response.status_code == 200
+        return response.status_code >= 200 and response.status_code < 400
     except requests.exceptions.RequestException:
         return False
 
@@ -539,8 +540,8 @@ def install_plugin_store(file_path):
             
             # 下载并解压插件
             download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
-            print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
-            print(f"移动到: {existing_destination_path}")
+#           print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
+#           print(f"移动到: {existing_destination_path}")
             shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
         else:
             print("检测到已安装插件商店，不再重新安装")
@@ -570,6 +571,13 @@ def get_working_proxy():
                 return result
     return None
 
+def get_download_url(url: str) -> str:
+    if can_connect(url):
+        return url
+    proxy = get_working_proxy()
+    if not proxy:
+        raise ValueError("无可用代理")
+    return f"{proxy}/{url}"
 
 def download_file(url_or_path: str, filepath: str, timeout: int = 10):
     try:
@@ -578,33 +586,27 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
             print(f"使用本地文件路径: {url_or_path}")
             shutil.copy(url_or_path, filepath)
             return
-        elif url_or_path.startswith(('http://', 'https://')):
-            download_url = url_or_path if can_connect(url_or_path) else f"{get_working_proxy()}/{url_or_path}"
-            print(f"当前使用的下载链接: {download_url}")
-            
-            # 尝试下载文件
-            try:
-                # 使用 urlopen 方法来设置超时
-                with urllib.request.urlopen(download_url, timeout=timeout) as response:
-                    with open(filepath, 'wb') as out_file:
-                        out_file.write(response.read())
-                return
-            except urllib.error.URLError as e:
-                print(f"下载失败，错误信息: {e}\n尝试使用代理进行下载")
-                proxy = get_working_proxy()
-                if proxy:
-                    download_url = f"{proxy}/{url_or_path}"
-                    print(f"当前使用的下载链接: {download_url}")
-                else:
-                    raise ValueError("无可用代理")
-                    
-        else:
+        if not url_or_path.startswith(('http://', 'https://')):
             raise ValueError(f"无效的路径或 URL: {url_or_path}")
             
-        # 再次尝试下载文件
-        with urllib.request.urlopen(download_url, timeout=timeout) as response:
-            with open(filepath, 'wb') as out_file:
-                out_file.write(response.read())
+        download_url = get_download_url(url_or_path)
+        print(f"当前使用的下载链接: {download_url}")
+        
+        try:
+            # 使用 urlopen 方法来设置超时
+            with urllib.request.urlopen(download_url, timeout=timeout) as response:
+                with open(filepath, 'wb') as out_file:
+                    out_file.write(response.read())
+            return
+        except urllib.error.URLError as e:
+            print(f"下载失败，错误信息: {e}\n尝试再次进行下载")
+            download_url = get_download_url(url_or_path)              
+            print(f"当前使用的下载链接: {download_url}")
+
+            # 再次尝试下载文件
+            with urllib.request.urlopen(download_url, timeout=timeout) as response:
+                with open(filepath, 'wb') as out_file:
+                    out_file.write(response.read())
                 
     except Exception as e:
         print(f"下载过程中发生错误: {e}")
@@ -707,14 +709,17 @@ def download_and_extract_from_git(repos: str):
     except Exception as e:
         print(f"Git 版下载并解压 {repos} 时发生错误: {e}")
         raise
-        
-        
+
+    
 def get_external_data_path():
+    # 兼容 PyInstaller
     if hasattr(sys, '_MEIPASS'):
-        # If running in a PyInstaller bundle
-        return os.path.join(sys._MEIPASS)
-    else:
-        return None
+        return sys._MEIPASS  # PyInstaller 打包后的临时文件路径
+    if getattr(sys, 'frozen', False):
+        executable_dir = os.path.dirname(sys.executable)
+        print("检测到 Nuitka 打包环境，使用可执行文件目录:", executable_dir)
+        return executable_dir  # Nuitka 打包时的可执行文件目录
+    return None
 
 
 def main():
