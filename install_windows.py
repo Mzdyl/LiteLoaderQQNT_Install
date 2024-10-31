@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 current_version = "1.18.1"
 
 
+
 # 存储反代服务器的URL
 def get_github_proxy_urls():
     return [
