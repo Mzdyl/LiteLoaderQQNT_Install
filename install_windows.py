@@ -19,7 +19,7 @@ from tkinter import filedialog
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 当前版本号
-current_version = "1.18"
+current_version = "1.18.1"
 
 
 # 存储反代服务器的URL
@@ -707,14 +707,16 @@ def download_and_extract_from_git(repos: str):
     except Exception as e:
         print(f"Git 版下载并解压 {repos} 时发生错误: {e}")
         raise
-        
-        
+
+    
 def get_external_data_path():
+    # 兼容 PyInstaller
     if hasattr(sys, '_MEIPASS'):
-        # If running in a PyInstaller bundle
-        return os.path.join(sys._MEIPASS)
-    else:
-        return None
+        return sys._MEIPASS  # PyInstaller 打包后的临时文件路径
+    # 兼容 Nuitka，假设资源文件与可执行文件在同一目录
+    if getattr(sys, 'frozen', False) and hasattr(sys, 'executable'):
+        return os.path.dirname(sys.executable)
+    return None
 
 
 def main():
