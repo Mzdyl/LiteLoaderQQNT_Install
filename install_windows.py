@@ -247,9 +247,9 @@ def get_document_path() -> str:
     return path
 
 
-def can_connect_to_github():
+def can_connect(url, timeout=2):
     try:
-        response = requests.head("https://github.com", timeout=5)
+        response = requests.head(url, timeout=timeout)
         return response.status_code == 200
     except requests.exceptions.RequestException:
         return False
@@ -583,7 +583,7 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
             shutil.copy(url_or_path, filepath)
             return
         elif url_or_path.startswith(('http://', 'https://')):
-            download_url = url_or_path if can_connect_to_github() else f"{get_working_proxy()}/{url_or_path}"
+            download_url = url_or_path if can_connect(url_or_path) else f"{get_working_proxy()}/{url_or_path}"
             print(f"当前使用的下载链接: {download_url}")
             
             # 尝试下载文件
