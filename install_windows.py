@@ -539,8 +539,8 @@ def install_plugin_store(file_path):
             
             # 下载并解压插件
             download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
-            print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
-            print(f"移动到: {existing_destination_path}")
+#           print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
+#           print(f"移动到: {existing_destination_path}")
             shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
         else:
             print("检测到已安装插件商店，不再重新安装")
@@ -579,7 +579,16 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
             shutil.copy(url_or_path, filepath)
             return
         elif url_or_path.startswith(('http://', 'https://')):
-            download_url = url_or_path if can_connect(url_or_path) else f"{get_working_proxy()}/{url_or_path}"
+            
+            if can_connect(url_or_path):
+                download_url = url_or_path
+            else:
+                proxy = get_working_proxy()
+                if proxy:
+                    download_url = f"{proxy}/{url_or_path}"
+                else:
+                    raise ValueError("无可用代理")
+                
             print(f"当前使用的下载链接: {download_url}")
             
             # 尝试下载文件
@@ -590,7 +599,7 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
                         out_file.write(response.read())
                 return
             except urllib.error.URLError as e:
-                print(f"下载失败，错误信息: {e}\n尝试使用代理进行下载")
+                print(f"下载失败，错误信息: {e}\n尝试再次使用代理进行下载")
                 proxy = get_working_proxy()
                 if proxy:
                     download_url = f"{proxy}/{url_or_path}"
