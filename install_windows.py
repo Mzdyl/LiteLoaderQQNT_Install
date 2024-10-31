@@ -250,7 +250,7 @@ def get_document_path() -> str:
 def can_connect(url, timeout=2):
     try:
         response = requests.head(url, timeout=timeout)
-        return response.status_code == 200
+        return response.status_code >= 200 and response.status_code < 400
     except requests.exceptions.RequestException:
         return False
 
