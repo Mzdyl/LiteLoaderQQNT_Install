@@ -61,7 +61,7 @@ install_mac_launchd.sh 是给 macOS 写的设定环境变量的版本
 
 **Windows 用户请确保使用 管理员身份运行。**
 
-**macOS 遇到 Operation not permitted 请检查是否给予 终端 完全磁盘访问权限 或者 允许 终端想访问其他App的数据。**
+**macOS 遇到 Operation not permitted 请检查是否给予 终端 完全磁盘访问权限 或者 允许 终端想访问其他App的数据 以及 App管理 中允许 终端。**
 
 **LiteLoaderQQNT 安装后无法使用插件请自行检测原因或加群交流，本脚本仅负责安装，同时步骤完全遵循官网指南**
 
