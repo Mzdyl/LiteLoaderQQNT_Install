@@ -715,10 +715,9 @@ def get_external_data_path():
     # 兼容 PyInstaller
     if hasattr(sys, '_MEIPASS'):
         return sys._MEIPASS  # PyInstaller 打包后的临时文件路径
-    if getattr(sys, 'frozen', False):
-        executable_dir = os.path.dirname(sys.executable)
-        print("检测到 Nuitka 打包环境，使用可执行文件目录:", executable_dir)
-        return executable_dir  # Nuitka 打包时的可执行文件目录
+    # 兼容 Nuitka
+    if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "LiteLoaderQQNT.zip")):
+        return os.path.dirname(os.path.abspath(__file__))
     return None
 
 
