@@ -689,6 +689,7 @@ def download_and_extract_form_release(repos: str):
         
         if latest_version == internal_version:
             print(f"内置版本与最新版本一致，使用内置版本")
+            filename = os.path.splitext(filename)[0]
             extract_dir = os.path.join(temp_dir, filename.split(".")[0])
             shutil.unpack_archive(os.path.join(get_external_data_path(), f"{filename}-{internal_version}.zip"), extract_dir)
         else:
