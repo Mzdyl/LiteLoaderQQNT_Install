@@ -66,16 +66,13 @@ jobs:
           LLtag: ${{ env.LLtag }}
           LVtag: ${{ env.LVtag }}
         run: |
-          echo "LLtag: $env:LLtag"
-          echo "LVtag: $env:LVtag"
-          dir
           python -m pip install ${{ matrix.builder }}
 
           if ('${{ matrix.builder }}' -eq 'nuitka') {
             $env:NUITKA_CACHE_DIR = "nuitka_cache"
-            nuitka --onefile --windows-uac-admin --include-data-files="LiteLoaderQQNT-${env.LLtag}.zip"="./" --include-data-files="list-viewer-${env.LVtag}.zip"="./" install_windows.py  --output-dir="dist" --output-file="install_windows_nuitka" --assume-yes-for-downloads --enable-plugins="tk-inter" --enable-console --mingw64
+            nuitka --onefile --windows-uac-admin --include-data-files="LiteLoaderQQNT-$($env:LLtag).zip"="./" --include-data-files="list-viewer-$($env:LVtag).zip"="./" install_windows.py --output-dir="dist" --output-file="install_windows_nuitka" --assume-yes-for-downloads --enable-plugins="tk-inter" --enable-console --mingw64
           } else {
-            pyinstaller --onefile --uac-admin --add-data "LiteLoaderQQNT-${env.LLtag}.zip:." --add-data "list-viewer-${env.LVtag}.zip:." install_windows.py --distpath dist --name install_windows_pyinstaller
+            pyinstaller --onefile --uac-admin --add-data "LiteLoaderQQNT-$($env:LLtag).zip:." --add-data "list-viewer-$($env:LVtag).zip:." install_windows.py --distpath dist --name install_windows_pyinstaller
           }
 
       - name: Save Cache
