@@ -692,15 +692,15 @@ def download_and_extract_form_release(repos: str):
             filename = os.path.splitext(filename)[0]
             extract_dir = os.path.join(temp_dir, filename.split(".")[0])
             shutil.unpack_archive(os.path.join(get_external_data_path(), f"{filename}-{internal_version}.zip"), extract_dir)
-        else:
-            print(f"版本不一致，下载最新版本")
-            download_url = f"https://github.com/{repos}/releases/latest/download/{filename}"
-            download_file(download_url, zip_path)
-            extract_dir = os.path.join(temp_dir, filename.split(".")[0])
-            shutil.unpack_archive(zip_path, extract_dir)
-            
+            return
     except Exception as e:
-        print(f"下载并解压 {repos} 时发生错误: {e}")
+        print(f"从GitHub获取版本信息 {repos} 时发生错误: {e}")
+        
+    print(f"下载最新版本")
+    download_url = f"https://github.com/{repos}/releases/latest/download/{filename}"
+    download_file(download_url, zip_path)
+    extract_dir = os.path.join(temp_dir, filename.split(".")[0])
+    shutil.unpack_archive(zip_path, extract_dir)
         
         
 def download_and_extract_from_git(repos: str):
