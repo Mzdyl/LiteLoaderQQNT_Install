@@ -614,6 +614,7 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
             print(f"使用内嵌版本")
             
             filename = os.path.basename(filepath)
+            filename = os.path.splitext(filename)[0]
             
             found = False
             for file in os.listdir(external_data_path):
@@ -757,48 +758,25 @@ def get_latest_tag(repo):
     return None
 
 
-#def get_internal_version(filename):
-#   """ 获取内置版本号，假设内置版本文件命名为 {filename}-{version}.zip """
-#   external_data_path = get_external_data_path()
-#   
-#   # 检查路径是否存在
-#   if not external_data_path:
-#       raise FileNotFoundError("无法找到外部数据路径。")
-#       
-#   # 查找符合命名格式的文件
-#   for file in os.listdir(external_data_path):
-#       if file.startswith(f"{filename}-") and file.endswith(".zip"):
-#           # 从文件名中提取版本号
-#           version = file.split('-')[-1].replace('.zip', '')
-#           return version
-#       
-#   return None  # 如果没有找到匹配的内置版本文件，则返回 None
-
-
 def get_internal_version(filename):
     """ 获取内置版本号，假设内置版本文件命名为 {filename}-{version}.zip """
+    filename = os.path.splitext(filename)[0]
     external_data_path = get_external_data_path()
     
     # 检查路径是否存在
-    print(f"检查路径：{external_data_path}")
     if not external_data_path:
-        print("错误：无法找到外部数据路径。")
         raise FileNotFoundError("无法找到外部数据路径。")
         
-    # 列出目录中的所有文件，显示当前文件列表
-    print(f"当前目录中的文件列表：{os.listdir(external_data_path)}")
-    
-    # 查找符合命名格式的文件
+        # 查找符合命名格式的文件
     for file in os.listdir(external_data_path):
-        print(f"检查文件：{file}")
         if file.startswith(f"{filename}-") and file.endswith(".zip"):
             # 从文件名中提取版本号
             version = file.split('-')[-1].replace('.zip', '')
-            print(f"找到匹配文件：{file}，提取版本号：{version}")
             return version
         
-    print("未找到匹配的内置版本文件")
     return None  # 如果没有找到匹配的内置版本文件，则返回 None
+
+
 
 def main():
     try:
