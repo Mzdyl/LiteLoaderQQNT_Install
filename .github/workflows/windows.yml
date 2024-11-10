@@ -62,6 +62,9 @@ jobs:
           restore-keys: nuitka-
 
       - name: Build by ${{ matrix.builder }}
+        env:
+          LLtag: ${{ env.LLtag }}
+          LVtag: ${{ env.LVtag }}
         run: |
           python -m pip install ${{ matrix.builder }}
           echo "LLtag: $env:LLtag"
