@@ -21,6 +21,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # 当前版本号
 current_version = "1.18.1"
 
+class Config:
+    def __init__(self, timeout=5):
+        self.timeout = timeout
+        
+config = Config()
+
 # 存储反代服务器的URL
 def get_github_proxy_urls():
     return [
@@ -181,15 +187,8 @@ def check_for_updates():
 
         if compare_versions(latest_release, current_version):
             print(f"发现新版本 {latest_release}！")
-
             # 提示用户是否下载更新
-            print("是否要下载更新？输入 'y' 确认，5 秒内未输入则跳过更新。")
-            start_time = time.time()
-            user_input = None
-            while (time.time() - start_time) < 5:
-                if msvcrt.kbhit():
-                    user_input = msvcrt.getch().decode("utf-8").strip().lower()
-                    break
+            user_input = countdown_input("是否要下载更新？输入 'y' 确认，5 秒内未输入则跳过更新。","n")
 
             if user_input == 'y':
                 download_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{latest_release}/install_windows.exe"
@@ -294,11 +293,12 @@ def install_liteloader(file_path):
         print(f"安装LL过程发生错误: {e}")
 
 
-def countdown_input(prompt, default='y', timeout=5):
+def countdown_input(prompt, default='y'):
     print(prompt)
+    
     start_time = time.time()
     user_input = None
-    while (time.time() - start_time) < timeout:
+    while (time.time() - start_time) < config.timeout:
         if msvcrt.kbhit():
             user_input = msvcrt.getch().decode("utf-8").strip().lower()
             break
@@ -781,6 +781,10 @@ def get_internal_version(filename):
 
 def main():
     try:
+        # 检查命令行参数，决定是否启用静默安装
+        if '--silent' in sys.argv:
+            config.timeout = 0  # 静默安装时将超时时间设置为 0
+            
         # 检测是否在 GitHub Actions 中运行
         github_actions = os.getenv("GITHUB_ACTIONS", False)
 

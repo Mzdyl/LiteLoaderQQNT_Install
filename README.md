@@ -95,7 +95,6 @@ LiteLoaderQQNT群: [Telegram](https://t.me/LiteLoaderQQNT)
 - [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 完善下版本判断，小于10MB太抽象了
 - [ ] [install_windows.py](https://github.com/Mzdyl/LiteLoaderQQNT_Install/blob/main/install_windows.py) 是否需要其他插件安装功能？
 
-
 ## 特别鸣谢：
 
 [LiteLoaderQQNT](https://github.com/LiteLoaderQQNT/LiteLoaderQQNT)
