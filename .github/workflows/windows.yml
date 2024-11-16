@@ -2,10 +2,9 @@ name: Windows
 
 on:
   push:
-    if: contains(github.event.head_commit.message, 'pre-release')    
-    paths:
-      - "install_windows.py"
-      - ".github/workflows/windows.yml"
+    tags:
+      - "prerelease"
+      - "test"
   pull_request:
     paths:
       - "install_windows.py"
@@ -18,6 +17,8 @@ concurrency:
 
 jobs:
   build-test:
+    permissions:
+      contents: write
     strategy:
       matrix:
         builder: [pyinstaller, nuitka]
@@ -25,7 +26,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        with:
+          ref: ${{ github.ref }}
+          fetch-tags: true
+      - name: Delete Tag(test)
+        if: ${{ github.ref == 'refs/tags/test' }}
+        run: |
+          if(
+          git tag -d test
+          ){
+          git push origin :refs/tags/test
+          }
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -135,7 +146,7 @@ jobs:
           }
 
   release:
-    if: contains(github.event.head_commit.message, 'pre-release')
+    if: ${{ github.ref == 'refs/tags/prerelease' }}
     permissions:
       contents: write
     needs: [build-test]
@@ -152,10 +163,15 @@ jobs:
       - name: Create notes
         run: git log --pretty=format:"* %h %s by @%an" "$(git tag -l --column=plain --sort=-creatordate "[0-9]*.[0-9]*" | head -1)..HEAD" > body.txt
 
-      - name: Delete Alpha
+      - name: Delete Alpha and Tag(prerelease)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if
+            git tag -d prerelease
+          then
+            git push origin :refs/tags/prerelease
+          fi
           if
             gh release view Alpha-windows
           then
