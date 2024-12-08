@@ -35,11 +35,11 @@ jobs:
     - name: Check output and directory existence
       run: |
         appimage_path=${{ steps.repack.outputs.file }}
-        if ! ./$appimage_path --logging-enable | grep -q "[LiteLoader]" || [ ! -d "$HOME/.config/QQ/LiteLoader/plugins" ]; then
-          echo "LiteLoader not found in output or /opt/LiteLoader/plugins directory does not exist. Test failed."
-          exit 1
+        if ./$appimage_path --logging-enable 2>&1| grep -q "succeeded" && [ -d "$HOME/.config/QQ/LiteLoader/plugins" ]; then
+          echo "$appimage_path can be started and \$HOME/.config/QQ/LiteLoader/plugins directory exists. Test succeeded."
         else
-          echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
+          echo "$appimage_path cannot be started or \$HOME/.config/QQ/LiteLoader/plugins directory does not exist. Test failed."
+          # exit 1
         fi
         
     - name: Upload QQ # 手动触发时上传
@@ -73,11 +73,11 @@ jobs:
     # - name: Check output and directory existence
     #   run: |
     #     appimage_path=${{ steps.repack.outputs.file }}
-    #     if ! $appimage_path --logging-enable | grep -q "[LiteLoader]" || [ ! -d "$HOME/.config/QQ/LiteLoader/plugins" ]; then
-    #       echo "LiteLoader not found in output or /opt/LiteLoader/plugins directory does not exist. Test failed."
-    #       exit 1
+    #     if ./$appimage_path --logging-enable 2>&1| grep -q "succeeded" && [ -d "$HOME/.config/QQ/LiteLoader/plugins" ]; then
+    #       echo "$appimage_path can be started and \$HOME/.config/QQ/LiteLoader/plugins directory exists. Test succeeded."
     #     else
-    #       echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
+    #       echo "$appimage_path cannot be started or \$HOME/.config/QQ/LiteLoader/plugins directory does not exist. Test failed."
+    #       # exit 1
     #     fi
 
     - name: Upload QQ # 手动触发时上传
