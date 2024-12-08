@@ -12,46 +12,69 @@ on:
   workflow_dispatch:
 
 jobs:
-  install_and_test:
+  x86_64:
+    name: repack for x86_64
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: 3.9  # 指定 Python 3 版本
-
-    - name: Install dependencies
-      run: |
-        sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 squashfs-tools libfuse2
-        python3 -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Download QQ Software
-      run: |
-        python3 get_qqnt.py AppImage
-        wget --no-check-certificate --content-disposition https://github.com/AppImage/AppImageKit/releases/download/13/runtime-x86_64
-
-    - name: Run repack_appimage.sh
+    - name: repack qqnt appimage
+      id: repack
       run: |
         chmod +x repack_appimage.sh
-        ./repack_appimage.sh
+        ARCH=x86_64 ./repack_appimage.sh
+        file=$(find . -iname "*x86_64*" -printf "%f\n")
+        echo "::set-output name=file::$file"
 
     - name: Check output and directory existence
       run: |
-        if ! ./QQ.AppImage --logging-enable | grep -q "[LiteLoader]" || [ ! -d "$HOME/.config/QQ/LiteLoader/plugins" ]; then
+        appimage_path=${{ steps.repack.outputs.file }}
+        if ! ./$appimage_path --logging-enable | grep -q "[LiteLoader]" || [ ! -d "$HOME/.config/QQ/LiteLoader/plugins" ]; then
           echo "LiteLoader not found in output or /opt/LiteLoader/plugins directory does not exist. Test failed."
           exit 1
         else
           echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
         fi
+        
     - name: Upload QQ # 手动触发时上传
       if: github.event_name == 'workflow_dispatch'
       uses: actions/upload-artifact@v4
       with:
-        name: QQ
-        path: QQ.AppImage
+        name: ${{ steps.repack.outputs.file }}
+        path: ${{ steps.repack.outputs.file }}
+        
+  arm64:
+    name: repack for arm64
+    runs-on: ubuntu-latest
 
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: repack qqnt appimage for
+      id: repack
+      run: |
+        chmod +x repack_appimage.sh
+        ARCH=arm64 ./repack_appimage.sh
+        file=$(find . -iname "*arm64*" -printf "%f\n")
+        echo "::set-output name=file::$file"
+    
+    # TODO use uraimo/run-on-arch-action@v2
+    # - name: Check output and directory existence
+    #   run: |
+    #     appimage_path=${{ steps.repack.outputs.file }}
+    #     if ! $appimage_path --logging-enable | grep -q "[LiteLoader]" || [ ! -d "$HOME/.config/QQ/LiteLoader/plugins" ]; then
+    #       echo "LiteLoader not found in output or /opt/LiteLoader/plugins directory does not exist. Test failed."
+    #       exit 1
+    #     else
+    #       echo "LiteLoader found in output and /opt/LiteLoader/plugins directory exists. Test succeeded."
+    #     fi
+
+    - name: Upload QQ # 手动触发时上传
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.repack.outputs.file }}
+        path: ${{ steps.repack.outputs.file }}
