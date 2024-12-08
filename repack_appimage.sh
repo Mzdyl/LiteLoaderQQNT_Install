@@ -120,12 +120,11 @@ qq_url=$(get_qqnt_appimage_url)
 if [ $# -eq 0 ]; then
     echo "未提供 QQ.AppImage 文件的路径，默认从官网下载最新版"
     qq_filename=$(basename "$qq_url")
-    download_url "$qq_url" “$qq_filename”
+    download_url "$qq_url" "$qq_filename"
     appimage_path=$(realpath "$qq_filename")
 else
-    appimage_path="$1"
-    qq_filename=$(basename "$appimage_path")
-    appimage_path="$(cd "$workdir" || exit; realpath "$appimage_path")"
+    qq_filename=$(basename "$1")
+    appimage_path="$(cd "$workdir" || exit; realpath "$1")"
 fi
 
 new_qq_filename=${qq_filename//.AppImage/_patch-${liteloaderqqnt_version}.AppImage}
@@ -137,4 +136,3 @@ download_url "$liteloaderqqnt_url" "$liteloaderqqnt_filename"
 
 patch_appiamge "$appimage_path"
 cp "$new_qq_filename" "$workdir"
-read
