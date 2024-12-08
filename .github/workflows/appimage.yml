@@ -30,7 +30,7 @@ jobs:
         chmod +x repack_appimage.sh
         ARCH=x86_64 ./repack_appimage.sh
         file=$(find . -iname "*x86_64*" -printf "%f\n")
-        echo "{file}={$file}" >> $GITHUB_OUTPUT
+        echo "file=$file" >> $GITHUB_OUTPUT
 
     - name: Check output and directory existence
       run: |
@@ -67,7 +67,7 @@ jobs:
         chmod +x repack_appimage.sh
         ARCH=arm64 ./repack_appimage.sh
         file=$(find . -iname "*arm64*" -printf "%f\n")
-        echo "{file}={$file}" >> $GITHUB_OUTPUT
+        echo "file=$file" >> $GITHUB_OUTPUT
     
     # TODO use uraimo/run-on-arch-action@v2
     # - name: Check output and directory existence
