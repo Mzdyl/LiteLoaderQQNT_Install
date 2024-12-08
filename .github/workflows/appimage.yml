@@ -20,6 +20,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 squashfs-tools libfuse2
+
     - name: repack qqnt appimage
       id: repack
       run: |
@@ -44,7 +48,7 @@ jobs:
       with:
         name: ${{ steps.repack.outputs.file }}
         path: ${{ steps.repack.outputs.file }}
-        
+
   arm64:
     name: repack for arm64
     runs-on: ubuntu-latest
@@ -52,6 +56,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 squashfs-tools libfuse2
 
     - name: repack qqnt appimage for
       id: repack
