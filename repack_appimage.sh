@@ -32,7 +32,7 @@ function patch_resources() {
     local jsfile_path="$app_path/app_launcher/$jsfile_name"
     
     # 写入 require(String.raw`*`) 到 *.js 文件
-    echo "正在将 'require("./LiteLoader");' 写入 $jsfile_path"
+    echo "正在将 'require(\"./LiteLoader\");' 写入 $jsfile_path"
     echo 'require("./LiteLoader");' > "$jsfile_path"
     echo "写入成功"
     
