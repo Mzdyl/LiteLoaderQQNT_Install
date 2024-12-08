@@ -13,7 +13,7 @@ on:
 
 jobs:
   x86_64:
-    name: repack for x86_64
+    name: Repack for x86_64
     runs-on: ubuntu-24.04
 
     steps:
@@ -24,7 +24,7 @@ jobs:
       run: |
         sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 squashfs-tools libfuse2
 
-    - name: repack qqnt appimage
+    - name: Repack qqnt appimage
       id: repack
       run: |
         chmod +x repack_appimage.sh
@@ -50,7 +50,7 @@ jobs:
         path: ${{ steps.repack.outputs.file }}
 
   arm64:
-    name: repack for arm64
+    name: Repack for arm64
     runs-on: ubuntu-24.04
 
     steps:
@@ -61,7 +61,7 @@ jobs:
       run: |
         sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 squashfs-tools libfuse2
 
-    - name: repack qqnt appimage for
+    - name: Repack qqnt appimage
       id: repack
       run: |
         chmod +x repack_appimage.sh
