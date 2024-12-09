@@ -20,7 +20,6 @@ cd "$temp_dir" || exit 1
 
 cleanup() {
     echo "清理临时目录: $temp_dir"
-    read -rp "stop: "
     rm -rf "$temp_dir"
 }
 trap cleanup EXIT
@@ -106,7 +105,7 @@ function extract_appimage() {
 }
 
 # 修改 AppRun 文件以支持变量 LITELOADERQQNT_PROFILE
-function patch_appiamge_apprun() {
+function patch_appimage_apprun() {
     apprun_file="$1/AppRun"
     profile_dir="\$HOME/.config/QQ/LiteLoader"
 
@@ -139,7 +138,7 @@ function patch_appiamge() {
     echo "正在对 AppImage 文件进行补丁操作: $appimage"
     chmod +x "$appimage"
     extract_appimage "$appimage"
-    patch_appiamge_apprun "squashfs-root"
+    patch_appimage_apprun "squashfs-root"
     patch_resources "squashfs-root/resources/app"
 
     install_dir="squashfs-root/resources/app/app_launcher/LiteLoader"
