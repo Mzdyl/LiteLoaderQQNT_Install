@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# 定义检查依赖的函数
+function check_dependencies() {
+    local missing_dependencies=()
+
+    for dep in "${dependencies[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            missing_dependencies+=("$dep")
+        fi
+    done
+
+    if [ ${#missing_dependencies[@]} -ne 0 ]; then
+        echo "缺失的依赖项：${missing_dependencies[*]}"
+        echo "请安装上述缺失的依赖项。"
+        exit 1
+    fi
+}
+
 # 检查网络连接选择镜像站
 function can_connect_to_internet() {
     if [ $(curl -sL --max-time 3 "https://github.com" | wc -c) -gt 0 ]; then
@@ -26,26 +43,15 @@ function download_and_extract() {
         *) archive_extension="${archive_name##*.}";;
     esac
 
-    if command -v wget > /dev/null; then
-        wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
-    elif command -v curl > /dev/null; then
-        curl -L -H "Accept: " "$url" -o "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
-    else
-        echo "wget 或 curl 均未安装，无法下载文件."
-        exit 1
-    fi
+    wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
+    # curl -L -H "Accept: " "$url" -o "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
 
     mkdir -p "$output_dir"
 
     case "$archive_extension" in
         tar.gz) tar -zxf "$archive_name" --strip-components=1 -C "$output_dir" ;;
         zip) 
-            if command -v unzip > /dev/null; then
-                unzip -q "$archive_name" -d "$output_dir"
-            else
-                echo "unzip 未安装，无法解压 zip 文件."
-                exit 1
-            fi
+            unzip -q "$archive_name" -d "$output_dir"
             ;;
         *) echo "不支持的文件格式: $archive_extension"; exit 1 ;;
     esac
@@ -380,6 +386,8 @@ function flatpak_qq_func() {
     fi
 }
 
+dependencies=("wget" "curl" "unzip" "sudo")
+check_dependencies
 
 # 检查是否为 root 用户
 if [ "$(id -u)" -eq 0 ]; then
