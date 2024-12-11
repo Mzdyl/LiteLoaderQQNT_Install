@@ -46,7 +46,7 @@ function check_proxy() {
     local proxy=$1
     local proxy_url="${proxy}/https://github.com"
 
-    if curl -Isf -m 1 -o /dev/null "$proxy_url"; then
+    if curl -Isf -m 5 -o /dev/null "$proxy_url"; then
         return 0
     fi
     return 1
@@ -66,7 +66,7 @@ function get_working_proxy() {
 # 获取下载 URL
 function get_github_download_url() {
     local url=$1
-    if curl -Isf -m 1 -o /dev/null "$url"; then
+    if curl -Isf -m 5 -o /dev/null "$url"; then
         echo "$url"
         return 0
     fi
