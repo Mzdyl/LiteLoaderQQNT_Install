@@ -30,8 +30,6 @@ github_download_proxies=(
     "https://gh.xiu2.us.kg"
     "https://dl.ghpig.top"
     "https://gh-proxy.com"
-    "https://cors.isteed.cc"
-    "https://sciproxy.com"
     "https://github.site"
     "https://github.store"
     "https://github.tmby.shop"
@@ -74,7 +72,7 @@ function get_github_download_url() {
     fi
 
     # 只代理 Github 链接
-    if [[ "$url" == *"/github.com/"* ]]; then
+    if [[ "$url" =~ ^(https?:\/\/)?(www\.)?github\.com/ ]]; then
         local proxy
         proxy=$(get_working_proxy)
         if [ -z "$proxy" ]; then
