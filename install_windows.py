@@ -21,7 +21,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # 当前版本号
 current_version = "1.18.1"
 
-
+class Config:
+    def __init__(self, timeout=5):
+        self.timeout = timeout
+        
+config = Config()
 
 # 存储反代服务器的URL
 def get_github_proxy_urls():
@@ -183,15 +187,8 @@ def check_for_updates():
 
         if compare_versions(latest_release, current_version):
             print(f"发现新版本 {latest_release}！")
-
             # 提示用户是否下载更新
-            print("是否要下载更新？输入 'y' 确认，5 秒内未输入则跳过更新。")
-            start_time = time.time()
-            user_input = None
-            while (time.time() - start_time) < 5:
-                if msvcrt.kbhit():
-                    user_input = msvcrt.getch().decode("utf-8").strip().lower()
-                    break
+            user_input = countdown_input("是否要下载更新？输入 'y' 确认，5 秒内未输入则跳过更新。","n")
 
             if user_input == 'y':
                 download_url = f"https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/download/{latest_release}/install_windows.exe"
@@ -296,11 +293,12 @@ def install_liteloader(file_path):
         print(f"安装LL过程发生错误: {e}")
 
 
-def countdown_input(prompt, default='y', timeout=5):
+def countdown_input(prompt, default='y'):
     print(prompt)
+    
     start_time = time.time()
     user_input = None
-    while (time.time() - start_time) < timeout:
+    while (time.time() - start_time) < config.timeout:
         if msvcrt.kbhit():
             user_input = msvcrt.getch().decode("utf-8").strip().lower()
             break
@@ -600,7 +598,7 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
             return
         except urllib.error.URLError as e:
             print(f"下载失败，错误信息: {e}\n尝试再次进行下载")
-            download_url = get_download_url(url_or_path)              
+            download_url = get_download_url(url_or_path)
             print(f"当前使用的下载链接: {download_url}")
 
             # 再次尝试下载文件
@@ -614,10 +612,20 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
         if external_data_path:
 #           print(f"使用内嵌版本，路径{external_data_path}")
             print(f"使用内嵌版本")
+            
             filename = os.path.basename(filepath)
-            fallback_path = os.path.join(external_data_path, filename)
-            if os.path.exists(fallback_path):
+            filename = os.path.splitext(filename)[0]
+            
+            found = False
+            for file in os.listdir(external_data_path):
+                if file.startswith(f"{filename}-") and file.endswith(".zip"):
+                    # 找到符合条件的内嵌文件
+                    fallback_path = os.path.join(external_data_path, file)  # 更新路径为实际文件
+                    found = True
+                    break
+            if found:
                 shutil.copy(fallback_path, filepath)
+                print(f"已将内嵌版本文件复制到: {filepath}")
             else:
                 raise ValueError(f"内嵌文件未找到: {fallback_path}")
         else:
@@ -652,6 +660,7 @@ def get_latest_version(file_path):
     
     return latest_version
 
+
 def download_and_extract_form_release(repos: str):
     temp_dir = tempfile.gettempdir()
 #   print(f"临时目录：{temp_dir}")
@@ -666,16 +675,32 @@ def download_and_extract_form_release(repos: str):
         return
 
     filename = cached_names[repos]
-    download_url = f"https://github.com/{repos}/releases/latest/download/{filename}"
     zip_path = os.path.join(temp_dir, filename)
 
     try:
-        download_file(download_url, zip_path)
-        extract_dir = os.path.join(temp_dir, filename.split(".")[0])
-        shutil.unpack_archive(zip_path, extract_dir)
+        # 获取网站上的最新版本号
+        latest_version = get_latest_tag(repos)
+        print(f"网站上的最新版本: {latest_version}")
+        
+        # 获取内置版本号
+        
+        internal_version = get_internal_version(filename)
+        print(f"内置版本: {internal_version}")
+        
+        if latest_version == internal_version:
+            print(f"内置版本与最新版本一致，使用内置版本")
+            filename = os.path.splitext(filename)[0]
+            extract_dir = os.path.join(temp_dir, filename.split(".")[0])
+            shutil.unpack_archive(os.path.join(get_external_data_path(), f"{filename}-{internal_version}.zip"), extract_dir)
+            return
     except Exception as e:
-        print(f"下载并解压 {repos} 时发生错误: {e}")
-
+        print(f"从GitHub获取版本信息 {repos} 时发生错误: {e}")
+        
+    print(f"下载最新版本")
+    download_url = f"https://github.com/{repos}/releases/latest/download/{filename}"
+    download_file(download_url, zip_path)
+    extract_dir = os.path.join(temp_dir, filename.split(".")[0])
+    shutil.unpack_archive(zip_path, extract_dir)
         
         
 def download_and_extract_from_git(repos: str):
@@ -709,20 +734,57 @@ def download_and_extract_from_git(repos: str):
     except Exception as e:
         print(f"Git 版下载并解压 {repos} 时发生错误: {e}")
         raise
-
     
+        
 def get_external_data_path():
     # 兼容 PyInstaller
     if hasattr(sys, '_MEIPASS'):
         return sys._MEIPASS  # PyInstaller 打包后的临时文件路径
     # 兼容 Nuitka
-    if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "LiteLoaderQQNT.zip")):
-        return os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    # 查找以 "LiteLoaderQQNT-" 开头，".zip" 结尾的文件
+    for file in os.listdir(base_dir):
+        if file.startswith("LiteLoaderQQNT-") and file.endswith(".zip"):
+            return base_dir  # 如果找到符合条件的文件，返回当前路径
     return None
+
+
+def get_latest_tag(repo):
+    url = f"https://api.github.com/repos/{repo}/releases"
+    response = requests.get(url)
+    response.raise_for_status()  # 检查请求是否成功
+    releases = response.json()
+    if releases:
+        return releases[0]['tag_name']
+    return None
+
+
+def get_internal_version(filename):
+    """ 获取内置版本号，假设内置版本文件命名为 {filename}-{version}.zip """
+    filename = os.path.splitext(filename)[0]
+    external_data_path = get_external_data_path()
+    
+    # 检查路径是否存在
+    if not external_data_path:
+        raise FileNotFoundError("无法找到外部数据路径。")
+        
+        # 查找符合命名格式的文件
+    for file in os.listdir(external_data_path):
+        if file.startswith(f"{filename}-") and file.endswith(".zip"):
+            # 从文件名中提取版本号
+            version = file.split('-')[-1].replace('.zip', '')
+            return version
+        
+    return None  # 如果没有找到匹配的内置版本文件，则返回 None
+
 
 
 def main():
     try:
+        # 检查命令行参数，决定是否启用静默安装
+        if '--silent' in sys.argv:
+            config.timeout = 0  # 静默安装时将超时时间设置为 0
+            
         # 检测是否在 GitHub Actions 中运行
         github_actions = os.getenv("GITHUB_ACTIONS", False)
 

@@ -38,9 +38,20 @@ jobs:
           pip install -r requirements.txt
 
       - name: Download External Data Release
+        id: download_data
         run: |
-          curl -L -o LiteLoaderQQNT.zip https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip
-          curl -L -o list-viewer.zip https://github.com/ltxhhz/LL-plugin-list-viewer/releases/latest/download/list-viewer.zip
+          # 获取 LiteLoaderQQNT 的最新版本
+          $LLtag = (Invoke-RestMethod -Uri "https://api.github.com/repos/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest").tag_name
+          echo "LLtag=$LLtag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+  
+          # 获取 LL-plugin-list-viewer 的最新版本
+          $LVtag = (Invoke-RestMethod -Uri "https://api.github.com/repos/ltxhhz/LL-plugin-list-viewer/releases/latest").tag_name
+          echo "LVtag=$LVtag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+  
+          curl -L -o "LiteLoaderQQNT-${LLtag}.zip" "https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/download/${LLtag}/LiteLoaderQQNT.zip"
+          curl -L -o "list-viewer-${LVtag}.zip" "https://github.com/ltxhhz/LL-plugin-list-viewer/releases/download/${LVtag}/list-viewer.zip"
+
+          dir
 
       - name: Restore Cache
         uses: actions/cache/restore@v4
@@ -51,14 +62,19 @@ jobs:
           restore-keys: nuitka-
 
       - name: Build by ${{ matrix.builder }}
+        env:
+          LLtag: ${{ env.LLtag }}
+          LVtag: ${{ env.LVtag }}
         run: |
           python -m pip install ${{ matrix.builder }}
+
           if ('${{ matrix.builder }}' -eq 'nuitka') {
             $env:NUITKA_CACHE_DIR = "nuitka_cache"
-            nuitka --onefile --windows-uac-admin --include-data-files="LiteLoaderQQNT.zip"="./" --include-data-files="list-viewer.zip"="./" install_windows.py  --output-dir="dist" --output-file="install_windows_nuitka" --assume-yes-for-downloads --enable-plugins="tk-inter" --enable-console --mingw64
+            nuitka --onefile --windows-uac-admin --include-data-files="LiteLoaderQQNT-$($env:LLtag).zip"="./" --include-data-files="list-viewer-$($env:LVtag).zip"="./" install_windows.py --output-dir="dist" --output-file="install_windows_nuitka" --assume-yes-for-downloads --enable-plugins="tk-inter" --enable-console --mingw64
           } else {
-            pyinstaller --onefile --uac-admin --add-data "LiteLoaderQQNT.zip:." --add-data "list-viewer.zip:." install_windows.py --distpath dist --name install_windows_pyinstaller
+            pyinstaller --onefile --uac-admin --add-data "LiteLoaderQQNT-$($env:LLtag).zip:." --add-data "list-viewer-$($env:LVtag).zip:." install_windows.py --distpath dist --name install_windows_pyinstaller
           }
+
       - name: Save Cache
         uses: actions/cache/save@v4
         if: matrix.builder == 'nuitka'
