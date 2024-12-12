@@ -1,5 +1,92 @@
 #!/bin/bash
 
+# 定义代理 URL 列表
+github_download_proxies=(
+    "$REPROXY_URL"
+    "https://mirror.ghproxy.com"
+    "https://gh.h233.eu.org"
+    "https://gh.ddlc.top"
+    "https://slink.ltd"
+    "https://gh.con.sh"
+    "https://cors.isteed.cc"
+    "https://hub.gitmirror.com"
+    "https://sciproxy.com"
+    "https://ghproxy.cc"
+    "https://cf.ghproxy.cc"
+    "https://www.ghproxy.cc"
+    "https://ghproxy.cn"
+    "https://www.ghproxy.cn"
+    "https://gh.jiasu.in"
+    "https://dgithub.xyz"
+    "https://download.ixnic.net"
+    "https://download.nuaa.cf"
+    "https://download.scholar.rr.nu"
+    "https://download.yzuu.cf"
+    "https://ghproxy.net"
+    "https://kkgithub.com"
+    "https://gitclone.com"
+    "https://hub.incept.pw"
+    "https://github.moeyy.xyz"
+    "https://gh.xiu2.us.kg"
+    "https://dl.ghpig.top"
+    "https://gh-proxy.com"
+    "https://github.site"
+    "https://github.store"
+    "https://github.tmby.shop"
+    "https://hub.whtrys.space"
+    "https://gh-proxy.ygxz.in"
+    "https://gitdl.cn"
+    "https://ghp.ci"
+    "https://githubfast.com"
+    "https://ghproxy.net"
+)
+
+# 检查代理是否有效
+function check_proxy() {
+    local proxy=$1
+    local proxy_url="${proxy}/https://github.com"
+
+    if curl -Isf -m 5 -o /dev/null "$proxy_url"; then
+        return 0
+    fi
+    return 1
+}
+
+# 获取有效代理
+function get_working_proxy() {
+    for proxy in "${github_download_proxies[@]}"; do
+        if check_proxy "${proxy%/}"; then
+            echo "${proxy%/}"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# 获取下载 URL
+function get_github_download_url() {
+    local url=$1
+    if curl -Isf -m 5 -o /dev/null "$url"; then
+        echo "$url"
+        return 0
+    fi
+
+    # 只代理 Github 链接
+    if [[ "$url" =~ ^(https?:\/\/)?(www\.)?github\.com/ ]]; then
+        local proxy
+        proxy=$(get_working_proxy)
+        if [ -z "$proxy" ]; then
+            echo "无可用代理" >&2
+            return 1
+        fi
+        echo "${proxy}/${url}"
+        return 0
+    fi
+
+    echo "无效的下载链接：$url" >&2
+    return 1
+}
+
 # 定义检查依赖的函数
 function check_dependencies() {
     local missing_dependencies=()
@@ -17,23 +104,11 @@ function check_dependencies() {
     fi
 }
 
-# 检查网络连接选择镜像站
-function can_connect_to_internet() {
-    if [ $(curl -sL --max-time 3 "https://github.com" | wc -c) -gt 0 ]; then
-        echo "0"
-        return
-    fi
-    if [ $(curl -sL --max-time 3 "${_reproxy_url}https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install.sh" | wc -c) -gt 0 ]; then
-        echo "1"
-        return
-    fi
-    echo "2"
-    return
-}
-
 # 下载和解压函数
 function download_and_extract() {
-    url=$1
+    url=$(get_github_download_url "$1")
+    [ -z "$url" ] && return 1
+
     output_dir=$2
     archive_name=$(basename "$url")
     # 获取扩展名并处理多部分扩展名
@@ -43,8 +118,8 @@ function download_and_extract() {
         *) archive_extension="${archive_name##*.}";;
     esac
 
-    wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
-    # curl -L -H "Accept: " "$url" -o "$archive_name" > /dev/null 2>&1 || { echo "下载失败，退出脚本"; exit 1; }
+    wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name" > /dev/null 2>&1 || return 1
+    # curl -L -H "Accept: " "$url" -o "$archive_name" > /dev/null 2>&1 || return 1
 
     mkdir -p "$output_dir"
 
@@ -65,38 +140,29 @@ function elevate_permissions() {
     sudo -v
 }
 
+function get_latest_github_release_from_gitlink() {
+    # repo_url="https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git"
+    TAG_URL="https://gitlink.org.cn/api/shenmo7192/LiteLoaderQQNT/tags.json"
+    LATEST_TAG=$(perl -nle 'print $1 if /"name"\s*:\s*"([^"]+)/' <<< "$(curl -s $TAG_URL)" | head -n 1)
+    [ -z "$LATEST_TAG" ] && { echo "获取最新版本失败，请截图：$LATEST_TAG"; return 1; }
+    echo "https://www.gitlink.org.cn/api/shenmo7192/liteloaderqqnt/archive/$LATEST_TAG.tar.gz"
+}
+
 # 拉取 LiteLoader
 function pull_liteloader() {
     cd /tmp || { echo "无法进入 /tmp 目录"; exit 1; }
     rm -rf LiteLoader
 
+    archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
+
     echo "正在拉取最新Release版本的仓库"
-
-    case $(can_connect_to_internet) in
-        0)
-            echo "通过GitHub获取最新Release版本"
-            archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
-            ;;
-        1)
-            echo "通过GitHub镜像获取最新Release版本"
-            archive_url="${_reproxy_url}https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
-            ;;
-        2)
-            echo "通过GitLink获取最新Release版本"
-            TAG_URL="https://gitlink.org.cn/api/shenmo7192/LiteLoaderQQNT/tags.json"
-            LATEST_TAG=$(perl -nle 'print $1 if /"name"\s*:\s*"([^"]+)/' <<< "$(curl -s $TAG_URL)" | head -n 1)
-            repo_url="https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git"
-            archive_url="https://www.gitlink.org.cn/api/shenmo7192/liteloaderqqnt/archive/$LATEST_TAG.tar.gz"
-            [ -z "$LATEST_TAG" ] && { echo "获取最新版本失败，请截图：$LATEST_TAG"; exit 1; }
-            ;;
-        *) echo "出现错误，请截图"; exit 1 ;;
-    esac
-
-    download_and_extract $archive_url LiteLoader || { echo "下载并解压失败，退出脚本"; exit 1; }
-
+    if ! download_and_extract "$archive_url" LiteLoader; then
+        echo "下载并解压失败，尝试通过 GitLink 获取最新 Release 版本"
+        archive_url=$(get_latest_github_release_from_gitlink)
+        download_and_extract "$archive_url" LiteLoader || { echo "下载并解压失败，退出脚本"; exit 1; }
+    fi
 }
 
-                
 # 安装 LiteLoader 的函数
 function install_liteloader() {
     echo "拉取完成，正在安装 LiteLoader..."
@@ -244,12 +310,8 @@ function install_plugin_store() {
     else
         echo "正在拉取最新版本的插件列表查看..."
     fi
-    URL="${_reproxy_url}${download_url}"
-    if [ $(can_connect_to_internet) -eq 0 ]; then
-        URL="${download_url}"
-    fi
-    download_and_extract "$URL" list-viewer
-    if [ $? -eq 0 ]; then
+
+    if download_and_extract "$download_url" list-viewer; then
         echo "插件商店安装成功"
     else
         echo "插件商店安装失败"
@@ -394,12 +456,6 @@ if [ "$(id -u)" -eq 0 ]; then
     echo "错误：禁止以 root 用户执行此脚本。"
     echo "请使用普通用户执行"
     exit 1
-fi
-
-# 设置默认的代理 URL
-_reproxy_url=${REPROXY_URL:-"https://mirror.ghproxy.com/"}
-if [ "${_reproxy_url: -1}" != "/" ]; then
-    _reproxy_url="${_reproxy_url}/"
 fi
 
 # 检查平台
