@@ -211,8 +211,7 @@ function install_liteloader() {
             echo "PS:由于 macOS 限制，对 Sandbox 目录操作预计耗时数分钟左右"
         fi
         
-        $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/plugins" "$ll_path/LiteLoader/" | grep -E '^[0-9]+%|^ '
-        if [ $? -ne 0 ]; then
+        if ! $sudo_cmd rsync -a --info=progress2 "$ll_path/LiteLoader_bak/plugins" "$ll_path/LiteLoader/"; then
             echo "恢复插件数据失败，退出..."
             return 1
         fi
@@ -220,8 +219,7 @@ function install_liteloader() {
     fi
     
     if [ -d "$ll_path/LiteLoader_bak/data" ]; then
-        $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/data" "$ll_path/LiteLoader/" | grep -E '^[0-9]+%|^ '
-        if [ $? -ne 0 ]; then
+        if ! $sudo_cmd rsync -a --info=progress2 "$ll_path/LiteLoader_bak/data" "$ll_path/LiteLoader/"; then
             echo "恢复数据文件失败，退出..."
             return 1
         fi
