@@ -399,7 +399,7 @@ function flatpak_qq_func() {
     # 检查 Flatpak 是否安装
     if command -v flatpak &> /dev/null; then        
         # 检查是否安装了 Flatpak 版的 QQ
-        if flatpak list | grep -xq "com.qq.QQ"; then
+        if flatpak list --app --columns=application | grep -xq "com.qq.QQ"; then
             echo "检测到 Flatpak 版 QQ 已安装"
             pull_liteloader || return 1
             
