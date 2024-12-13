@@ -185,6 +185,9 @@ function install_liteloader() {
         return 1
     fi
     
+    [ -d "$qq_path" ] || { echo "QQ未安装，退出"; return 0; }
+    pull_liteloader || return 1
+
     # 如果目标目录存在且不为空，则先备份处理
     if [ -e "$ll_path/LiteLoader" ]; then
         if ! $sudo_cmd rm -rf "$ll_path/LiteLoader_bak"; then
@@ -460,8 +463,6 @@ elevate_permissions
 if [[ "$platform" == "linux" && "$GITHUB_ACTIONS" != "true" ]]; then
     modify_plugins_directory
 fi
-
-pull_liteloader || exit 1
 
 install_liteloader || exit 1
 
