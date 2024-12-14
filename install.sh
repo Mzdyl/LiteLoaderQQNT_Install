@@ -83,21 +83,10 @@ github_download_proxies=(
     "https://ghproxy.net"
 )
 
-# 检查代理是否有效
-function check_proxy() {
-    local proxy=$1
-    local proxy_url="${proxy}/https://github.com"
-
-    if curl -Isf -m 5 -o /dev/null "$proxy_url"; then
-        return 0
-    fi
-    return 1
-}
-
 # 获取有效代理
-function get_working_proxy() {
+function get_github_working_proxy() {
     for proxy in "${github_download_proxies[@]}"; do
-        if check_proxy "${proxy%/}"; then
+        if curl -Isf -m 5 -o /dev/null "${proxy%/}/https://github.com"; then
             echo "${proxy%/}"
             return 0
         fi
@@ -116,7 +105,7 @@ function get_github_download_url() {
     # 只代理 Github 链接
     if [[ "$url" =~ ^(https?:\/\/)?(www\.)?github\.com/ ]]; then
         local proxy
-        proxy=$(get_working_proxy)
+        proxy=$(get_github_working_proxy)
         if [ -z "$proxy" ]; then
             echo "无可用代理" >&2
             return 1
@@ -164,15 +153,6 @@ function elevate_permissions() {
     sudo -v
 }
 
-# 获取 LiteLoaderQQNT 的最新 Gitlink URL
-function get_liteloaderqqnt_from_gitlink() { # TODO 考虑移除
-    # repo_url="https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git"
-    TAG_URL="https://gitlink.org.cn/api/shenmo7192/LiteLoaderQQNT/tags.json"
-    LATEST_TAG=$(perl -nle 'print $1 if /"name"\s*:\s*"([^"]+)/' <<< "$(curl -s $TAG_URL)" | head -n 1)
-    [ -z "$LATEST_TAG" ] && { echo "获取最新版本失败，请截图：$LATEST_TAG"; return 1; }
-    echo "https://www.gitlink.org.cn/api/shenmo7192/liteloaderqqnt/archive/$LATEST_TAG.tar.gz"
-}
-
 # 拉取 LiteLoaderQQNT
 function pull_liteloaderqqnt() {
     local new_liteloaderqqnt_dir="${1:-$LITELOADERQQNT_NAME}"
@@ -182,14 +162,6 @@ function pull_liteloaderqqnt() {
     _name=$(basename "$url")
     if download_url "$url" "$_name"; then
         unzip -q "$_name" -d "$new_liteloaderqqnt_dir" && return 0
-    fi
-
-    echo "下载并解压失败，尝试通过 GitLink 获取最新 Release 版本"
-    url=$(get_liteloaderqqnt_from_gitlink)
-    [ -z "$url" ] && { echo "获取 GitLink 链接失败"; return 1; }
-    _name=$(basename "$url")
-    if wget -t3 -T3 -q --header="Accept: " -O "$_name" "$url"; then
-        tar -zxf "$_name" --strip-components=1 -C "$new_liteloaderqqnt_dir" && return 0
     fi
 
     echo "LiteLoaderQQNT 获取失败"
@@ -374,30 +346,6 @@ function set_liteloaderqqnt_profile() {
     fi
 }
 
-function create_symlink_func() {
-    read -rp "是否为插件目录创建软连接以方便安装插件 (y/N): " create_symlink
-    if [[ "$create_symlink" =~ ^[Yy]$ ]]; then
-        read -rp "请输入 LiteLoader 插件目录（默认为 $HOME/Downloads/plugins）: " custom_plugins_dir
-        plugins_dir=${custom_plugins_dir:-"$HOME/Downloads/plugins"}
-        echo "插件目录: $plugins_dir"
-        
-        # 创建插件目录
-        if [ ! -d "$plugins_dir" ]; then
-            mkdir -p "$plugins_dir"
-            echo "已创建插件目录: $plugins_dir"
-        fi
-        
-        # 创建软连接
-        lite_loader_plugins_dir="$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins"
-        if [ ! -d "$lite_loader_plugins_dir" ]; then
-            mkdir -p "$lite_loader_plugins_dir"
-        fi
-        
-        sudo ln -s "$lite_loader_plugins_dir" "$plugins_dir"
-        echo "已为插件目录创建软连接到 $plugins_dir"
-    fi
-}
-
 function install_liteloaderqqnt_with_aur() {
     if [ -f /usr/bin/pacman ]; then
         # AUR 中的代码本身就需要对 GitHub 进行访问，故不添加网络判断了
@@ -466,10 +414,6 @@ if [[ "$platform" == "linux" && "$GITHUB_ACTIONS" != "true" ]]; then
 fi
 
 install_liteloaderqqnt || exit 1
-
-if [ "$platform" == "macos" ]; then
-    create_symlink_func
-fi
 
 install_plugin_store || { echo "发生错误，安装失败"; exit 1; }
 
