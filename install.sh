@@ -143,7 +143,9 @@ function download_url() {
     if wget -t3 -T3 -q -O "$output" "$url"; then
         echo "下载成功：$output"
     else
-        echo "下载失败：$url" && return 1
+        echo "下载失败：$url"
+        rm -rf "$output"
+        return 1
     fi
 }
 
