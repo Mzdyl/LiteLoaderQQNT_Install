@@ -163,6 +163,8 @@ function get_liteloaderqqnt_path() {
         "xdg")  _dir="$HOME/.local/share/$LITELOADERQQNT_NAME" ;;
         "qq")   _dir="$qq_path/$LITELOADERQQNT_NAME" ;;
         "opt")  _dir="/opt/$LITELOADERQQNT_NAME" ;;
+        "appimage"|"squashfs-root/resources")
+                _dir="squashfs-root/resources/app/app_launcher/$LITELOADERQQNT_NAME" ;;
         *)      _dir="$(cd "$WORKDIR" && realpath "$_dir")"
     esac
     mkdir -p "$_dir" || { echo "创建失败：'$_dir'" >&2; return 1; }
@@ -199,7 +201,7 @@ function install_liteloaderqqnt() {
 
     qq_path=${QQ_PATH:-$qq_path} # 提供自定义 QQ 路径
 
-    [ -d "$qq_path" ] || { echo "QQ未安装，退出"; return 0; }
+    [ -d "$qq_path" ] || { echo "QQ未安装，退出"; return 0; } # need fix
 
     ll_path=$(get_liteloaderqqnt_path "$qq_path" ) || {
         echo "获取 LiteLoaderQQNT 本体路径失败" >&2
@@ -268,6 +270,8 @@ function patch_resources() {
 
     [ ! -d "$app_path" ] && { echo "路径无效：$app_path"; return 1; }
     echo "开始处理 $app_path"
+
+    [ "$APPIMAGE_MODE" = 0 ] && ll_path="./LiteLoaderQQNT"
 
     # 写入 require(String.raw`*`) 到 *.js 文件
     echo "正在将 'require(\"${ll_path%/}\");' 写入 app_launcher/$jsfile_name"
@@ -343,6 +347,7 @@ function set_liteloaderqqnt_profile() {
     echo "尝试为shell ${SHELL##*/} 设置环境变量: LITELOADERQQNT_PROFILE"
 
     # 获取已定义值
+    # need fix
     existing_value=$(sed -n "s/^$_perfix//gp" "$config_file" | awk 'END { print }')
     if [ -n "$existing_value" ]; then
         var_value=$(echo "${existing_value#\"}" | sed 's/^\"//;s/\"$//;s/^'\''//;s/'\''$//')
@@ -418,6 +423,115 @@ function install_for_flatpak_qq() {
     fi
 }
 
+# 获取qq appimage 最新链接
+function get_qqnt_appimage_url() {
+    [ "$os_arch" != "x86_64" ] && os_arch="arm64"
+    check_url="$(wget -t3 -T3 -q -O- https://im.qq.com/linuxqq/index.shtml| grep -o 'https://.*linuxQQDownload.js?[^"]*')"
+    appimage_url=$(wget -t3 -T3 -q -O- "$check_url" | grep -o 'https://[^,]*AppImage' | grep "$os_arch")
+
+    [ -z "$appimage_url" ] && { echo "获取qq下载链接失败"; exit 1; }
+    echo "$appimage_url"
+}
+
+# 计算 squashfs 偏移值
+function calc_appimage_offset() {
+    local appimage_file="$1"
+    local magic_number="68 73 71 73" #hsqs
+
+    [ ! -f "$appimage_file" ] && { echo "Error: '$appimage_file' not found!"; exit 1; }
+
+    # 查找魔数并计算偏移值
+    lineno=$(od -A n -t x1 -v -w4 "$appimage_file" | awk "/^ $magic_number/ {print NR; exit}")
+    [ -z "$lineno" ] && { echo "Error: 未找到 squashfs"; exit 1; }
+
+    echo "$(( (lineno-1)*4 ))"
+}
+
+# 提取 appimage 内容
+function extract_appimage() {
+    local appimage_file="$1"
+    if ! ./"$appimage_file" --appimage-extract >/dev/null 2>&1; then
+        echo "执行 --appimage-extract 失败，尝试手动提取..."
+        offset=$(calc_appimage_offset "$appimage_file")
+        output="out.squashfs"
+        echo "squashfs偏移值：$offset"
+        rm -rf squashfs-root
+
+        echo "开始写出 squashfs 文件至 $output"
+        tail -c +"$((offset+1))" "$appimage_file" > "$output"
+        echo "写出成功：$output"
+
+        echo "开始提取 squashfs 内容"
+        unsquashfs "$output" >/dev/null
+        [ ! -d "squashfs-root" ] && { echo "文件提取失败: $output"; exit 1; }
+        echo "文件提取成功"
+        rm "$output" && echo "临时文件 $output 已移除"
+    fi
+}
+
+# 修改 AppRun 文件以支持变量 LITELOADERQQNT_PROFILE
+function patch_appimage_apprun() {
+    apprun_file="$1/AppRun"
+    profile_dir="\$HOME/.config/QQ/LiteLoader"
+
+    # 检查是否已存在 LITELOADERQQNT_PROFILE
+    if grep -q "export LITELOADERQQNT_PROFILE=" "$apprun_file"; then
+        sed -i "s|export LITELOADERQQNT_PROFILE=.*|export LITELOADERQQNT_PROFILE=\${LITELOADERQQNT_PROFILE:=$profile_dir}|" "$apprun_file"
+    else
+        # 如果不存在，则添加新的行
+        echo "export LITELOADERQQNT_PROFILE=\${LITELOADERQQNT_PROFILE:=$profile_dir}" >> "$apprun_file"
+        echo "已添加 LITELOADERQQNT_PROFILE: $profile_dir"
+    fi
+}
+
+# 重新打包 appimage 文件
+function repack_appimage() {
+    local appdir="$1"
+    local output="$2"
+    echo "正在重新打包"
+    mksquashfs "$appdir" tmp.squashfs -root-owned -noappend >/dev/null
+    cat "$runtime_filename" >> "$output"
+    cat "tmp.squashfs" >> "$output"
+    rm -rf "tmp.squashfs"
+    chmod a+x "$output"
+    echo "打包完成：$output"
+}
+
+# 修改 appimage 文件
+function patch_appiamge() {
+    local appimage="$1"
+    echo "正在对 AppImage 文件进行补丁操作: $appimage"
+    chmod +x "$appimage"
+    extract_appimage "$appimage"
+    patch_appimage_apprun "squashfs-root"
+    QQ_PATH="squashfs-root/resources"
+
+    install_liteloaderqqnt || return 1
+
+    repack_appimage "squashfs-root" "$new_qq_filename"
+    rm -rf "squashfs-root"
+}
+
+function download_file_for_appimage() {
+    case "$1" in
+        runtime)
+            # 下载 runtime 文件
+            [ "${ARCH:=$(uname -m)}" = "x86_64" ] && _arch="x86_64" || _arch="aarch64"
+            runtime_url="https://github.com/AppImage/AppImageKit/releases/download/13/runtime-$_arch"
+            runtime_filename=$(basename "$runtime_url")
+            download_url "$runtime_url" "$runtime_filename"
+            ;;
+        qq)
+            # 下载 qq
+            qq_url=$(get_qqnt_appimage_url)
+            qq_filename=$(basename "$qq_url")
+            download_url "$qq_url" "$qq_filename"
+            appimage_path=$(realpath "$qq_filename")
+            ;;
+        *) echo "参数错误 '$1'" && return 1 ;;
+    esac
+}
+
 # 检查平台
 case "${PLATFORM:-$(uname)}" in
     "Linux") PLATFORM="linux";;
@@ -453,9 +567,27 @@ cd "$temp_dir" || exit 1
 while true; do
     case "$1" in
         --appimage)
-            { [ -n "$2" ] && [ -f "$2" ] && APPIMAGE_PATH="$2"; } || APPIMAGE_PATH=""
-            echo "TODO"; exit 0 #TODO
-            shift 2 ;;
+            APPIMAGE_MODE=0
+            echo "正在获取 LiteLoaderQQNT 版本..."
+            liteloaderqqnt_check_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
+            liteloaderqqnt_version=$(basename "$(wget -t3 -T3 --spider "$liteloaderqqnt_check_url" 2>&1 | grep -m1 -o 'https://.*releases/tag[^ ]*')")
+            echo "最新 LiteLoaderQQNT 版本：$liteloaderqqnt_version"
+
+            if [ -n "${2:-APPIMAGE_PATH}" ]; then
+                _file="$(cd "$WORKDIR" || exit; realpath "$2")"
+                [ -f "$_file" ] && APPIMAGE_PATH="$_file" || APPIMAGE_PATH=""
+            fi
+            if [ -z "$APPIMAGE_PATH" ]; then
+                download_file_for_appimage qq || exit 1
+                APPIMAGE_PATH="$appimage_path"
+            fi
+
+            new_qq_filename=${APPIMAGE_PATH//.AppImage/_patch-${liteloaderqqnt_version}.AppImage}
+            download_file_for_appimage runtime || exit 1
+            patch_appiamge "$APPIMAGE_PATH"  || exit 1
+            cp "$new_qq_filename" "$WORKDIR" || exit 1
+            exit 0
+            ;;
         --ll-dir)       LITELOADERQQNT_DIR="${2%/}"; shift 2 ;;
         --ll-profile)   LITELOADERQQNT_PROFILE="${2%/}"; shift 2 ;;
         -u|--update)    echo "TODO"; exit 0 ;; #TODO
