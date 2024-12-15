@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  install_and_test:
+  check_macos_qq:
     runs-on: macos-latest
 
     steps:
@@ -42,7 +42,7 @@ jobs:
         chmod +x install.sh
         ./install.sh
         
-    - name: Run QQ on macOS, wait, and check LiteLoader
+    - name: Run QQ on macOS, wait, and check LiteLoaderQQNT
       run: |
         /Applications/QQ.app/Contents/MacOS/QQ &  # 启动 QQ，放入后台
         sleep 3  # 等待 3 秒
@@ -50,11 +50,11 @@ jobs:
         # 关闭 QQ 应用程序，这里使用 pkill 假设 QQ 进程的名字为 QQ
         pkill QQ
 
-        # 检查 LiteLoader 插件是否存在
-        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/data" ]; then
-          echo "LiteLoader data folder exists. Test succeeded."
+        # 检查 LiteLoaderQQNT 插件是否存在
+        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoaderQQNT/data" ]; then
+          echo "LiteLoaderQQNT data folder exists. Test succeeded."
         else
-          echo "LiteLoader data folder does not exist. Test failed."
+          echo "LiteLoaderQQNT data folder does not exist. Test failed."
           exit 1
         fi
 
@@ -64,14 +64,14 @@ jobs:
         echo "127.0.0.1 github.com" | sudo tee -a /etc/hosts
         echo "127.0.0.1 api.github.com" | sudo tee -a /etc/hosts
 
-    - name: Remove LiteLoader directory
+    - name: Remove LiteLoaderQQNT directory
       run: |
-        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader" ]; then
+        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoaderQQNT" ]; then
           # 删除目录及其内容
-          rm -rf "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader"
-          echo "LiteLoader directory removed successfully."
+          rm -rf "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoaderQQNT"
+          echo "LiteLoaderQQNT directory removed successfully."
         else
-          echo "LiteLoader directory does not exist."
+          echo "LiteLoaderQQNT directory does not exist."
         fi
 
     - name: ReRun install.sh
@@ -85,4 +85,11 @@ jobs:
 
         # 关闭 QQ 应用程序，这里使用 pkill 假设 QQ 进程的名字为 QQ
         pkill QQ
-        pkill QQ
+
+        # 检查 LiteLoaderQQNT 插件是否存在
+        if [ -d "$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoaderQQNT/data" ]; then
+          echo "LiteLoaderQQNT data folder exists. Test succeeded."
+        else
+          echo "LiteLoaderQQNT data folder does not exist. Test failed."
+          exit 1
+        fi

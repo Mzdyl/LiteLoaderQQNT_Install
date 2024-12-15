@@ -1,5 +1,47 @@
 #!/bin/bash
 
+# 检查平台
+platform="unknown"
+unamestr=$(uname)
+readonly LITELOADERQQNT_NAME="LiteLoaderQQNT"
+if [[ "$unamestr" == "Linux" ]]; then #TODO 更好的平台检测？
+    platform="linux"
+    sudo_cmd="sudo"
+    readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/.local/share/$LITELOADERQQNT_NAME"
+    readonly DEFAULT_LITELOADERQQNT_CONFIG="$HOME/.config/$LITELOADERQQNT_NAME"
+elif [[ "$unamestr" == "Darwin" ]]; then
+    platform="macos"
+    sudo_cmd=""
+    readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/Library/Containers/com.tencent.qq/Data/Documents/$LITELOADERQQNT_NAME"
+    readonly DEFAULT_LITELOADERQQNT_CONFIG="$HOME/Library/Containers/com.tencent.qq/Data/Documents/$LITELOADERQQNT_NAME"
+else
+    echo "不支持的平台: $platform，退出..."
+    exit 1
+fi
+
+readonly LITELOADERQQNT_URL="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
+readonly PLUGIN_LIST_VIEWER_URL="https://github.com/ltxhhz/LL-plugin-list-viewer/releases/latest/download/list-viewer.zip"
+
+# 统一不同平台/安装方式的 QQ 对 LiteLoaderQQNT 本体及数据的处理
+_tmp="${LITELOADERQQNT_DIR%/}"
+liteloaderqqnt_dir="${_tmp:-$DEFAULT_LITELOADERQQNT_DIR}"
+_tmp="${LITELOADERQQNT_PROFILE%/}"
+liteloaderqqnt_config="${_tmp:-$DEFAULT_LITELOADERQQNT_CONFIG}"
+
+{ mkdir -p "$liteloaderqqnt_dir" && echo "目录创建成功：$liteloaderqqnt_dir"; } || echo "目录创建失败：$liteloaderqqnt_dir"
+{ mkdir -p "$liteloaderqqnt_config" && echo "目录创建成功：$liteloaderqqnt_config"; } || echo "目录创建失败：$liteloaderqqnt_config"
+
+# 创建并切换至临时目录
+temp_dir=$(mktemp -d)
+echo "临时目录创建成功: $temp_dir"
+cd "$temp_dir" || exit 1
+
+cleanup() {
+    echo "清理临时目录: $temp_dir"
+    rm -rf "$temp_dir"
+}
+trap cleanup EXIT
+
 # 定义代理 URL 列表
 github_download_proxies=(
     "$REPROXY_URL"
@@ -41,21 +83,10 @@ github_download_proxies=(
     "https://ghproxy.net"
 )
 
-# 检查代理是否有效
-function check_proxy() {
-    local proxy=$1
-    local proxy_url="${proxy}/https://github.com"
-
-    if curl -Isf -m 5 -o /dev/null "$proxy_url"; then
-        return 0
-    fi
-    return 1
-}
-
 # 获取有效代理
-function get_working_proxy() {
+function get_github_working_proxy() {
     for proxy in "${github_download_proxies[@]}"; do
-        if check_proxy "${proxy%/}"; then
+        if curl -Isf -m 5 -o /dev/null "${proxy%/}/https://github.com"; then
             echo "${proxy%/}"
             return 0
         fi
@@ -74,7 +105,7 @@ function get_github_download_url() {
     # 只代理 Github 链接
     if [[ "$url" =~ ^(https?:\/\/)?(www\.)?github\.com/ ]]; then
         local proxy
-        proxy=$(get_working_proxy)
+        proxy=$(get_github_working_proxy)
         if [ -z "$proxy" ]; then
             echo "无可用代理" >&2
             return 1
@@ -100,38 +131,22 @@ function check_dependencies() {
     if [ ${#missing_dependencies[@]} -ne 0 ]; then
         echo "缺失的依赖项：${missing_dependencies[*]}"
         echo "请安装上述缺失的依赖项。"
-        exit 1
+        return 1
     fi
 }
 
-# 下载和解压函数
-function download_and_extract() {
+function download_url() {
+    local url
     url=$(get_github_download_url "$1")
-    [ -z "$url" ] && return 1
-
-    output_dir=$2
-    archive_name=$(basename "$url")
-    # 获取扩展名并处理多部分扩展名
-    case "$archive_name" in
-        *.tar.gz) archive_extension="tar.gz" ;;
-        *.zip) archive_extension="zip" ;;
-        *) archive_extension="${archive_name##*.}";;
-    esac
-
-    wget --max-redirect=10 --header="Accept: " "$url" -O "$archive_name" > /dev/null 2>&1 || return 1
-    # curl -L -H "Accept: " "$url" -o "$archive_name" > /dev/null 2>&1 || return 1
-
-    mkdir -p "$output_dir"
-
-    case "$archive_extension" in
-        tar.gz) tar -zxf "$archive_name" --strip-components=1 -C "$output_dir" ;;
-        zip) 
-            unzip -q "$archive_name" -d "$output_dir"
-            ;;
-        *) echo "不支持的文件格式: $archive_extension"; exit 1 ;;
-    esac
-
-    rm "$archive_name"
+    local output=${2:-$(basename "$url")}
+    echo "开始下载 $output: $url"
+    if wget -t3 -T3 -q -O "$output" "$url"; then
+        echo "下载成功：$output"
+    else
+        echo "下载失败：$url"
+        rm -rf "$output"
+        return 1
+    fi
 }
 
 # 提升权限
@@ -140,248 +155,200 @@ function elevate_permissions() {
     sudo -v
 }
 
-function get_latest_github_release_from_gitlink() {
-    # repo_url="https://gitlink.org.cn/shenmo7192/LiteLoaderQQNT.git"
-    TAG_URL="https://gitlink.org.cn/api/shenmo7192/LiteLoaderQQNT/tags.json"
-    LATEST_TAG=$(perl -nle 'print $1 if /"name"\s*:\s*"([^"]+)/' <<< "$(curl -s $TAG_URL)" | head -n 1)
-    [ -z "$LATEST_TAG" ] && { echo "获取最新版本失败，请截图：$LATEST_TAG"; return 1; }
-    echo "https://www.gitlink.org.cn/api/shenmo7192/liteloaderqqnt/archive/$LATEST_TAG.tar.gz"
-}
-
-# 拉取 LiteLoader
-function pull_liteloader() {
-    cd /tmp || { echo "无法进入 /tmp 目录"; exit 1; }
-    rm -rf LiteLoader
-
-    archive_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest/download/LiteLoaderQQNT.zip"
+# 拉取 LiteLoaderQQNT
+function pull_liteloaderqqnt() {
+    local new_liteloaderqqnt_dir="${1:-$LITELOADERQQNT_NAME}"
+    local url=$LITELOADERQQNT_URL
 
     echo "正在拉取最新Release版本的仓库"
-    if ! download_and_extract "$archive_url" LiteLoader; then
-        echo "下载并解压失败，尝试通过 GitLink 获取最新 Release 版本"
-        archive_url=$(get_latest_github_release_from_gitlink)
-        download_and_extract "$archive_url" LiteLoader || { echo "下载并解压失败，退出脚本"; exit 1; }
+    _name=$(basename "$url")
+    if download_url "$url" "$_name"; then
+        unzip -q "$_name" -d "$new_liteloaderqqnt_dir" && return 0
+    fi
+
+    echo "LiteLoaderQQNT 获取失败"
+    return 1
+}
+
+# 安装 LiteLoaderQQNT 的函数
+function install_liteloaderqqnt() {
+    local ll_path="$liteloaderqqnt_dir"
+
+    # 设置路径和命令
+    case "$platform" in
+        linux)  local qq_path="/opt/QQ/resources"
+                local restore_dir="$liteloaderqqnt_config" ;; # 分离本体与数据
+        macos)  local qq_path="/Applications/QQ.app/Contents/Resources"
+                local restore_dir="$ll_path" ;; # 暂时保持与数据融合
+        # *) echo "Unsupported platform: $platform"; return 1 ;;
+    esac
+
+    qq_path=${1:-$qq_path} # 提供自定义 QQ 路径
+
+    [ -d "$qq_path" ] || { echo "QQ未安装，退出"; return 0; }
+    local new_liteloaderqqnt_dir="$LITELOADERQQNT_NAME"
+    pull_liteloaderqqnt "$new_liteloaderqqnt_dir" || return 1
+    echo "拉取完成，正在安装 LiteLoaderQQNT..."
+
+    # TODO 更好的更新逻辑
+    local backup_data_dir="${LITELOADERQQNT_NAME}_bak"
+    mkdir -p "$backup_data_dir"
+    for _dir in "data" "plugins"; do
+        if ls -A "$ll_path/$_dir" &>/dev/null; then
+            echo "正在备份 LiteLoaderQQNT 数据目录 $_dir ..."
+            if $sudo_cmd rsync -a "$ll_path/$_dir" "$backup_data_dir/"; then
+                echo "已备份至 '$backup_data_dir/$_dir'"
+            else
+                echo "备份失败：$_dir"
+                return 1
+            fi
+        fi
+    done
+    [ -z "$(ls -A "$backup_data_dir" 2>/dev/null)" ] && rm -rf "$backup_data_dir"
+
+    mv "$ll_path" "${ll_path}_bak"
+    if $sudo_cmd rsync -a "$new_liteloaderqqnt_dir/" "$ll_path"; then
+        # 恢复插件和数据
+        if [ -d "$backup_data_dir" ]; then
+            if ! $sudo_cmd rsync -a "$backup_data_dir/" "$restore_dir"; then
+                echo "恢复插件数据失败，退出..."
+                return 1
+            fi
+            echo "已恢复 LiteLoaderQQNT 数据"
+            rm -rf "${ll_path}_bak"
+        fi
+        echo "LiteLoaderQQNT 安装/更新成功"
+    else
+        echo "移动 LiteLoaderQQNT 到目标目录失败"
+        rm -rf "$ll_path"
+        mv "${ll_path}_bak" "$ll_path" && echo "更新失败，已恢复，退出..."
+        return 1
+    fi
+
+    # 修补 resources
+    patch_resources "$qq_path/app" "$ll_path" || return 1
+
+    # 针对 macOS 官网版热更新适配
+    if [ "$platform" == "macos" ]; then
+        echo "正在对 macOS 热更新版本进行补丁"
+        versions_path="$HOME/Library/Containers/com.tencent.qq/Data/Library/Application Support/QQ/versions"
+        for version_dir in "$versions_path"/*; do
+            _dir="$version_dir/QQUpdate.app/Contents/Resources/app"
+            [ -d "$_dir" ] && patch_resources "$_dir" "$ll_path"
+        done
+        return 0 # 无论是否成功都返回 true,待优化？
     fi
 }
 
-# 安装 LiteLoader 的函数
-function install_liteloader() {
-    echo "拉取完成，正在安装 LiteLoader..."
-    
-    # 设置路径和命令
-    if [ "$platform" == "linux" ]; then
-        qq_path="/opt/QQ/resources"
-        ll_path="/opt"
-        sudo_cmd="sudo"
-    elif [ "$platform" == "macos" ]; then
-        qq_path="/Applications/QQ.app/Contents/Resources"
-        ll_path="$HOME/Library/Containers/com.tencent.qq/Data/Documents"
-        sudo_cmd=""
-    else
-        echo "不支持的平台: $platform，退出..."
-        return 1
-    fi
-    
-    # 如果目标目录存在且不为空，则先备份处理
-    if [ -e "$ll_path/LiteLoader" ]; then
-        $sudo_cmd rm -rf "$ll_path/LiteLoader_bak"
-        if [ $? -ne 0 ]; then
-            echo "备份 LiteLoader 失败，退出..."
-            return 1
-        fi
-        
-        $sudo_cmd mv "$ll_path/LiteLoader" "$ll_path/LiteLoader_bak"
-        if [ $? -ne 0 ]; then
-            echo "移动 LiteLoader 到备份目录失败，退出..."
-            return 1
-        fi
-        echo "已将原 LiteLoader 目录备份为 LiteLoader_bak"
-    fi
-    
-    $sudo_cmd mv -f LiteLoader "$ll_path"
-    if [ $? -ne 0 ]; then
-        echo "移动 LiteLoader 到目标目录失败，退出..."
-        return 1
-    fi
-    
-    # 恢复插件和数据
-    if [ -d "$ll_path/LiteLoader_bak/plugins" ]; then
-        if [ "$platform" == "macos" ]; then
-            echo "正在恢复插件数据..."
-            echo "PS:由于 macOS 限制，对 Sandbox 目录操作预计耗时数分钟左右"
-        fi
-        
-        $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/plugins" "$ll_path/LiteLoader/" | grep -E '^[0-9]+%|^ '
-        if [ $? -ne 0 ]; then
-            echo "恢复插件数据失败，退出..."
-            return 1
-        fi
-        echo "已将 LiteLoader_bak 中的旧插件复制到新的 LiteLoader 目录"
-    fi
-    
-    if [ -d "$ll_path/LiteLoader_bak/data" ]; then
-        $sudo_cmd rsync -a --progress "$ll_path/LiteLoader_bak/data" "$ll_path/LiteLoader/" | grep -E '^[0-9]+%|^ '
-        if [ $? -ne 0 ]; then
-            echo "恢复数据文件失败，退出..."
-            return 1
-        fi
-        echo "已将 LiteLoader_bak 中的数据文件复制到新的 LiteLoader 目录"
-    fi
-    
-    # 修补主目录下的 index.js
-    patch_index_js "$qq_path/app/app_launcher"
-    if [ $? -ne 0 ]; then
-        echo "修补 index.js 失败，退出..."
-        return 1
-    fi
-    
-    # 针对 macOS 官网版热更新适配
-    if [ "$platform" == "macos" ]; then
-        versions_path="$HOME/Library/Containers/com.tencent.qq/Data/Library/Application Support/QQ/versions"
-        for version_dir in "$versions_path"/*; do
-            if [ -d "$version_dir/QQUpdate.app/Contents/Resources/app/app_launcher" ]; then
-                patch_index_js "$version_dir/QQUpdate.app/Contents/Resources/app/app_launcher"
-                if [ $? -ne 0 ]; then
-                    echo "修补 $version_dir/QQUpdate.app/Contents/Resources/app/app_launcher 的 index.js 失败"
-                fi
-            fi
-        done
-    fi
-}
-                
-# 修补 index.js 的函数，创建 *.js 文件，并修改 package.json
-function patch_index_js() {
-    local path=$1
-    local file_name="ml_install.js"  # 这里的文件名可以随意设置
-    
-    echo "正在创建 $path/$file_name..."
-    
+# 修补 resources，创建 *.js 文件，并修改 package.json
+function patch_resources() {
+    local app_path=$1
+    local ll_path=${2:-./LiteLoaderQQNT} # LiteLoaderQQNT 路径，默认相对 $app_path
+    local jsfile_name="ml_install.js"    # 这里的文件名可以随意设置
+    local jsfile_path="$app_path/app_launcher/$jsfile_name"
+
+    [ ! -d "$app_path" ] && { echo "路径无效：$app_path"; return 1; }
+    echo "开始处理 $app_path"
+
     # 写入 require(String.raw`*`) 到 *.js 文件
-    echo "require(String.raw\`$ll_path/LiteLoader\`);" | sudo tee "$path/$file_name" > /dev/null
-    if [ $? -ne 0 ]; then
-        echo "创建文件 $path/$file_name 失败，退出..."
-        return 1  # 返回非零状态以指示失败
-    fi
-    echo "已创建 $path/$file_name，内容为 require(String.raw\`$ll_path/LiteLoader\`)"
-    
+    echo "正在将 'require(\"${ll_path%/}\");' 写入 app_launcher/$jsfile_name"
+    echo "require(\"${ll_path%/}\");" | sudo tee "$jsfile_path" > /dev/null
+    echo "写入成功"
+
     # 检查 package.json 文件是否存在
-    local package_json="$path/../package.json"
+    local package_json="$app_path/package.json"
     if [ -f "$package_json" ]; then
-        echo "正在修改 $package_json 的 main 字段..."
-        
-        if [ "$platform" == "linux" ]; then
-            sudo sed -i 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
-        elif [ "$platform" == "macos" ]; then
-            # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
-            sudo sed -i '' 's|"main":.*|"main": "./app_launcher/'"$file_name"'",|' "$package_json"
+        # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
+        echo "正在修改 package.json 的 main 字段为 './app_launcher/$jsfile_name'"
+
+        case "$platform" in
+            linux) sed_command=("sudo" sed "-i") ;;
+            macos) sed_command=("sudo" sed "-i" "") ;;
+            *) echo "Unsupported platform: $platform"; return 1 ;;
+        esac
+
+        if "${sed_command[@]}" 's|"main":.*|"main": "./app_launcher/'"$jsfile_name"'",|' "$package_json"; then
+            echo "修改成功: $app_path"
+            return 0
         fi
-        
-        if [ $? -ne 0 ]; then
-            echo "修改 $package_json 失败，退出..."
-            return 1  # 返回非零状态以指示失败
-        fi
-        
-        echo "已将 $package_json 中的 main 字段修改为 ./app_launcher/$file_name"
+        echo "修改失败：$app_path" && return 1
     else
-        echo "未找到 $path/../package.json，跳过修改"
+        echo "未找到 package.json ，跳过修改"
+        return 1
     fi
 }
 
 function install_plugin_store() {
-    download_url=https://github.com/ltxhhz/LL-plugin-list-viewer/releases/latest/download/list-viewer.zip
+    local url=$PLUGIN_LIST_VIEWER_URL
+    local plugins_dir="$liteloaderqqnt_config/plugins"
+    local plugin_store_dir="$plugins_dir/list-viewer"
 
-    if [ "$platform" == "linux" ]; then
-        pluginsDir=${LITELOADERQQNT_PROFILE:-/opt/LiteLoader/plugins}
-        echo "修改LiteLoader文件夹权限(可能解决部分错误)"
-        sudo chmod -R 0777 /opt/LiteLoader
-    elif [ "$platform" == "macos" ]; then
-        pluginsDir="$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins"
-    fi
+    echo "修改 LiteLoaderQQNT 文件夹权限(可能解决部分错误)"
+    sudo chmod -R 0755 "$liteloaderqqnt_config"
 
-    pluginStoreFolder="$pluginsDir/list-viewer"
+    mkdir -p "$plugins_dir" || return 1
 
-    if [ ! -e "$pluginsDir" ]; then
-        mkdir -p "$pluginsDir" || exit 1
-    fi
-    cd "$pluginsDir" || exit 1
-
-    if [ -e "$pluginStoreFolder" ]; then
+    if ls -A "$plugin_store_dir" &> /dev/null; then
         echo "插件列表查看已存在"
-        return
-    else
-        echo "正在拉取最新版本的插件列表查看..."
+        return 0
     fi
 
-    if download_and_extract "$download_url" list-viewer; then
-        echo "插件商店安装成功"
+    echo "正在拉取最新版本的插件列表查看..."
+    _name=$(basename "$url")
+    if download_url "$url" "$_name"; then
+        unzip -q "$_name" -d "$plugin_store_dir" && { echo "插件商店安装成功"; return 0; }
+    fi
+
+    echo "插件商店安装失败"
+    return 1
+}
+
+function set_liteloaderqqnt_profile() {
+    local var_value="$liteloaderqqnt_config"
+    local var_name="LITELOADERQQNT_PROFILE"
+    local start_marker="# BEGIN LITELOADERQQNT"
+    local end_marker="# END LITELOADERQQNT"
+
+    # 获取 config_file
+    local config_file="$HOME/.profile"
+    local _perfix="export $var_name="
+    case "${SHELL##*/}" in
+        zsh)    config_file="$HOME/.zshrc" ;;
+        bash)   config_file="$HOME/.bashrc" ;;
+        fish)   _perfix="set -gx LITELOADERQQNT_PROFILE "
+                config_file="$(fish -c 'printf $__fish_config_dir')/config.fish" ;;
+        *)  echo "非bash、zsh、fish，将尝试修改 ~/.profile"
+            echo "若不生效，请自行根据 ~/.profile 内新增内容修改 shell 配置" ;;
+    esac
+
+    echo "尝试为shell ${SHELL##*/} 设置环境变量: LITELOADERQQNT_PROFILE"
+
+    # 获取已定义值
+    existing_value=$(sed -n "s/^$_perfix//gp" "$config_file" | awk 'END { print }')
+    if [ -n "$existing_value" ]; then
+        var_value=$(echo "${existing_value#\"}" | sed 's/^\"//;s/\"$//;s/^'\''//;s/'\''$//')
+        echo "变量 $var_name 将使用已设置的值：'$var_value'"
     else
-        echo "插件商店安装失败"
+        echo "变量 $var_name 将使用默认值：'$var_value'"
+    fi
+
+    # 写入
+    local context="$_perfix\"$var_value\""
+    context="$start_marker\n# 请勿在行内填写任何其他配置\n$context\n$end_marker"
+
+    if grep -q "^$start_marker$" "$config_file" && grep -q "^$end_marker$" "$config_file"; then
+        # TODO 添加一个函数或从脚本参数获取以更新变量
+        # echo "配置已存在，跳过修改"
+        sed -i "/$start_marker/,/$end_marker/c $context" "$config_file"
+        echo "使用已设置值更新 $var_name，值为 '$var_value'"
+    else
+        sed -i "s/^$_perfix//d" "$$config_file"
+        echo -e "\n$context" >> "$config_file"
+        echo "已添加变量 $var_name 至 $config_file，值为：'$var_value'"
     fi
 }
 
-function modify_plugins_directory() {
-    read -p "是否通过环境变量修改插件目录 (y/N): " modify_env_choice
-    
-    if [[ "$modify_env_choice" =~ ^[Yy]$ ]]; then
-        read -p "请输入LiteLoader插件目录（默认为$HOME/.config/LiteLoader-Plugins）: " custompluginsDir
-        pluginsDir=${custompluginsDir:-"$HOME/.config/LiteLoader-Plugins"}
-        echo "插件目录: $pluginsDir"
-        
-        # 检测当前 shell 类型
-        environment_variables="export LITELOADERQQNT_PROFILE="
-        case "${SHELL##*/}" in
-            zsh) config_file="$HOME/.zshrc" ;;
-            bash) config_file="$HOME/.bashrc" ;;
-            fish) environment_variables="set -gx LITELOADERQQNT_PROFILE "
-            config_file=$(fish -c 'printf $__fish_config_dir')"/config.fish";;
-            *) echo "非bash、zsh、fish，跳过修改环境变量"
-            echo "请将用户目录下 .bashrc 文件内 LL 相关内容自行拷贝到相应配置文件中"
-            config_file="$HOME/.bashrc" ;;
-        esac
-        
-        # 检查是否已存在LITELOADERQQNT_PROFILE
-        if grep -q "$environment_variables" "$config_file"; then
-            read -p "LITELOADERQQNT_PROFILE 已存在，是否要修改？ (y/N): " modify_choice
-            if [[ "$modify_choice" =~ ^[Yy]$ ]]; then
-                sudo sed -i "s|$environment_variables.*|$environment_variables\"$pluginsDir\"|" "$config_file"
-                echo "LITELOADERQQNT_PROFILE 已修改为: $pluginsDir"
-            else
-                echo "未修改 LITELOADERQQNT_PROFILE。"
-            fi
-        else
-            echo $environment_variables'"'$pluginsDir'"' >> "$config_file"
-            echo "已添加 LITELOADERQQNT_PROFILE: $pluginsDir"
-        fi
-        source "$config_file"
-    else
-        pluginsDir='/opt/LiteLoader/plugins'
-    fi
-}
-
-function create_symlink_func() {
-    read -p "是否为插件目录创建软连接以方便安装插件 (y/N): " create_symlink
-    if [[ "$create_symlink" =~ ^[Yy]$ ]]; then
-        read -p "请输入 LiteLoader 插件目录（默认为 $HOME/Downloads/plugins）: " custom_plugins_dir
-        plugins_dir=${custom_plugins_dir:-"$HOME/Downloads/plugins"}
-        echo "插件目录: $plugins_dir"
-        
-        # 创建插件目录
-        if [ ! -d "$plugins_dir" ]; then
-            mkdir -p "$plugins_dir"
-            echo "已创建插件目录: $plugins_dir"
-        fi
-        
-        # 创建软连接
-        lite_loader_plugins_dir="$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoader/plugins"
-        if [ ! -d "$lite_loader_plugins_dir" ]; then
-            mkdir -p "$lite_loader_plugins_dir"
-        fi
-        
-        sudo ln -s "$lite_loader_plugins_dir" "$plugins_dir"
-        echo "已为插件目录创建软连接到 $plugins_dir"
-    fi
-}
-    
-function aur_install_func() {
+function install_liteloaderqqnt_with_aur() {
     if [ -f /usr/bin/pacman ]; then
         # AUR 中的代码本身就需要对 GitHub 进行访问，故不添加网络判断了
         if grep -Eq "Arch Linux|ID_LIKE=\"arch\"" /etc/os-release; then
@@ -392,64 +359,43 @@ function aur_install_func() {
             # 检查用户输入是否为空（3 秒内无输入）
             if [[ -z "$response" ]]; then
                 echo "开始使用 aur 安装..."
-                git clone https://aur.archlinux.org/liteloader-qqnt-bin.git
-                cd liteloader-qqnt-bin
-                makepkg -si
-                rm -rf liteloader-qqnt-bin
-                exit 0
+                if git clone https://aur.archlinux.org/liteloader-qqnt-bin.git; then
+                    { cd liteloader-qqnt-bin && makepkg -si; } || return 1
+                fi
             else
                 echo "切换使用传统方式安装"
             fi
         fi
     fi
 }
-            
 
-function flatpak_qq_func() {
+function install_for_flatpak_qq() {
     # 检查 Flatpak 是否安装
-    if command -v flatpak &> /dev/null; then        
+    if command -v flatpak &> /dev/null; then
         # 检查是否安装了 Flatpak 版的 QQ
-        if flatpak list | grep -xq "com.qq.QQ"; then
+        if flatpak list --app --columns=application | grep -xq "com.qq.QQ"; then
             echo "检测到 Flatpak 版 QQ 已安装"
-            pull_liteloader 
             
-            LITELOADER_DIR=$HOME/.config/LiteLoaderQQNT
-            LITELOADER_DATA_DIR=$LITELOADER_DIR
-            mv -f /tmp/LiteLoader $LITELOADER_DIR
-                        
-            # 提示用户输入自定义的 LITELOADERQQNT_PROFILE 值（如果需要自定义）
-            read -p "是否需要自定义 LiteLoaderQQNT 数据目录? (当前目录: $LITELOADER_DATA_DIR) (y/n): " custom_dir
-            if [[ "$custom_dir" == "y" ]]; then
-                read -p "请输入新的 LiteLoaderQQNT 数据目录路径: " user_defined_dir
-                LITELOADER_DATA_DIR="$user_defined_dir"
-            fi
-            
-            FLATPAK_QQ_DIR=$(flatpak info --show-location com.qq.QQ)/files/extra/QQ/resources/app
-            
-            # 检查 LiteLoaderQQNT 数据目录是否存在
-            if [ ! -d "$LITELOADER_DATA_DIR" ]; then
-                mkdir -p "$LITELOADER_DATA_DIR"
-            fi
-            
+            local qq_path
+            qq_path=$(flatpak info --show-location com.qq.QQ)/files/extra/QQ/resources
+            install_liteloaderqqnt "$qq_path"
+
+
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
-            echo "授予 Flatpak 版 QQ 对数据目录 $LITELOADER_DATA_DIR 和本体目录 $LITELOADER_DIR 的访问权限"
-            sudo flatpak override --filesystem="$LITELOADER_DATA_DIR" com.qq.QQ
-            sudo flatpak override --filesystem="$LITELOADER_DIR" com.qq.QQ
+            echo "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_dir 的访问权限"
+            sudo flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_config"
+            sudo flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_dir"
 
             # 将 LITELOADERQQNT_PROFILE 作为环境变量传递给 Flatpak 版 QQ
-            sudo flatpak override --env=LITELOADERQQNT_PROFILE="$LITELOADER_DATA_DIR" com.qq.QQ
-            
-            echo "设置完成！LiteLoaderQQNT 数据目录：$LITELOADER_DATA_DIR"
-            
-            echo "require(String.raw\`$LITELOADER_DIR\`)" | sudo tee $FLATPAK_QQ_DIR/app_launcher/ml_install.js > /dev/null
-            sudo sed -i 's|"main":.*|"main": "./app_launcher/ml_install.js",|' $FLATPAK_QQ_DIR/package.json
-            exit 0
+            sudo flatpak override --user com.qq.QQ --env=LITELOADERQQNT_PROFILE="$liteloaderqqnt_config"
+
+            echo "设置完成！LiteLoaderQQNT 数据目录：$liteloaderqqnt_config"
         fi
     fi
 }
 
-dependencies=("wget" "curl" "unzip" "sudo")
-check_dependencies
+dependencies=("wget" "curl" "unzip" "sudo" "rsync")
+check_dependencies || exit 1
 
 # 检查是否为 root 用户
 if [ "$(id -u)" -eq 0 ]; then
@@ -458,41 +404,20 @@ if [ "$(id -u)" -eq 0 ]; then
     exit 1
 fi
 
-# 检查平台
-platform="unknown"
-unamestr=$(uname)
-if [[ "$unamestr" == "Linux" ]]; then
-    platform="linux"
-    aur_install_func
-    flatpak_qq_func
-elif [[ "$unamestr" == "Darwin" ]]; then
-    platform="macos"
+if [ "$platform" = "linux" ]; then
+    install_liteloaderqqnt_with_aur || exit 1
+    install_for_flatpak_qq || exit 1
 fi
 
 elevate_permissions
 
 if [[ "$platform" == "linux" && "$GITHUB_ACTIONS" != "true" ]]; then
-    modify_plugins_directory
+    set_liteloaderqqnt_profile
 fi
 
-pull_liteloader
+install_liteloaderqqnt || exit 1
 
-install_liteloader
-
-if [ "$platform" == "macos" ]; then
-    create_symlink_func
-fi
-
-install_plugin_store
-
-# 清理临时文件
-rm -rf /tmp/LiteLoader
-
-# 错误处理
-if [ $? -ne 0 ]; then
-    echo "发生错误，安装失败"
-    exit 1
-fi
+install_plugin_store || { echo "发生错误，安装失败"; exit 1; }
 
 echo "如果安装过程中没有提示发生错误"
 echo "但 QQ 设置界面没有 LiteLoaderQQNT"
@@ -503,6 +428,3 @@ echo "打开QQ后会弹出初始化失败，此为正常现象，请按照说明
 
 echo "脚本将在 3 秒后退出..."
 sleep 3
-exit 0
-    
-                
