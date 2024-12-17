@@ -566,7 +566,7 @@ esac
 readonly LITELOADERQQNT_NAME="LiteLoaderQQNT"
 if [ "$PLATFORM" = "linux" ]; then
     sudo_cmd="sudo"
-    QQ_PATH="${QQ_PATH:-/opt/QQ}"
+    QQ_PATH="$(realpath "${QQ_PATH:-/opt/QQ}")"
     readonly SEPARATE_DATA_MODE=0 # 分离本体与数据
     readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/.local/share/$LITELOADERQQNT_NAME"
     readonly DEFAULT_LITELOADERQQNT_CONFIG="$HOME/.config/$LITELOADERQQNT_NAME"
@@ -578,7 +578,7 @@ elif [ "$PLATFORM" = "macos" ]; then
     readonly DEFAULT_LITELOADERQQNT_CONFIG="$DEFAULT_LITELOADERQQNT_DIR"
 fi
 
-QQ_PATH=$(realpath "$QQ_PATH")
+# [ "${QQ_PATH:0:1}" = "/" ] && QQ_PATH=$(realpath "$QQ_PATH")
 # [ -d "$QQ_PATH" ] || { echo "指定的 QQ 路径不存在：'$QQ_PATH'" >&2; exit 1; }
 
 # 解析参数
@@ -606,7 +606,15 @@ while true; do
     esac
 done
 
-liteloaderqqnt_config=$(realpath "${LITELOADERQQNT_PROFILE:-$DEFAULT_LITELOADERQQNT_CONFIG}")
+# TODO 兼容 macOS: realpath
+_tmp="${LITELOADERQQNT_PROFILE:-$DEFAULT_LITELOADERQQNT_CONFIG}"
+if mkdir -p "$_tmp"; then
+    echo "目录创建成功：$_tmp"
+else
+    echo "目录创建失败：$_tmp"
+    exit 1
+fi
+liteloaderqqnt_config=$(realpath "$_tmp")
 
 # 创建并切换至临时目录
 temp_dir=$(mktemp -d)
@@ -622,16 +630,6 @@ fi
 
 dependencies=("wget" "curl" "unzip" "sudo" "rsync")
 check_dependencies || exit 1
-
-# 统一不同平台/安装方式的 QQ 对 LiteLoaderQQNT 本体及数据的处理
-# liteloaderqqnt_dir="${LITELOADERQQNT_DIR:-$DEFAULT_LITELOADERQQNT_DIR}"
-
-if mkdir -p "$liteloaderqqnt_config"; then
-    echo "目录创建成功：$liteloaderqqnt_config"
-else
-    echo "目录创建失败：$liteloaderqqnt_config"
-    exit 1
-fi
 
 # patch appimage
 [ "$APPIMAGE_MODE" = 0 ] && {
