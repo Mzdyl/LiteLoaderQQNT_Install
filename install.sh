@@ -138,17 +138,22 @@ function download_url() {
     local url
     url=$(get_github_download_url "$1") || return 1
     local output=${2:-$(basename "$url")}
-    if [ -f "$output" ]; then
-        echo "文件已下载，跳过: '$output'" && return 0
+    local max_retries=3  # 最大重试次数
+    local attempt=${3:-0}  # 当前尝试次数
+
+    [ -f "$output" ] && { echo "文件已下载，跳过: '$output'"; return 0; }
+    [ "$attempt" = 0 ] && echo "开始下载 $output: $url"
+    wget -t3 -T3 -q -O "$output" "$url" && { echo "下载成功：$output"; return 0; }
+
+    [ "$attempt" = 0 ] && echo "下载失败：$url" >&2
+    rm -rf "$output"
+    if (( attempt < max_retries )); then
+        echo "重试中... (尝试次数: $((attempt + 1)) / $max_retries)"
+        download_url "$1" "$output" $((attempt + 1))  # 递归调用
     else
-        echo "开始下载 $output: $url"
-        if wget -t3 -T3 -q -O "$output" "$url"; then
-            echo "下载成功：$output"
-        else
-            echo "下载失败：$url"
-            rm -rf "$output"
-            return 1
-        fi
+        echo "所有尝试失败，清理并退出。" >&2
+        rm -rf "$output"
+        return 1
     fi
 }
 
