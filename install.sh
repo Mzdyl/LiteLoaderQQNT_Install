@@ -566,17 +566,20 @@ esac
 readonly LITELOADERQQNT_NAME="LiteLoaderQQNT"
 if [ "$PLATFORM" = "linux" ]; then
     sudo_cmd="sudo"
-    QQ_PATH="/opt/QQ"
+    QQ_PATH="${QQ_PATH:-/opt/QQ}"
     readonly SEPARATE_DATA_MODE=0 # 分离本体与数据
     readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/.local/share/$LITELOADERQQNT_NAME"
     readonly DEFAULT_LITELOADERQQNT_CONFIG="$HOME/.config/$LITELOADERQQNT_NAME"
 elif [ "$PLATFORM" = "macos" ]; then
     sudo_cmd=""
-    QQ_PATH="/Applications/QQ.app"
+    QQ_PATH="${QQ_PATH:-/Applications/QQ.app}"
     readonly SEPARATE_DATA_MODE=1 # macOS 暂不支持
     readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/Library/Containers/com.tencent.qq/Data/Documents/$LITELOADERQQNT_NAME"
     readonly DEFAULT_LITELOADERQQNT_CONFIG="$DEFAULT_LITELOADERQQNT_DIR"
 fi
+
+QQ_PATH=$(realpath "$QQ_PATH")
+[ -d "$QQ_PATH" ] || { echo "指定的 QQ 路径不存在：'$QQ_PATH'" >&2; exit 1; }
 
 # 解析参数
 OPTIONS=$(getopt -o h --long appimage::,ll-dir:,ll-profile:,help -n "$0" -- "$@") || \
