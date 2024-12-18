@@ -502,6 +502,7 @@ function repack_appimage() {
     cat "runtime" >> "$output"
     cat "tmp.squashfs" >> "$output"
     rm -rf "tmp.squashfs"
+    rm -f "runtime"
     chmod a+x "$output"
     echo "打包完成：$output"
 }
