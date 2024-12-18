@@ -26,6 +26,7 @@ Options:
                             - 'opt' 位于 /opt/LiteLoaderQQNT
                             - 其他值则为相对/绝对路径
   --ll-profile <path>     指定 LiteLoaderQQNT 数据存放路径
+  -k, --skip-sudo         强制跳过 sudo 提权
   -h, --help              显示帮助信息
   -u, --update            尝试更新 LiteLoaderQQNT
 
@@ -162,7 +163,8 @@ function download_url() {
 
 # 提升权限
 function elevate_permissions() {
-    command -v sudo >/dev/null 2>&1 || { echo "未找到 sudo 命令"; return 0; } 
+    [ "$SKIP_SUDO" = 0 ] && { echo "跳过提权"; return 0; }
+    command -v sudo >/dev/null 2>&1 || { echo "未找到 sudo 命令"; return 0; }
 
     case "$PLATFORM" in
         linux)  echo "请输入您的密码以提升权限："; sudo_cmd="sudo"; sudo -v ;;
@@ -580,7 +582,7 @@ fi
 # [ -d "$QQ_PATH" ] || { echo "指定的 QQ 路径不存在：'$QQ_PATH'" >&2; exit 1; }
 
 # 解析参数
-OPTIONS=$(getopt -o h --long appimage::,ll-dir:,ll-profile:,help -n "$0" -- "$@") || \
+OPTIONS=$(getopt -o h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help -n "$0" -- "$@") || \
     { echo "Error: 参数处理失败."; exit 1; }
 eval set -- "$OPTIONS"
 unset OPTIONS
@@ -598,6 +600,7 @@ while true; do
             shift 2 ;;
         --ll-dir)       LITELOADERQQNT_DIR="${2:-LITELOADERQQNT_DIR}"; shift 2 ;;
         --ll-profile)   LITELOADERQQNT_PROFILE="${2:-$LITELOADERQQNT_PROFILE}"; shift 2 ;;
+        -k|--skip-sudo) SKIP_SUDO=0; shift 1 ;;
         -u|--update)    echo "TODO"; exit 0 ;; #TODO
         --) shift; break ;;
         *)  echo "Error: 未知选项 '$1'."; show_help; exit 1 ;;
