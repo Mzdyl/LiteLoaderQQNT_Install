@@ -375,7 +375,7 @@ function set_liteloaderqqnt_profile() {
             { echo "变量 $var_name 更新失败" >&2; return 1; }
         echo "使用已设置值更新 $var_name，值为 '$var_value'"
     else
-        sed -i "/^$_perfix/d" "$$config_file"
+        sed -i "/^$_perfix/d" "$config_file"
         echo -e "\n$context" >> "$config_file" || \
             { echo "变量 $var_name 写出失败" >&2; return 1; }
         echo "已添加变量 $var_name 至 $config_file，值为：'$var_value'"
