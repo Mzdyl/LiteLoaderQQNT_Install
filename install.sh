@@ -41,6 +41,12 @@ Options:
 EOF
 }
 
+function sync_files() {
+    [ -e "$1" ] || return 1
+    command -v rsync >/dev/null 2>&1 && { rsync -a "$1" "$2"; return; }
+    cp -aR "$1" "$2"
+}
+
 # 定义代理 URL 列表
 github_download_proxies=(
     "$REPROXY_URL"
@@ -224,7 +230,7 @@ function install_liteloaderqqnt() {
     for _dir in "data" "plugins"; do
         if [ -n "$(ls -A "$ll_path/$_dir" 2>/dev/null)" ]; then
             echo "正在备份 LiteLoaderQQNT 数据目录 $_dir ..."
-            if $sudo_cmd rsync -a "$ll_path/$_dir" "$backup_data_dir/"; then
+            if sync_files "$ll_path/$_dir" "$backup_data_dir/"; then
                 echo "已备份至 '$backup_data_dir/$_dir'"
             else
                 echo "备份失败：$_dir"
@@ -235,14 +241,14 @@ function install_liteloaderqqnt() {
     [ -z "$(ls -A "$backup_data_dir" 2>/dev/null)" ] && rm -rf "$backup_data_dir"
 
     mv "$ll_path" "${ll_path}_bak"
-    if $sudo_cmd rsync -a "$LITELOADERQQNT_NAME/" "$ll_path"; then
+    if sync_files "$LITELOADERQQNT_NAME/" "$ll_path"; then
         # 恢复插件和数据
         if [ -d "$backup_data_dir" ]; then
             # 设置数据存储模式
             local restore_dir="$liteloaderqqnt_config"
             [ "$SEPARATE_DATA_MODE" -eq 0 ] || restore_dir="$ll_path"
 
-            if ! $sudo_cmd rsync -a "$backup_data_dir/" "$restore_dir"; then
+            if ! sync_files "$backup_data_dir/" "$restore_dir"; then
                 echo "恢复插件数据失败，退出..."
                 return 1
             fi
@@ -616,7 +622,7 @@ if [ "$(id -u)" -eq 0 ]; then
     exit 1
 fi
 
-dependencies=("wget" "curl" "unzip" "sudo" "rsync")
+dependencies=("wget" "curl" "unzip" "sudo")
 check_dependencies || exit 1
 
 # patch appimage
