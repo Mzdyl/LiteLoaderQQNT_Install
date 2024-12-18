@@ -41,10 +41,30 @@ Options:
 EOF
 }
 
+# 依赖检查
+function check_dependencies() {
+    _count=0
+    for dep in "wget" "curl"; do
+        ! command -v "$dep" >/dev/null 2>&1 && { _count=$((_count+1)); continue; }
+        readonly REQUEST_CMD=$dep
+        break
+    done
+    [ "$_count" -eq 2 ] && { echo "请安装 wget 或 curl 后重试." >&2; return 1; }
+
+    command -v unzip >/dev/null 2>&1 || { echo "未检测到 unzip，请安装后重试" >&2; return 1; }
+    command -v rsync >/dev/null 2>&1 || echo "未检测到 rsync，将使用 cp 命令替代" >&2
+}
+
 function sync_files() {
     [ -e "$1" ] || return 1
-    command -v rsync >/dev/null 2>&1 && { rsync -a "$1" "$2"; return; }
-    cp -aR "$1" "$2"
+    command -v rsync >/dev/null 2>&1 && { $sudo_cmd rsync -a "$1" "$2"; return; }
+    $sudo_cmd cp -aR "$1" "$2"
+}
+
+function check_url_connectivity() {
+    local cmd=(wget -q --spider -t1 -T5 "$1")
+    [ "$REQUEST_CMD" = "curl" ] && cmd=(curl -Isf -m5 -o /dev/null "$1")
+    "${cmd[@]}"
 }
 
 # 定义代理 URL 列表
@@ -91,7 +111,7 @@ github_download_proxies=(
 # 获取有效代理
 function get_github_working_proxy() {
     for proxy in "${github_download_proxies[@]}"; do
-        if curl -Isf -m 5 -o /dev/null "${proxy%/}/https://github.com"; then
+        if check_url_connectivity "${proxy%/}/https://github.com"; then
             echo "${proxy%/}"
             return 0
         fi
@@ -102,7 +122,7 @@ function get_github_working_proxy() {
 # 获取下载 URL
 function get_github_download_url() {
     local url=$1
-    if curl -Isf -m 5 -o /dev/null "$url"; then
+    if check_url_connectivity "$url"; then
         echo "$url"
         return 0
     fi
@@ -123,39 +143,21 @@ function get_github_download_url() {
     return 1
 }
 
-# 定义检查依赖的函数
-function check_dependencies() {
-    local missing_dependencies=()
-
-    for dep in "${dependencies[@]}"; do
-        if ! command -v "$dep" &> /dev/null; then
-            missing_dependencies+=("$dep")
-        fi
-    done
-
-    if [ ${#missing_dependencies[@]} -ne 0 ]; then
-        echo "缺失的依赖项：${missing_dependencies[*]}"
-        echo "请安装上述缺失的依赖项。"
-        return 1
-    fi
-}
-
 function download_url() {
     local url
     url=$(get_github_download_url "$1") || return 1
     local output=${2:-$(basename "$url")}
-    if [ -f "$output" ]; then
-        echo "文件已下载，跳过: '$output'" && return 0
-    else
-        echo "开始下载 $output: $url"
-        if wget -t3 -T3 -q -O "$output" "$url"; then
-            echo "下载成功：$output"
-        else
-            echo "下载失败：$url"
-            rm -rf "$output"
-            return 1
-        fi
-    fi
+
+    local cmd=(wget -t3 -T3 -q -O "$output" "$url")
+    [ "$REQUEST_CMD" = "curl" ] && cmd=(curl -L --retry 3 -m3 -s -o "$output" "$url")
+
+    [ "$output" = "-" ] && { "${cmd[@]}"; return; }
+
+    [ -f "$output" ] && { echo "文件已下载，跳过: '$output'" && return 0; }
+
+    echo "开始下载 $output: $url"
+    "${cmd[@]}" || { echo "下载失败" >&2; rm -rf "$output"; return 1; }
+    echo "下载成功"
 }
 
 # 提升权限
@@ -440,8 +442,8 @@ function install_for_flatpak_qq() {
 # 获取qq appimage 最新链接
 function get_qqnt_appimage_url() {
     [ "${ARCH:-$(uname -m)}" = "x86_64" ] && _arch="x86_64" || _arch="arm64"
-    check_url="$(wget -t3 -T3 -q -O- https://im.qq.com/linuxqq/index.shtml| grep -o 'https://.*linuxQQDownload.js?[^"]*')"
-    [ "$check_url" ] && appimage_url=$(wget -t3 -T3 -q -O- "$check_url" | grep -o 'https://[^,]*AppImage' | grep "$_arch")
+    check_url="$(download_url https://im.qq.com/linuxqq/index.shtml -| grep -o 'https://.*linuxQQDownload.js?[^"]*')"
+    [ "$check_url" ] && appimage_url=$(download_url "$check_url" -| grep -o 'https://[^,]*AppImage' | grep "$_arch")
 
     [ -z "$appimage_url" ] && { echo "获取qq下载链接失败"; return 1; }
     echo "$appimage_url"
@@ -470,7 +472,7 @@ function extract_appimage() {
     rm -rf squashfs-root runtime
 
     echo "正在写出 runtime 文件：runtime"
-    head -c $offset "$appimage_file" > runtime || return 1
+    head -c "$offset" "$appimage_file" > runtime || return 1
     echo "写出成功：runtime"
 
     echo "正在写出 squashfs 文件：$output"
@@ -622,7 +624,6 @@ if [ "$(id -u)" -eq 0 ]; then
     exit 1
 fi
 
-dependencies=("wget" "curl" "unzip" "sudo")
 check_dependencies || exit 1
 
 # patch appimage
