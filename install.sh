@@ -26,6 +26,7 @@ Options:
                             - 'opt' 位于 /opt/LiteLoaderQQNT
                             - 其他值则为相对/绝对路径
   --ll-profile <path>     指定 LiteLoaderQQNT 数据存放路径
+  -k, --skip-sudo         强制跳过 sudo 提权
   -h, --help              显示帮助信息
   -u, --update            尝试更新 LiteLoaderQQNT
 
@@ -162,8 +163,13 @@ function download_url() {
 
 # 提升权限
 function elevate_permissions() {
-    echo "请输入您的密码以提升权限："
-    sudo -v
+    [ "$SKIP_SUDO" = 0 ] && { echo "跳过提权"; return 0; }
+    command -v sudo >/dev/null 2>&1 || { echo "未找到 sudo 命令"; return 0; }
+
+    case "$PLATFORM" in
+        linux)  echo "请输入您的密码以提升权限："; sudo_cmd="sudo"; sudo -v ;;
+        macos)  sudo_cmd="" ;;
+    esac
 }
 
 # 获取 LiteLoaderQQNT 本体安装位置
@@ -294,7 +300,7 @@ function patch_resources() {
 
     # 写入 require(String.raw`*`) 到 *.js 文件
     echo "正在将 'require(\"${ll_path%/}\");' 写入 app_launcher/$jsfile_name"
-    echo "require(\"${ll_path%/}\");" | sudo tee "$jsfile_path" > /dev/null
+    echo "require(\"${ll_path%/}\");" | $sudo_cmd tee "$jsfile_path" > /dev/null
     echo "写入成功"
 
     # 检查 package.json 文件是否存在
@@ -304,8 +310,8 @@ function patch_resources() {
         echo "正在修改 package.json 的 main 字段为 './app_launcher/$jsfile_name'"
 
         case "$PLATFORM" in
-            linux) sed_command=("sudo" sed "-i") ;;
-            macos) sed_command=("sudo" sed "-i" "") ;;
+            linux) sed_command=($sudo_cmd sed -i) ;;
+            macos) sed_command=($sudo_cmd sed -i "") ;;
             *) echo "Unsupported platform: $PLATFORM"; return 1 ;;
         esac
 
@@ -325,7 +331,7 @@ function install_plugin_store() {
     local plugin_store_dir="$plugins_dir/list-viewer"
 
     echo "修改 LiteLoaderQQNT 文件夹权限(可能解决部分错误)"
-    sudo chmod -R 0755 "$liteloaderqqnt_config"
+    $sudo_cmd chmod -R 0755 "$liteloaderqqnt_config"
 
     mkdir -p "$plugins_dir" || return 1
 
@@ -428,11 +434,11 @@ function install_for_flatpak_qq() {
 
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
             echo "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
-            sudo flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_config"
-            sudo flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_path"
+            $sudo_cmd flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_config"
+            $sudo_cmd flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_path"
 
             # 将 LITELOADERQQNT_PROFILE 作为环境变量传递给 Flatpak 版 QQ
-            sudo flatpak override --user com.qq.QQ --env=LITELOADERQQNT_PROFILE="$liteloaderqqnt_config"
+            $sudo_cmd flatpak override --user com.qq.QQ --env=LITELOADERQQNT_PROFILE="$liteloaderqqnt_config"
 
             echo "设置完成！LiteLoaderQQNT 数据目录：$liteloaderqqnt_config"
         fi
@@ -553,21 +559,20 @@ function patch_appimage() {
 # unset liteloaderqqnt_path qq_res_path
 
 # 检查平台
-case "${PLATFORM:-$(uname)}" in
-    "Linux") PLATFORM="linux";;
-    "Darwin") PLATFORM="macos";;
+_tmp=$(echo "${PLATFORM:-$(uname)}" | tr '[:upper:]' '[:lower:]')
+case "$_tmp" in
+    "linux")            PLATFORM="linux";;
+    "darwin"|"macos")   PLATFORM="macos";;
     *) echo "不支持的系统？请反馈，退出..."; exit 1 ;;
 esac
 
 readonly LITELOADERQQNT_NAME="LiteLoaderQQNT"
 if [ "$PLATFORM" = "linux" ]; then
-    sudo_cmd="sudo"
     QQ_PATH="$(realpath "${QQ_PATH:-/opt/QQ}")"
     readonly SEPARATE_DATA_MODE=0 # 分离本体与数据
     readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/.local/share/$LITELOADERQQNT_NAME"
     readonly DEFAULT_LITELOADERQQNT_CONFIG="$HOME/.config/$LITELOADERQQNT_NAME"
 elif [ "$PLATFORM" = "macos" ]; then
-    sudo_cmd=""
     QQ_PATH="${QQ_PATH:-/Applications/QQ.app}"
     readonly SEPARATE_DATA_MODE=1 # macOS 暂不支持
     readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/Library/Containers/com.tencent.qq/Data/Documents/$LITELOADERQQNT_NAME"
@@ -578,7 +583,7 @@ fi
 # [ -d "$QQ_PATH" ] || { echo "指定的 QQ 路径不存在：'$QQ_PATH'" >&2; exit 1; }
 
 # 解析参数
-OPTIONS=$(getopt -o h --long appimage::,ll-dir:,ll-profile:,help -n "$0" -- "$@") || \
+OPTIONS=$(getopt -o h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help -n "$0" -- "$@") || \
     { echo "Error: 参数处理失败."; exit 1; }
 eval set -- "$OPTIONS"
 unset OPTIONS
@@ -596,6 +601,7 @@ while true; do
             shift 2 ;;
         --ll-dir)       LITELOADERQQNT_DIR="${2:-LITELOADERQQNT_DIR}"; shift 2 ;;
         --ll-profile)   LITELOADERQQNT_PROFILE="${2:-$LITELOADERQQNT_PROFILE}"; shift 2 ;;
+        -k|--skip-sudo) SKIP_SUDO=0; shift 1 ;;
         -u|--update)    echo "TODO"; exit 0 ;; #TODO
         --) shift; break ;;
         *)  echo "Error: 未知选项 '$1'."; show_help; exit 1 ;;
