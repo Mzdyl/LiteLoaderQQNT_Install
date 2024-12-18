@@ -162,8 +162,12 @@ function download_url() {
 
 # 提升权限
 function elevate_permissions() {
-    echo "请输入您的密码以提升权限："
-    sudo -v
+    command -v sudo >/dev/null 2>&1 || { echo "未找到 sudo 命令"; return 0; } 
+
+    case "$PLATFORM" in
+        linux)  echo "请输入您的密码以提升权限："; sudo_cmd="sudo"; sudo -v ;;
+        macos)  sudo_cmd="" ;;
+    esac
 }
 
 # 获取 LiteLoaderQQNT 本体安装位置
@@ -294,7 +298,7 @@ function patch_resources() {
 
     # 写入 require(String.raw`*`) 到 *.js 文件
     echo "正在将 'require(\"${ll_path%/}\");' 写入 app_launcher/$jsfile_name"
-    echo "require(\"${ll_path%/}\");" | sudo tee "$jsfile_path" > /dev/null
+    echo "require(\"${ll_path%/}\");" | $sudo_cmd tee "$jsfile_path" > /dev/null
     echo "写入成功"
 
     # 检查 package.json 文件是否存在
@@ -304,8 +308,8 @@ function patch_resources() {
         echo "正在修改 package.json 的 main 字段为 './app_launcher/$jsfile_name'"
 
         case "$PLATFORM" in
-            linux) sed_command=("sudo" sed "-i") ;;
-            macos) sed_command=("sudo" sed "-i" "") ;;
+            linux) sed_command=($sudo_cmd sed -i) ;;
+            macos) sed_command=($sudo_cmd sed -i "") ;;
             *) echo "Unsupported platform: $PLATFORM"; return 1 ;;
         esac
 
@@ -325,7 +329,7 @@ function install_plugin_store() {
     local plugin_store_dir="$plugins_dir/list-viewer"
 
     echo "修改 LiteLoaderQQNT 文件夹权限(可能解决部分错误)"
-    sudo chmod -R 0755 "$liteloaderqqnt_config"
+    $sudo_cmd chmod -R 0755 "$liteloaderqqnt_config"
 
     mkdir -p "$plugins_dir" || return 1
 
@@ -428,11 +432,11 @@ function install_for_flatpak_qq() {
 
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
             echo "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
-            sudo flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_config"
-            sudo flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_path"
+            $sudo_cmd flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_config"
+            $sudo_cmd flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_path"
 
             # 将 LITELOADERQQNT_PROFILE 作为环境变量传递给 Flatpak 版 QQ
-            sudo flatpak override --user com.qq.QQ --env=LITELOADERQQNT_PROFILE="$liteloaderqqnt_config"
+            $sudo_cmd flatpak override --user com.qq.QQ --env=LITELOADERQQNT_PROFILE="$liteloaderqqnt_config"
 
             echo "设置完成！LiteLoaderQQNT 数据目录：$liteloaderqqnt_config"
         fi
@@ -561,13 +565,11 @@ esac
 
 readonly LITELOADERQQNT_NAME="LiteLoaderQQNT"
 if [ "$PLATFORM" = "linux" ]; then
-    sudo_cmd="sudo"
     QQ_PATH="$(realpath "${QQ_PATH:-/opt/QQ}")"
     readonly SEPARATE_DATA_MODE=0 # 分离本体与数据
     readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/.local/share/$LITELOADERQQNT_NAME"
     readonly DEFAULT_LITELOADERQQNT_CONFIG="$HOME/.config/$LITELOADERQQNT_NAME"
 elif [ "$PLATFORM" = "macos" ]; then
-    sudo_cmd=""
     QQ_PATH="${QQ_PATH:-/Applications/QQ.app}"
     readonly SEPARATE_DATA_MODE=1 # macOS 暂不支持
     readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/Library/Containers/com.tencent.qq/Data/Documents/$LITELOADERQQNT_NAME"
