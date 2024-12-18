@@ -559,9 +559,10 @@ function patch_appimage() {
 # unset liteloaderqqnt_path qq_res_path
 
 # 检查平台
-case "${PLATFORM:-$(uname)}" in
-    "Linux") PLATFORM="linux";;
-    "Darwin") PLATFORM="macos";;
+_tmp=$(echo "${PLATFORM:-$(uname)}" | tr '[:upper:]' '[:lower:]')
+case "$_tmp" in
+    "linux")            PLATFORM="linux";;
+    "darwin"|"macos")   PLATFORM="macos";;
     *) echo "不支持的系统？请反馈，退出..."; exit 1 ;;
 esac
 
