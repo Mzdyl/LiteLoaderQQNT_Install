@@ -458,24 +458,24 @@ function calc_appimage_offset() {
 # 提取 appimage 内容
 function extract_appimage() {
     local appimage_file="$1"
-    chmod +x "$appimage_file"
-    if ! "$appimage_file" --appimage-extract >/dev/null 2>&1; then
-        echo "执行 --appimage-extract 失败，尝试手动提取..."
-        offset=$(calc_appimage_offset "$appimage_file") || return 1
-        output="out.squashfs"
-        echo "squashfs偏移值：$offset"
-        rm -rf squashfs-root
+    offset=$(calc_appimage_offset "$appimage_file") || return 1
+    echo "squashfs偏移值：$offset"
+    output="out.squashfs"
+    rm -rf squashfs-root runtime
 
-        echo "开始写出 squashfs 文件至 $output"
-        tail -c +"$((offset+1))" "$appimage_file" > "$output" || return 1
-        echo "写出成功：$output"
+    echo "正在写出 runtime 文件：runtime"
+    head -c $offset "$appimage_file" > runtime || return 1
+    echo "写出成功：runtime"
 
-        echo "开始提取 squashfs 内容"
-        unsquashfs "$output" >/dev/null
-        [ ! -d "squashfs-root" ] && { echo "文件提取失败: $output"; return 1; }
-        echo "文件提取成功"
-        rm "$output" && echo "临时文件 $output 已移除"
-    fi
+    echo "正在写出 squashfs 文件：$output"
+    tail -c +"$((offset+1))" "$appimage_file" > "$output" || return 1
+    echo "写出成功：$output"
+
+    echo "开始提取 squashfs 内容"
+    unsquashfs "$output" >/dev/null
+    [ ! -d "squashfs-root" ] && { echo "文件提取失败: $output" >&2; return 1; }
+    echo "文件提取成功：squashfs-root"
+    rm "$output" && echo "临时文件 $output 已移除"
 }
 
 # 修改 AppRun 文件以支持变量 LITELOADERQQNT_PROFILE
@@ -499,31 +499,19 @@ function repack_appimage() {
     local output="$2"
     echo "正在重新打包"
     mksquashfs "$appdir" tmp.squashfs -root-owned -noappend >/dev/null
-    cat "$runtime_filename" >> "$output"
+    cat "runtime" >> "$output"
     cat "tmp.squashfs" >> "$output"
     rm -rf "tmp.squashfs"
+    rm -f "runtime"
     chmod a+x "$output"
     echo "打包完成：$output"
 }
 
-function download_file_for_appimage() {
-    case "$1" in
-        runtime)
-            # 下载 runtime 文件
-            [ "${ARCH:-$(uname -m)}" = "x86_64" ] && _arch="x86_64" || _arch="aarch64"
-            runtime_url="https://github.com/AppImage/AppImageKit/releases/download/13/runtime-$_arch"
-            runtime_filename=$(basename "$runtime_url")
-            download_url "$runtime_url" "$runtime_filename"
-            ;;
-        qq)
-            # 下载 qq
-            qq_url=$(get_qqnt_appimage_url)
-            qq_filename=$(basename "$qq_url")
-            appimage_path=$(realpath "$qq_filename")
-            download_url "$qq_url" "$qq_filename"
-            ;;
-        *) echo "参数错误 '$1'" && return 1 ;;
-    esac
+function download_qq_appimage() {
+    qq_url=$(get_qqnt_appimage_url)
+    qq_filename=$(basename "$qq_url")
+    appimage_path=$(realpath "$qq_filename")
+    download_url "$qq_url" "$qq_filename"
 }
 
 # 修改 appimage 文件
@@ -536,12 +524,12 @@ function patch_appimage() {
     echo "最新 LiteLoaderQQNT 版本：$liteloaderqqnt_version"
 
     if [ -z "$APPIMAGE_PATH" ]; then
-        download_file_for_appimage qq || return 1
+        download_qq_appimage || return 1
         APPIMAGE_PATH="$appimage_path"
     fi
 
-    new_qq_filename=${APPIMAGE_PATH//.AppImage/_patch-${liteloaderqqnt_version}.AppImage}
-    download_file_for_appimage runtime || return 1
+    _tmp=${APPIMAGE_PATH##*/}
+    new_qq_filename="$WORKDIR/${_tmp%%AppImage}_patch-${liteloaderqqnt_version}.AppImage"
 
     echo "正在对 AppImage 文件进行补丁操作: $APPIMAGE_PATH"
     extract_appimage "$APPIMAGE_PATH" || return 1
