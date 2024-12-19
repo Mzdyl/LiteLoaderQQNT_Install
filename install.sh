@@ -167,7 +167,10 @@ function elevate_permissions() {
     command -v sudo >/dev/null 2>&1 || { echo "未找到 sudo 命令"; return 0; }
 
     case "$PLATFORM" in
-        linux)  echo "请输入您的密码以提升权限："; sudo_cmd="sudo"; sudo -v ;;
+        linux)
+            echo "请输入您的密码以提升权限："
+            sudo -v || { echo "提权失败，请重试或添加 '-k' 参数以跳过提权，退出" >&2; return 1; }
+            sudo_cmd="sudo" ;;
         macos)  sudo_cmd="" ;;
     esac
 }
@@ -305,24 +308,15 @@ function patch_resources() {
 
     # 检查 package.json 文件是否存在
     local package_json="$qq_res_path/app/package.json"
-    if [ -f "$package_json" ]; then
-        # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
-        echo "正在修改 package.json 的 main 字段为 './app_launcher/$jsfile_name'"
+    [ ! -f "$package_json" ] && { echo "未找到 package.json ，跳过修改" >&2; return 1; }
 
-        case "$PLATFORM" in
-            linux) sed_command=($sudo_cmd sed -i) ;;
-            macos) sed_command=($sudo_cmd sed -i "") ;;
-            *) echo "Unsupported platform: $PLATFORM"; return 1 ;;
-        esac
-
-        if "${sed_command[@]}" 's|"main":.*|"main": "./app_launcher/'"$jsfile_name"'",|' "$package_json"; then
-            echo "修改成功: $qq_res_path"
-            return 0
-        fi
-        echo "修改失败：$qq_res_path" && return 1
-    else
-        echo "未找到 package.json ，跳过修改" && return 1
+    # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
+    echo "正在修改 package.json 的 main 字段为 './app_launcher/$jsfile_name'"
+    _tmp="$(cat "$package_json")"
+    if ! echo "$_tmp" | sed '/"main"/ s#"[^"]*",$#"./app_launcher/'"$jsfile_name"'",#' | $sudo_cmd tee "$package_json" >/dev/null; then
+        echo "修改失败：$qq_res_path" >&2; return 1
     fi
+    echo "修改成功: $qq_res_path"
 }
 
 function install_plugin_store() {
