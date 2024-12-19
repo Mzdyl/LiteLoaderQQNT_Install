@@ -167,7 +167,10 @@ function elevate_permissions() {
     command -v sudo >/dev/null 2>&1 || { echo "未找到 sudo 命令"; return 0; }
 
     case "$PLATFORM" in
-        linux)  echo "请输入您的密码以提升权限："; sudo_cmd="sudo"; sudo -v ;;
+        linux)
+            echo "请输入您的密码以提升权限："
+            sudo -v || { echo "提权失败，请重试或添加 '-k' 参数以跳过提权，退出" >&2; return 1; }
+            sudo_cmd="sudo" ;;
         macos)  sudo_cmd="" ;;
     esac
 }
