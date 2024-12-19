@@ -215,7 +215,7 @@ function get_qq_resources_path() {
     if [ -n "$version_file" ]; then
         version=$(grep "$version_file" -e '"curVersion"' | cut -d\" -f4)
         [ -n "$version" ] && _tmp=$(find "$qq_path" -type d -name "$version" 2>/dev/null |grep "versions/${version}$")
-        [ -n "$_tmp" ] && qq_path="$_tmp" || \
+        { [ -n "$_tmp" ] && qq_path="$_tmp"; } || \
             log_info "已找到 version 文件，但获取版本目录失败：'$version_file'"
     fi
 
@@ -369,7 +369,7 @@ function get_liteloaderqqnt_profile_from_shell_rc() {
     esac
 
     echo "尝试从 shell(${SHELL##*/}: $shell_rc_file) 获取环境变量: LITELOADERQQNT_PROFILE"
-    local _tmp=$(sed -n "s/^$ll_profile_line_perfix//gp" "$shell_rc_file" | awk 'END { print }')
+    _tmp=$(sed -n "s/^$ll_profile_line_perfix//gp" "$shell_rc_file" | awk 'END { print }')
     if [ -n "$_tmp" ]; then
         _tmp=$(echo "${_tmp}" | sed 's/^\"//;s/\"$//;s/^'\''//;s/'\''$//')
         existing_ll_profile_value=$(echo "$_tmp"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
@@ -378,7 +378,8 @@ function get_liteloaderqqnt_profile_from_shell_rc() {
 }
 
 function set_liteloaderqqnt_profile_to_shell_rc() {
-    local var_value=$(echo "$liteloaderqqnt_config"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
+    local var_value
+    var_value=$(echo "$liteloaderqqnt_config"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
     local var_name="LITELOADERQQNT_PROFILE"
     local MARKER_START="# BEGIN LITELOADERQQNT"
     local MARKER_END="# END LITELOADERQQNT"
