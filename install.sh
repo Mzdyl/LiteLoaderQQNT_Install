@@ -43,13 +43,11 @@ EOF
 }
 
 log_info() {
-    local message="$1"
-    echo -e "\e[32m[INFO]\e[0m : $message"
+    printf "\e[32m[INFO]\e[0m : $1\n"
 }
 
 log_error() {
-    local message="$1"
-    echo -e "\e[31m[ERROR]\e[0m: $message" >&2
+    printf "\e[31m[ERROR]\e[0m: $1\n" >&2
 }
 
 # 依赖检查
@@ -368,12 +366,12 @@ function get_liteloaderqqnt_profile_from_shell_rc() {
             log_info "若不生效，请自行根据 ~/.profile 内新增内容修改 shell 配置" ;;
     esac
 
-    echo "尝试从 shell(${SHELL##*/}: $shell_rc_file) 获取环境变量: LITELOADERQQNT_PROFILE"
+    log_info "尝试从 shell(${SHELL##*/}: $shell_rc_file) 获取环境变量: LITELOADERQQNT_PROFILE"
     _tmp=$(sed -n "s/^$ll_profile_line_perfix//gp" "$shell_rc_file" | awk 'END { print }')
     if [ -n "$_tmp" ]; then
         _tmp=$(echo "${_tmp}" | sed 's/^\"//;s/\"$//;s/^'\''//;s/'\''$//')
         existing_ll_profile_value=$(echo "$_tmp"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
-        echo "获取 ${SHELL##*/} 配置中变量 $var_name 成功：\"$existing_ll_profile_value\""
+        log_info "获取 ${SHELL##*/} 配置中变量 $var_name 成功：\"$existing_ll_profile_value\""
     fi
 }
 
