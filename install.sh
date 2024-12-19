@@ -350,49 +350,48 @@ function install_plugin_store() {
     return 1
 }
 
-function set_liteloaderqqnt_profile() {
-    local var_value="$liteloaderqqnt_config"
+function get_liteloaderqqnt_profile_from_shell_rc() {
     local var_name="LITELOADERQQNT_PROFILE"
-    local start_marker="# BEGIN LITELOADERQQNT"
-    local end_marker="# END LITELOADERQQNT"
 
-    # 获取 config_file
-    local config_file="$HOME/.profile"
-    local _perfix="export $var_name="
+    # 获取 shell 配置文件
+    shell_rc_file="$HOME/.profile"
+    ll_profile_line_perfix="export $var_name="
     case "${SHELL##*/}" in
-        zsh)    config_file="$HOME/.zshrc" ;;
-        bash)   config_file="$HOME/.bashrc" ;;
-        fish)   _perfix="set -gx LITELOADERQQNT_PROFILE "
-                config_file="$(fish -c 'printf $__fish_config_dir')/config.fish" ;;
+        zsh)    shell_rc_file="$HOME/.zshrc" ;;
+        bash)   shell_rc_file="$HOME/.bashrc" ;;
+        fish)   ll_profile_line_perfix="set -gx LITELOADERQQNT_PROFILE "
+                shell_rc_file="$(fish -c 'printf $__fish_config_dir')/config.fish" ;;
         *)  echo "非bash、zsh、fish，将尝试修改 ~/.profile"
             echo "若不生效，请自行根据 ~/.profile 内新增内容修改 shell 配置" ;;
     esac
 
-    echo "尝试为shell ${SHELL##*/} 设置环境变量: LITELOADERQQNT_PROFILE"
-
-    # 获取已定义值
-    existing_value=$(sed -n "s/^$_perfix//gp" "$config_file" | awk 'END { print }')
-    if [ -n "$existing_value" ]; then
-        var_value=$(echo "${existing_value#\"}" | sed 's/^\"//;s/\"$//;s/^'\''//;s/'\''$//')
-        echo "变量 $var_name 将使用已设置的值：'$var_value'"
-    else
-        echo "变量 $var_name 将使用默认值：'$var_value'"
+    echo "尝试从 shell(${SHELL##*/}: $shell_rc_file) 获取环境变量: LITELOADERQQNT_PROFILE"
+    local _tmp=$(sed -n "s/^$ll_profile_line_perfix//gp" "$shell_rc_file" | awk 'END { print }')
+    if [ -n "$_tmp" ]; then
+        _tmp=$(echo "${_tmp}" | sed 's/^\"//;s/\"$//;s/^'\''//;s/'\''$//')
+        existing_ll_profile_value=$(echo "$_tmp"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
+        echo "当前 ${SHELL##*/} 配置中变量 $var_name 值为 \"$existing_ll_profile_value\""
     fi
+}
 
-    # 写入
-    local context="$_perfix\"$var_value\""
-    context="$start_marker\n# 请勿在行内填写任何其他配置\n$context\n$end_marker"
+function set_liteloaderqqnt_profile_to_shell_rc() {
+    local var_value=$(echo "$liteloaderqqnt_config"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
+    local var_name="LITELOADERQQNT_PROFILE"
+    local MARKER_START="# BEGIN LITELOADERQQNT"
+    local MARKER_END="# END LITELOADERQQNT"
 
-    if grep -q "^$start_marker$" "$config_file" && grep -q "^$end_marker$" "$config_file"; then
-        # TODO 不一致时更新
-        sed -i "/$start_marker/,/$end_marker/c $context" "$config_file" || \
-            { echo "变量 $var_name 更新失败" >&2; return 1; }
-        echo "使用已设置值更新 $var_name，值为 '$var_value'"
+    local context="$ll_profile_line_perfix\"$var_value\""
+    if grep -q "^$MARKER_START$" "$shell_rc_file" && grep -q "^$MARKER_END$" "$shell_rc_file"; then
+        [ "$existing_ll_profile_value" = "$var_value" ] && { echo "shell 配置内的变量 '$var_name' 值与当前值一致，跳过更新"; return 0; }
+        sed -i "/$MARKER_START/,/$MARKER_END/ {
+            /$ll_profile_line_perfix/ s|.*|$context|;
+        }" "$shell_rc_file" && \
+        echo "使用运行值更新 $var_name，值为 \"$var_value\""
     else
-        sed -i "/^$_perfix/d" "$config_file"
-        echo -e "\n$context" >> "$config_file" || \
-            { echo "变量 $var_name 写出失败" >&2; return 1; }
-        echo "已添加变量 $var_name 至 $config_file，值为：'$var_value'"
+        context="$MARKER_START\n# 请勿在行内填写任何其他配置\n$context\n$MARKER_END"
+        sed -i "/^$ll_profile_line_perfix/d" "$shell_rc_file"
+        echo -e "\n$context" >> "$shell_rc_file" || { echo "变量 $var_name 写出失败" >&2; return 1; }
+        echo "已更新变量 $var_name 至 $shell_rc_file：\"$var_value\""
     fi
 }
 
@@ -608,14 +607,9 @@ while true; do
     esac
 done
 
-# TODO 兼容 macOS: realpath
 _tmp="${LITELOADERQQNT_PROFILE:-$DEFAULT_LITELOADERQQNT_CONFIG}"
-if mkdir -p "$_tmp"; then
-    echo "目录创建成功：$_tmp"
-else
-    echo "目录创建失败：$_tmp"
-    exit 1
-fi
+mkdir -p "$_tmp" || { echo "目录创建失败：$_tmp" >&2; exit 1; }
+echo "目录创建成功：$_tmp"
 liteloaderqqnt_config=$(realpath "$_tmp")
 
 # 创建并切换至临时目录
@@ -650,8 +644,10 @@ qq_res_path=$(get_qq_resources_path) && {
     install_liteloaderqqnt || exit 1
 }
 
-[ "$PLATFORM" = "linux" ] && set_liteloaderqqnt_profile && \
-    export LITELOADERQQNT_PROFILE="$LITELOADERQQNT_PROFILE"
+[ "$PLATFORM" = "linux" ] && {
+    get_liteloaderqqnt_profile_from_shell_rc
+    set_liteloaderqqnt_profile_to_shell_rc
+}
 
 install_plugin_store
 
