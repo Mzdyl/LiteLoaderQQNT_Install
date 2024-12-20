@@ -263,9 +263,12 @@ function install_liteloaderqqnt() {
     _tmp="$ll_path/package.json"
     if [ -f "$_tmp" ]; then
         _tmp=$(awk -F\" '/"version"/ {print $4}' "$_tmp")
-        [ "$_tmp" = "$LITELOADERQQNT_LASTEST_VERSION" ] && \
-            { log_info "LiteLoaderQQNT 已安装，跳过：$_tmp"; return 0; }
-        log_info "LiteLoaderQQNT 需更新：$_tmp -> $LITELOADERQQNT_LASTEST_VERSION"
+        if [ "$_tmp" = "$LITELOADERQQNT_LASTEST_VERSION" ]; then
+            [ "$INSTALL_FORCE" != 0 ] && { log_info "LiteLoaderQQNT 已安装，跳过：$_tmp"; return 0; }
+            log_info "强制更新 LiteLoaderQQNT：$_tmp -> $LITELOADERQQNT_LASTEST_VERSION"
+        else
+            log_info "LiteLoaderQQNT 需更新：$_tmp -> $LITELOADERQQNT_LASTEST_VERSION"
+        fi
     fi
 
     pull_liteloaderqqnt || return 1
@@ -368,15 +371,24 @@ function install_plugin_store() {
     _tmp="$plugin_store_dir/manifest.json"
     if [ -f "$_tmp" ]; then
         _tmp=$(awk -F\" '/"version"/ {print $4}' "$_tmp")
-        [ "${_tmp#v}" = "${PLUGIN_LIST_VIEWER_LASTEST_VERSION#v}" ] && \
-            { log_info "插件已安装，跳过：$plugin_name ($_tmp)"; return 0; }
-        log_info "插件 $plugin_name 需更新：$_tmp -> $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
+        if [ "${_tmp#v}" = "${PLUGIN_LIST_VIEWER_LASTEST_VERSION#v}" ]; then
+            [ "$INSTALL_FORCE" != 0 ] && { log_info "插件已安装，跳过：$plugin_name ($_tmp)"; return 0; }
+            log_info "强制更新 $plugin_name：$_tmp -> $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
+        else
+            log_info "插件 $plugin_name 需更新：$_tmp -> $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
+        fi
     fi
 
     log_info "正在安装最新版本插件：$plugin_name"
     _name=$(basename "$url")
     if download_url "$url" "$_name"; then
-        unzip -q "$_name" -d "$plugin_store_dir" && { log_info "插件安装成功：$plugin_name"; return 0; }
+        [ -d "$plugin_store_dir" ] && mv "$plugin_store_dir" "${plugin_store_dir}_bak"
+        unzip -q "$_name" -d "$plugin_store_dir" && {
+            log_info "插件安装成功：$plugin_name"
+            rm -rf "${plugin_store_dir}_bak"
+            return 0
+        }
+        mv "${plugin_store_dir}_bak" "$plugin_store_dir"
     fi
 
     log_error "插件安装失败，请手动安装：$plugin_name"
@@ -587,7 +599,7 @@ function patch_appimage() {
     repack_appimage "squashfs-root" "$new_qq_filename" || return 1
 }
 
-# unset liteloaderqqnt_path qq_res_path
+unset INSTALL_FORCE
 
 # 检查平台
 _tmp=$(echo "${PLATFORM:-$(uname)}" | tr '[:upper:]' '[:lower:]')
@@ -614,7 +626,7 @@ fi
 # [ -d "$QQ_PATH" ] || { echo "指定的 QQ 路径不存在：'$QQ_PATH'" >&2; exit 1; }
 
 # 解析参数
-OPTIONS=$(getopt -o h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help -n "$0" -- "$@") || \
+OPTIONS=$(getopt -o f,h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help,force -n "$0" -- "$@") || \
     { log_error "参数处理失败."; exit 1; }
 eval set -- "$OPTIONS"
 unset OPTIONS
@@ -633,7 +645,7 @@ while true; do
         --ll-dir)       LITELOADERQQNT_DIR="${2:-LITELOADERQQNT_DIR}"; shift 2 ;;
         --ll-profile)   LITELOADERQQNT_PROFILE="${2:-$LITELOADERQQNT_PROFILE}"; shift 2 ;;
         -k|--skip-sudo) SKIP_SUDO=0; shift 1 ;;
-        -u|--update)    echo "TODO"; exit 0 ;; #TODO
+        -f|--force)    INSTALL_FORCE=0; shift 1 ;; #TODO
         --) shift; break ;;
         *)  log_error "未知选项 '$1'."; show_help; exit 1 ;;
     esac
