@@ -169,6 +169,25 @@ function download_url() {
     log_info "下载成功"
 }
 
+# 获取最新版本号(release tag)
+get_github_latest_release() {
+    local url="$1"
+    if ! [[ "$url" =~ ^(https?:\/\/)?github\.com/ ]]; then
+        log_error "非 GitHub 仓库 URL：'$url'"
+        return 1
+    fi
+    # 提取 GitHub 用户名和仓库名
+    repo=$(echo "$url" | awk -F/ '{print $4 "/" $5}')
+    # 请求 API
+    local _tmp="https://api.github.com/repos/$repo/releases/latest"
+    _tmp=$(download_url "$_tmp" -| awk -F'"' '/"tag_name":/ {print $4}')
+    [ -n "$_tmp" ] && { echo "$_tmp"; return 0; }
+    # 解析 html
+    _tmp="$(download_url "https://github.com/$repo/releases/latest" -| grep -m1 -o "$repo/releases/tag/[^\"/]*")"
+    [ -z "$_tmp" ] && { log_error "最新版本获取失败"; return 1; }
+    echo "${_tmp##*/}"
+}
+
 # 提升权限
 function elevate_permissions() {
     [ "$SKIP_SUDO" = 0 ] && { log_info "跳过提权"; return 0; }
@@ -535,10 +554,6 @@ function download_qq_appimage() {
 function patch_appimage() {
     # APPIMAGE_MODE=0
     LITELOADERQQNT_DIR="${LITELOADERQQNT_DIR:-appimage}"
-    log_info "正在获取 LiteLoaderQQNT 版本..."
-    liteloaderqqnt_check_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
-    liteloaderqqnt_version=$(basename "$(wget -t3 -T3 --spider "$liteloaderqqnt_check_url" 2>&1 | grep -m1 -o 'https://.*releases/tag[^ ]*')")
-    log_info "最新 LiteLoaderQQNT 版本：$liteloaderqqnt_version"
 
     if [ -z "$APPIMAGE_PATH" ]; then
         download_qq_appimage || return 1
@@ -546,7 +561,7 @@ function patch_appimage() {
     fi
 
     _tmp=${APPIMAGE_PATH##*/}
-    new_qq_filename="$WORKDIR/${_tmp%%AppImage}_patch-${liteloaderqqnt_version}.AppImage"
+    new_qq_filename="$WORKDIR/${_tmp%%AppImage}_patch-${LITELOADERQQNT_LASTEST_VERSION}.AppImage"
 
     log_info "正在对 AppImage 文件进行补丁操作: $APPIMAGE_PATH"
     extract_appimage "$APPIMAGE_PATH" || return 1
@@ -616,11 +631,6 @@ mkdir -p "$_tmp" || { log_error "LiteLoaderQQNT 数据目录创建失败：$_tmp
 log_info "LiteLoaderQQNT 数据目录创建成功：$_tmp"
 liteloaderqqnt_config=$(realpath "$_tmp")
 
-# 创建并切换至临时目录
-temp_dir=$(mktemp -d)
-log_info "临时目录创建成功: $temp_dir"
-cd "$temp_dir" || exit 1
-
 # 检查是否为 root 用户
 if [ "$(id -u)" -eq 0 ]; then
     log_error "禁止以 root 用户执行此脚本，请使用普通用户执行"
@@ -628,6 +638,20 @@ if [ "$(id -u)" -eq 0 ]; then
 fi
 
 check_dependencies || exit 1
+
+# 创建并切换至临时目录
+temp_dir=$(mktemp -d)
+cd "$temp_dir" || exit 1
+log_info "进入临时目录: $temp_dir"
+
+# 版本检测
+_tmp="$(get_github_latest_release "$LITELOADERQQNT_URL")"
+LITELOADERQQNT_LASTEST_VERSION=${_tmp:-latest}
+_tmp="$(get_github_latest_release "$PLUGIN_LIST_VIEWER_URL")"
+PLUGIN_LIST_VIEWER_LASTEST_VERSION=${_tmp:-latest}
+
+log_info "最新 LiteLoaderQQNT: $LITELOADERQQNT_LASTEST_VERSION"
+log_info "最新 list-viewer 插件: $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
 
 # patch appimage
 [ "$APPIMAGE_MODE" = 0 ] && {
