@@ -136,25 +136,19 @@ function get_github_download_url() {
         return 0
     fi
 
-    # 只代理 Github 链接
-    if [[ "$url" =~ ^(https?:\/\/)?(www\.)?github\.com/ ]]; then
-        local proxy
-        proxy=$(get_github_working_proxy)
-        if [ -z "$proxy" ]; then
-            log_error "无可用代理"
-            return 1
-        fi
-        echo "${proxy}/${url}"
-        return 0
+    _tmp=$(get_github_working_proxy)
+    if [ -z "$_tmp" ]; then
+        log_error "无可用代理，链接无法访问：'$url'"
+        return 1
     fi
-
-    log_error "无效的下载链接：$url"
-    return 1
+    echo "${_tmp}/${url}"
 }
 
 function download_url() {
-    local url
-    url=$(get_github_download_url "$1") || return 1
+    local url="$1"
+    if [[ "$url" =~ ^(https?:\/\/)?github\.com/ ]]; then
+        url=$(get_github_download_url "$1") || return 1
+    fi
     local output=${2:-$(basename "$url")}
 
     local cmd=(wget -t3 -T3 -q -O "$output" "$url")
