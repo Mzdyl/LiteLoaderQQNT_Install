@@ -43,11 +43,11 @@ EOF
 }
 
 log_info() {
-    printf "\e[32m[INFO]\e[0m : $1\n"
+    printf "\e[32m[INFO]\e[0m : %s\n" "$1"
 }
 
 log_error() {
-    printf "\e[31m[ERROR]\e[0m: $1\n" >&2
+    printf "\e[31m[ERROR]\e[0m: %s\n" "$1" >&2
 }
 
 # 依赖检查
@@ -136,25 +136,19 @@ function get_github_download_url() {
         return 0
     fi
 
-    # 只代理 Github 链接
-    if [[ "$url" =~ ^(https?:\/\/)?(www\.)?github\.com/ ]]; then
-        local proxy
-        proxy=$(get_github_working_proxy)
-        if [ -z "$proxy" ]; then
-            log_error "无可用代理"
-            return 1
-        fi
-        echo "${proxy}/${url}"
-        return 0
+    _tmp=$(get_github_working_proxy)
+    if [ -z "$_tmp" ]; then
+        log_error "无可用代理，链接无法访问：'$url'"
+        return 1
     fi
-
-    log_error "无效的下载链接：$url"
-    return 1
+    echo "${_tmp}/${url}"
 }
 
 function download_url() {
-    local url
-    url=$(get_github_download_url "$1") || return 1
+    local url="$1"
+    if [[ "$url" =~ ^(https?:\/\/)?github\.com/ ]]; then
+        url=$(get_github_download_url "$1") || return 1
+    fi
     local output=${2:-$(basename "$url")}
 
     local cmd=(wget -t3 -T3 -q -O "$output" "$url")
@@ -167,6 +161,25 @@ function download_url() {
     log_info "开始下载 $output: $url"
     "${cmd[@]}" || { log_error "下载失败"; rm -rf "$output"; return 1; }
     log_info "下载成功"
+}
+
+# 获取最新版本号(release tag)
+get_github_latest_release() {
+    local url="$1"
+    if ! [[ "$url" =~ ^(https?:\/\/)?github\.com/ ]]; then
+        log_error "非 GitHub 仓库 URL：'$url'"
+        return 1
+    fi
+    # 提取 GitHub 用户名和仓库名
+    repo=$(echo "$url" | awk -F/ '{print $4 "/" $5}')
+    # 请求 API
+    local _tmp="https://api.github.com/repos/$repo/releases/latest"
+    _tmp=$(download_url "$_tmp" -| awk -F'"' '/"tag_name":/ {print $4}')
+    [ -n "$_tmp" ] && { echo "$_tmp"; return 0; }
+    # 解析 html
+    _tmp="$(download_url "https://github.com/$repo/releases/latest" -| grep -m1 -o "$repo/releases/tag/[^\"/]*")"
+    [ -z "$_tmp" ] && { log_error "最新版本获取失败"; return 1; }
+    echo "${_tmp##*/}"
 }
 
 # 提升权限
@@ -240,6 +253,18 @@ function pull_liteloaderqqnt() {
 function install_liteloaderqqnt() {
     local ll_path="$liteloaderqqnt_path"
 
+    # 检测更新
+    _tmp="$ll_path/package.json"
+    if [ -f "$_tmp" ]; then
+        _tmp=$(awk -F\" '/"version"/ {print $4}' "$_tmp")
+        if [ "$_tmp" = "$LITELOADERQQNT_LASTEST_VERSION" ]; then
+            [ "$INSTALL_FORCE" != 0 ] && { log_info "LiteLoaderQQNT 已安装，跳过：$_tmp"; return 0; }
+            log_info "强制更新 LiteLoaderQQNT：$_tmp -> $LITELOADERQQNT_LASTEST_VERSION"
+        else
+            log_info "LiteLoaderQQNT 需更新：$_tmp -> $LITELOADERQQNT_LASTEST_VERSION"
+        fi
+    fi
+
     pull_liteloaderqqnt || return 1
     log_info "拉取完成，正在安装 LiteLoaderQQNT..."
 
@@ -308,7 +333,7 @@ function patch_resources() {
     [[ "$LITELOADERQQNT_DIR" =~ ^(qq|appimage)$ ]] && ll_path="./LiteLoaderQQNT"
 
     # 写入 require(String.raw`*`) 到 *.js 文件
-    log_info "正在将创建/覆写文件：'$jsfile_path'"
+    log_info "正在创建/覆写文件：'$jsfile_path'"
     echo "require(\"${ll_path%/}\");" | $sudo_cmd tee "$jsfile_path" > /dev/null
     log_info "写入成功：'require(\"${ll_path%/}\");'"
 
@@ -336,15 +361,28 @@ function install_plugin_store() {
 
     mkdir -p "$plugins_dir" || return 1
 
-    if ls -A "$plugin_store_dir" &> /dev/null; then
-        log_info "插件已存在，跳过安装：$plugin_name"
-        return 0
+    # 检测更新
+    _tmp="$plugin_store_dir/manifest.json"
+    if [ -f "$_tmp" ]; then
+        _tmp=$(awk -F\" '/"version"/ {print $4}' "$_tmp")
+        if [ "${_tmp#v}" = "${PLUGIN_LIST_VIEWER_LASTEST_VERSION#v}" ]; then
+            [ "$INSTALL_FORCE" != 0 ] && { log_info "插件已安装，跳过：$plugin_name ($_tmp)"; return 0; }
+            log_info "强制更新 $plugin_name：$_tmp -> $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
+        else
+            log_info "插件 $plugin_name 需更新：$_tmp -> $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
+        fi
     fi
 
     log_info "正在安装最新版本插件：$plugin_name"
     _name=$(basename "$url")
     if download_url "$url" "$_name"; then
-        unzip -q "$_name" -d "$plugin_store_dir" && { log_info "插件安装成功：$plugin_name"; return 0; }
+        [ -d "$plugin_store_dir" ] && mv "$plugin_store_dir" "${plugin_store_dir}_bak"
+        unzip -q "$_name" -d "$plugin_store_dir" && {
+            log_info "插件安装成功：$plugin_name"
+            rm -rf "${plugin_store_dir}_bak"
+            return 0
+        }
+        mv "${plugin_store_dir}_bak" "$plugin_store_dir"
     fi
 
     log_error "插件安装失败，请手动安装：$plugin_name"
@@ -427,13 +465,13 @@ function install_for_flatpak_qq() {
         if flatpak list --app --columns=application | grep -xq "com.qq.QQ"; then
             log_info "检测到 Flatpak 版 QQ 已安装"
 
+            qq_res_path=$(flatpak info --show-location com.qq.QQ)/files/extra/QQ/resources
             liteloaderqqnt_path=$(get_liteloaderqqnt_path "$qq_res_path") || {
                 log_error "获取 LiteLoaderQQNT 本体路径失败"
                 return 1
             }
-
-            qq_res_path=$(flatpak info --show-location com.qq.QQ)/files/extra/QQ/resources
             install_liteloaderqqnt || return 1
+
 
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
             log_info "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
@@ -535,10 +573,6 @@ function download_qq_appimage() {
 function patch_appimage() {
     # APPIMAGE_MODE=0
     LITELOADERQQNT_DIR="${LITELOADERQQNT_DIR:-appimage}"
-    log_info "正在获取 LiteLoaderQQNT 版本..."
-    liteloaderqqnt_check_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
-    liteloaderqqnt_version=$(basename "$(wget -t3 -T3 --spider "$liteloaderqqnt_check_url" 2>&1 | grep -m1 -o 'https://.*releases/tag[^ ]*')")
-    log_info "最新 LiteLoaderQQNT 版本：$liteloaderqqnt_version"
 
     if [ -z "$APPIMAGE_PATH" ]; then
         download_qq_appimage || return 1
@@ -546,7 +580,7 @@ function patch_appimage() {
     fi
 
     _tmp=${APPIMAGE_PATH##*/}
-    new_qq_filename="$WORKDIR/${_tmp%%AppImage}_patch-${liteloaderqqnt_version}.AppImage"
+    new_qq_filename="$WORKDIR/${_tmp%%AppImage}_patch-${LITELOADERQQNT_LASTEST_VERSION}.AppImage"
 
     log_info "正在对 AppImage 文件进行补丁操作: $APPIMAGE_PATH"
     extract_appimage "$APPIMAGE_PATH" || return 1
@@ -559,7 +593,7 @@ function patch_appimage() {
     repack_appimage "squashfs-root" "$new_qq_filename" || return 1
 }
 
-# unset liteloaderqqnt_path qq_res_path
+unset INSTALL_FORCE
 
 # 检查平台
 _tmp=$(echo "${PLATFORM:-$(uname)}" | tr '[:upper:]' '[:lower:]')
@@ -586,7 +620,7 @@ fi
 # [ -d "$QQ_PATH" ] || { echo "指定的 QQ 路径不存在：'$QQ_PATH'" >&2; exit 1; }
 
 # 解析参数
-OPTIONS=$(getopt -o h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help -n "$0" -- "$@") || \
+OPTIONS=$(getopt -o f,h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help,force -n "$0" -- "$@") || \
     { log_error "参数处理失败."; exit 1; }
 eval set -- "$OPTIONS"
 unset OPTIONS
@@ -605,7 +639,7 @@ while true; do
         --ll-dir)       LITELOADERQQNT_DIR="${2:-LITELOADERQQNT_DIR}"; shift 2 ;;
         --ll-profile)   LITELOADERQQNT_PROFILE="${2:-$LITELOADERQQNT_PROFILE}"; shift 2 ;;
         -k|--skip-sudo) SKIP_SUDO=0; shift 1 ;;
-        -u|--update)    echo "TODO"; exit 0 ;; #TODO
+        -f|--force)    INSTALL_FORCE=0; shift 1 ;; #TODO
         --) shift; break ;;
         *)  log_error "未知选项 '$1'."; show_help; exit 1 ;;
     esac
@@ -616,11 +650,6 @@ mkdir -p "$_tmp" || { log_error "LiteLoaderQQNT 数据目录创建失败：$_tmp
 log_info "LiteLoaderQQNT 数据目录创建成功：$_tmp"
 liteloaderqqnt_config=$(realpath "$_tmp")
 
-# 创建并切换至临时目录
-temp_dir=$(mktemp -d)
-log_info "临时目录创建成功: $temp_dir"
-cd "$temp_dir" || exit 1
-
 # 检查是否为 root 用户
 if [ "$(id -u)" -eq 0 ]; then
     log_error "禁止以 root 用户执行此脚本，请使用普通用户执行"
@@ -629,13 +658,27 @@ fi
 
 check_dependencies || exit 1
 
+# 创建并切换至临时目录
+temp_dir=$(mktemp -d)
+cd "$temp_dir" || exit 1
+log_info "进入临时目录: $temp_dir"
+
+# 版本检测
+_tmp="$(get_github_latest_release "$LITELOADERQQNT_URL")"
+LITELOADERQQNT_LASTEST_VERSION=${_tmp:-latest}
+_tmp="$(get_github_latest_release "$PLUGIN_LIST_VIEWER_URL")"
+PLUGIN_LIST_VIEWER_LASTEST_VERSION=${_tmp:-latest}
+
+log_info "最新 LiteLoaderQQNT: $LITELOADERQQNT_LASTEST_VERSION"
+log_info "最新 list-viewer 插件: $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
+
 # patch appimage
 [ "$APPIMAGE_MODE" = 0 ] && {
     patch_appimage "$APPIMAGE_PATH" || exit 1
     exit 0
 }
 
-elevate_permissions
+elevate_permissions || exit
 
 if [ "$PLATFORM" = "linux" ]; then
     install_liteloaderqqnt_with_aur || exit 1
@@ -643,23 +686,19 @@ if [ "$PLATFORM" = "linux" ]; then
 fi
 
 qq_res_path=$(get_qq_resources_path) && {
-    liteloaderqqnt_path=$(get_liteloaderqqnt_path)
+    liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
     install_liteloaderqqnt || exit 1
 }
+
+install_plugin_store
 
 [ "$PLATFORM" = "linux" ] && {
     get_liteloaderqqnt_profile_from_shell_rc
     set_liteloaderqqnt_profile_to_shell_rc
 }
 
-install_plugin_store
-
 log_info "如果安装过程中没有提示发生错误
          但 QQ 设置界面没有 LiteLoaderQQNT
          请检查已安装过的插件
          插件错误会导致 LiteLoaderQQNT 无法正常启动
-
          打开QQ后会弹出初始化失败，此为正常现象，请按照说明完成后续操作"
-
-log_info "脚本将在 3 秒后退出..."
-sleep 3
