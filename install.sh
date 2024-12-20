@@ -259,6 +259,15 @@ function pull_liteloaderqqnt() {
 function install_liteloaderqqnt() {
     local ll_path="$liteloaderqqnt_path"
 
+    # 检测更新
+    _tmp="$ll_path/package.json"
+    if [ -f "$_tmp" ]; then
+        _tmp=$(awk -F\" '/"version"/ {print $4}' "$_tmp")
+        [ "$_tmp" = "$LITELOADERQQNT_LASTEST_VERSION" ] && \
+            { log_info "LiteLoaderQQNT 已安装，跳过：$_tmp"; return 0; }
+        log_info "LiteLoaderQQNT 需更新：$_tmp -> $LITELOADERQQNT_LASTEST_VERSION"
+    fi
+
     pull_liteloaderqqnt || return 1
     log_info "拉取完成，正在安装 LiteLoaderQQNT..."
 
@@ -355,9 +364,13 @@ function install_plugin_store() {
 
     mkdir -p "$plugins_dir" || return 1
 
-    if ls -A "$plugin_store_dir" &> /dev/null; then
-        log_info "插件已存在，跳过安装：$plugin_name"
-        return 0
+    # 检测更新
+    _tmp="$plugin_store_dir/manifest.json"
+    if [ -f "$_tmp" ]; then
+        _tmp=$(awk -F\" '/"version"/ {print $4}' "$_tmp")
+        [ "${_tmp#v}" = "${PLUGIN_LIST_VIEWER_LASTEST_VERSION#v}" ] && \
+            { log_info "插件已安装，跳过：$plugin_name ($_tmp)"; return 0; }
+        log_info "插件 $plugin_name 需更新：$_tmp -> $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
     fi
 
     log_info "正在安装最新版本插件：$plugin_name"
