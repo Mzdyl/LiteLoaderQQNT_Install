@@ -26,10 +26,10 @@ Options:
                             - 'qq' 位于 qq 安装目录的 app 文件夹内
                             - 'opt' 位于 /opt/LiteLoaderQQNT
                             - 其他值则为相对/绝对路径
-  --ll-profile <path>     指定 LiteLoaderQQNT 数据存放路径
+  --ll-profile <path>     指定 LiteLoaderQQNT 数据存放路径(Linux only)
   -k, --skip-sudo         强制跳过 sudo 提权
   -h, --help              显示帮助信息
-  -u, --update            尝试更新 LiteLoaderQQNT
+  -f, --force             强制更新 LiteLoaderQQNT 及插件商店
 
 默认会自动检测系统，尝试可能的 QQ 安装方式，提供如下变量供自定义：
 - 'LITELOADERQQNT_DIR' LiteLoaderQQNT 本体位置，默认值：
@@ -37,9 +37,13 @@ Options:
     macOS: '\$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoaderQQNT'
 - 'LITELOADERQQNT_PROFILE' LiteLoaderQQNT 数据目录，默认值：
     Linux: 'HOME/.config/LiteLoaderQQNT'
-    macOS: 则与本体位于同一目录
+    macOS: 与本体位于同一目录
+
 - 'QQ_PATH' 自定义 QQ 位置（其 app 文件夹所在的父目录）
 - 'PLATFORM' 强制指定系统，非必要勿使用，为可能的系统检测失败预留，值必须为 'linux' 或 'macos'
+- 'ARCH' 为 AppImage 打包指定系统架构，默认自动检测，仅支持 'x86_64' 和 'arm64'
+- 'APPIMAGE_PATH' AppImage 文件路径
+- 'PROXY_URL' 自定义 Github 下载代理，会在预置的代理中优先使用该变量
 EOF
 }
 
@@ -79,7 +83,7 @@ function check_url_connectivity() {
 
 # 定义代理 URL 列表
 github_download_proxies=(
-    "$REPROXY_URL"
+    "$PROXY_URL"
     "https://mirror.ghproxy.com"
     "https://gh.h233.eu.org"
     "https://gh.ddlc.top"
@@ -594,7 +598,7 @@ function patch_appimage() {
     repack_appimage "squashfs-root" "$new_qq_filename" || return 1
 }
 
-unset INSTALL_FORCE APPIMAGE_WITH_PLUGIN
+unset INSTALL_FORCE APPIMAGE_WITH_PLUGIN SKIP_SUDO APPIMAGE_MODE
 
 # 检查平台
 _tmp=$(echo "${PLATFORM:-$(uname)}" | tr '[:upper:]' '[:lower:]')
@@ -641,7 +645,7 @@ while true; do
         --ll-dir)       LITELOADERQQNT_DIR="${2:-LITELOADERQQNT_DIR}"; shift 2 ;;
         --ll-profile)   LITELOADERQQNT_PROFILE="${2:-$LITELOADERQQNT_PROFILE}"; shift 2 ;;
         -k|--skip-sudo) SKIP_SUDO=0; shift 1 ;;
-        -f|--force)    INSTALL_FORCE=0; shift 1 ;; #TODO
+        -f|--force)    INSTALL_FORCE=0; shift 1 ;;
         --) shift; break ;;
         *)  log_error "未知选项 '$1'."; show_help; exit 1 ;;
     esac
