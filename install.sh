@@ -7,7 +7,7 @@ readonly WORKDIR="$PWD"
 
 cleanup() {
     [ -d "$temp_dir" ] && {
-        echo "清理临时目录: $temp_dir"
+        log_info "清理临时目录: $temp_dir"
         rm -rf "$temp_dir"
     }
 }
@@ -42,6 +42,14 @@ Options:
 EOF
 }
 
+log_info() {
+    printf "\e[32m[INFO]\e[0m : $1\n"
+}
+
+log_error() {
+    printf "\e[31m[ERROR]\e[0m: $1\n" >&2
+}
+
 # 依赖检查
 function check_dependencies() {
     _count=0
@@ -50,10 +58,10 @@ function check_dependencies() {
         readonly REQUEST_CMD=$dep
         break
     done
-    [ "$_count" -eq 2 ] && { echo "请安装 wget 或 curl 后重试." >&2; return 1; }
+    [ "$_count" -eq 2 ] && { log_error "请安装 wget 或 curl 后重试."; return 1; }
 
-    command -v unzip >/dev/null 2>&1 || { echo "未检测到 unzip，请安装后重试" >&2; return 1; }
-    command -v rsync >/dev/null 2>&1 || echo "未检测到 rsync，将使用 cp 命令替代" >&2
+    command -v unzip >/dev/null 2>&1 || { log_error "未检测到 unzip，请安装后重试"; return 1; }
+    command -v rsync >/dev/null 2>&1 || log_error "未检测到 rsync，将使用 cp 命令替代"
 }
 
 function sync_files() {
@@ -133,14 +141,14 @@ function get_github_download_url() {
         local proxy
         proxy=$(get_github_working_proxy)
         if [ -z "$proxy" ]; then
-            echo "无可用代理" >&2
+            log_error "无可用代理"
             return 1
         fi
         echo "${proxy}/${url}"
         return 0
     fi
 
-    echo "无效的下载链接：$url" >&2
+    log_error "无效的下载链接：$url"
     return 1
 }
 
@@ -154,22 +162,22 @@ function download_url() {
 
     [ "$output" = "-" ] && { "${cmd[@]}"; return; }
 
-    [ -f "$output" ] && { echo "文件已下载，跳过: '$output'" && return 0; }
+    [ -f "$output" ] && { log_info "文件已下载，跳过: '$output'" && return 0; }
 
-    echo "开始下载 $output: $url"
-    "${cmd[@]}" || { echo "下载失败" >&2; rm -rf "$output"; return 1; }
-    echo "下载成功"
+    log_info "开始下载 $output: $url"
+    "${cmd[@]}" || { log_error "下载失败"; rm -rf "$output"; return 1; }
+    log_info "下载成功"
 }
 
 # 提升权限
 function elevate_permissions() {
-    [ "$SKIP_SUDO" = 0 ] && { echo "跳过提权"; return 0; }
-    command -v sudo >/dev/null 2>&1 || { echo "未找到 sudo 命令"; return 0; }
+    [ "$SKIP_SUDO" = 0 ] && { log_info "跳过提权"; return 0; }
+    command -v sudo >/dev/null 2>&1 || { log_info "未找到 sudo 命令"; return 0; }
 
     case "$PLATFORM" in
         linux)
-            echo "请输入您的密码以提升权限："
-            sudo -v || { echo "提权失败，请重试或添加 '-k' 参数以跳过提权，退出" >&2; return 1; }
+            log_info "请输入您的密码以提升权限："
+            sudo -v || { log_error "提权失败，请重试或添加 '-k' 参数以跳过提权，退出"; return 1; }
             sudo_cmd="sudo" ;;
         macos)  sudo_cmd="" ;;
     esac
@@ -187,7 +195,7 @@ function get_liteloaderqqnt_path() {
         "opt")  _dir="/opt/$LITELOADERQQNT_NAME" ;;
         *)      _dir="$(cd "$WORKDIR" && realpath "$_dir")"
     esac
-    mkdir -p "$_dir" || { echo "创建失败：'$_dir'" >&2; return 1; }
+    mkdir -p "$_dir" || { log_error "创建 LiteLoaderQQNT 安装路径失败：'$_dir'"; return 1; }
     echo "$_dir"
 }
 
@@ -198,33 +206,33 @@ function get_qq_resources_path() {
     version_file=$(find "$qq_path" -type f -name 'config.json' 2>/dev/null | grep 'versions/config.json$')
 
     if [ "$(echo "$version_file" | wc -l)" -gt 1 ]; then
-        echo "Error：找到多个 config.json 文件，请检查 '$qq_path' 是否为 QQ 安装根路径？" >&2
+        log_error "找到多个 config.json 文件，请检查是否为 QQ 安装根路径？：'$qq_path'"
         return 1
     fi
 
     if [ -n "$version_file" ]; then
         version=$(grep "$version_file" -e '"curVersion"' | cut -d\" -f4)
         [ -n "$version" ] && _tmp=$(find "$qq_path" -type d -name "$version" 2>/dev/null |grep "versions/${version}$")
-        [ -n "$_tmp" ] && qq_path="$_tmp" || \
-            echo "Error：已找到 version 文件 '$version_file'，但获取版本目录失败" >&2
+        { [ -n "$_tmp" ] && qq_path="$_tmp"; } || \
+            log_info "已找到 version 文件，但获取版本目录失败：'$version_file'"
     fi
 
     _tmp=$(find "$qq_path" -type d -iname 'app_launcher' 2>/dev/null | grep 'app_launcher$')
     [ -n "$_tmp" ] && { echo "${_tmp%/app/app_launcher}"; return 0; }
-    echo "Error：未在 '$qq_path' 找到可用 resources 路径" >&2; return 1;
+    log_error "未在 '$qq_path' 找到可用 resources 路径"; return 1;
 }
 
 # 拉取 LiteLoaderQQNT
 function pull_liteloaderqqnt() {
     local url=$LITELOADERQQNT_URL
 
-    echo "正在拉取最新Release版本的仓库"
+    log_info "正在获取最新版本 LiteLoaderQQNT"
     _name=$(basename "$url")
     if download_url "$url" "$_name"; then
         unzip -oq "$_name" -d "$LITELOADERQQNT_NAME" && return 0
     fi
 
-    echo "LiteLoaderQQNT 获取失败"
+    log_error "LiteLoaderQQNT 获取失败"
     return 1
 }
 
@@ -233,46 +241,44 @@ function install_liteloaderqqnt() {
     local ll_path="$liteloaderqqnt_path"
 
     pull_liteloaderqqnt || return 1
-    echo "拉取完成，正在安装 LiteLoaderQQNT..."
+    log_info "拉取完成，正在安装 LiteLoaderQQNT..."
 
     # TODO 更好的更新逻辑
     local backup_data_dir="${LITELOADERQQNT_NAME}_bak"
     mkdir -p "$backup_data_dir"
     for _dir in "data" "plugins"; do
         if [ -n "$(ls -A "$ll_path/$_dir" 2>/dev/null)" ]; then
-            echo "正在备份 LiteLoaderQQNT 数据目录 $_dir ..."
-            if sync_files "$ll_path/$_dir" "$backup_data_dir/"; then
-                echo "已备份至 '$backup_data_dir/$_dir'"
-            else
-                echo "备份失败：$_dir"
-                return 1
+            log_info "正在备份 LiteLoaderQQNT 数据目录：$_dir"
+            if ! sync_files "$ll_path/$_dir" "$backup_data_dir/"; then
+                log_error "备份失败：$_dir"; return 1
             fi
+            log_info "已备份至 '$backup_data_dir/$_dir'"
         fi
     done
     [ -z "$(ls -A "$backup_data_dir" 2>/dev/null)" ] && rm -rf "$backup_data_dir"
 
     mv "$ll_path" "${ll_path}_bak"
-    if sync_files "$LITELOADERQQNT_NAME/" "$ll_path"; then
-        # 恢复插件和数据
-        if [ -d "$backup_data_dir" ]; then
-            # 设置数据存储模式
-            local restore_dir="$liteloaderqqnt_config"
-            [ "$SEPARATE_DATA_MODE" -eq 0 ] || restore_dir="$ll_path"
-
-            if ! sync_files "$backup_data_dir/" "$restore_dir"; then
-                echo "恢复插件数据失败，退出..."
-                return 1
-            fi
-            echo "已恢复 LiteLoaderQQNT 数据"
-        fi
-        rm -rf "${ll_path}_bak"
-        echo "LiteLoaderQQNT 安装/更新成功"
-    else
-        echo "移动 LiteLoaderQQNT 到目标目录失败"
+    if ! sync_files "$LITELOADERQQNT_NAME/" "$ll_path"; then
+        log_error "移动 LiteLoaderQQNT 到目标目录失败"
         rm -rf "$ll_path"
-        mv "${ll_path}_bak" "$ll_path" && echo "更新失败，已恢复，退出..."
+        mv "${ll_path}_bak" "$ll_path" && log_info "更新失败，已恢复，退出..."
         return 1
     fi
+
+    # 恢复插件和数据
+    if [ -d "$backup_data_dir" ]; then
+        # 设置数据存储模式
+        local restore_dir="$liteloaderqqnt_config"
+        [ "$SEPARATE_DATA_MODE" -eq 0 ] || restore_dir="$ll_path"
+
+        if ! sync_files "$backup_data_dir/" "$restore_dir"; then
+            log_error "恢复插件数据失败，退出..."
+            return 1
+        fi
+        log_info "已恢复 LiteLoaderQQNT 数据"
+    fi
+    rm -rf "${ll_path}_bak"
+    log_info "LiteLoaderQQNT 安装/更新成功"
 
     # 修补 resources
     patch_resources || return 1
@@ -282,9 +288,9 @@ function install_liteloaderqqnt() {
         "$HOME/Library/Application Support/QQ/versions")
 
     if [ "$PLATFORM" = "macos" ]; then
-        echo "尝试处理 QQ 热更新"
+        log_info "尝试处理 QQ 热更新"
         for _tmp in "${qq_update_dir[@]}"; do
-            qq_res_path=$(get_qq_resources_path "$_tmp") || { echo "无热更新."; continue; }
+            qq_res_path=$(get_qq_resources_path "$_tmp") || { log_info "无热更新."; continue; }
             patch_resources
         done
         return 0 # TODO 无论是否成功都返回 true，待优化？
@@ -297,50 +303,51 @@ function patch_resources() {
     local jsfile_name="ml_install.js"   # 这里的文件名可以随意设置
     local jsfile_path="$qq_res_path/app/app_launcher/$jsfile_name"
 
-    echo "开始处理 $qq_res_path"
+    log_info "开始处理 $qq_res_path"
 
     [[ "$LITELOADERQQNT_DIR" =~ ^(qq|appimage)$ ]] && ll_path="./LiteLoaderQQNT"
 
     # 写入 require(String.raw`*`) 到 *.js 文件
-    echo "正在将 'require(\"${ll_path%/}\");' 写入 app_launcher/$jsfile_name"
+    log_info "正在将创建/覆写文件：'$jsfile_path'"
     echo "require(\"${ll_path%/}\");" | $sudo_cmd tee "$jsfile_path" > /dev/null
-    echo "写入成功"
+    log_info "写入成功：'require(\"${ll_path%/}\");'"
 
     # 检查 package.json 文件是否存在
     local package_json="$qq_res_path/app/package.json"
-    [ ! -f "$package_json" ] && { echo "未找到 package.json ，跳过修改" >&2; return 1; }
+    [ ! -f "$package_json" ] && { log_error "未找到 package.json ，跳过修改"; return 1; }
 
     # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
-    echo "正在修改 package.json 的 main 字段为 './app_launcher/$jsfile_name'"
+    log_info "正在修改文件：$package_json"
     _tmp="$(cat "$package_json")"
     if ! echo "$_tmp" | sed '/"main"/ s#"[^"]*",$#"./app_launcher/'"$jsfile_name"'",#' | $sudo_cmd tee "$package_json" >/dev/null; then
-        echo "修改失败：$qq_res_path" >&2; return 1
+        log_error "修改失败：$package_json"; return 1
     fi
-    echo "修改成功: $qq_res_path"
+    log_info "修改文件 main 字段成功：'./app_launcher/$jsfile_name'"
 }
 
 function install_plugin_store() {
     local url=$PLUGIN_LIST_VIEWER_URL
     local plugins_dir="$liteloaderqqnt_config/plugins"
     local plugin_store_dir="$plugins_dir/list-viewer"
+    local plugin_name="插件列表查看"
 
-    echo "修改 LiteLoaderQQNT 文件夹权限(可能解决部分错误)"
+    log_info "修改 LiteLoaderQQNT 文件夹权限(可能解决部分错误)"
     $sudo_cmd chmod -R 0755 "$liteloaderqqnt_config"
 
     mkdir -p "$plugins_dir" || return 1
 
     if ls -A "$plugin_store_dir" &> /dev/null; then
-        echo "插件列表查看已存在"
+        log_info "插件已存在，跳过安装：$plugin_name"
         return 0
     fi
 
-    echo "正在拉取最新版本的插件列表查看..."
+    log_info "正在安装最新版本插件：$plugin_name"
     _name=$(basename "$url")
     if download_url "$url" "$_name"; then
-        unzip -q "$_name" -d "$plugin_store_dir" && { echo "插件商店安装成功"; return 0; }
+        unzip -q "$_name" -d "$plugin_store_dir" && { log_info "插件安装成功：$plugin_name"; return 0; }
     fi
 
-    echo "插件商店安装失败，请手动安装"
+    log_error "插件安装失败，请手动安装：$plugin_name"
     return 1
 }
 
@@ -355,37 +362,40 @@ function get_liteloaderqqnt_profile_from_shell_rc() {
         bash)   shell_rc_file="$HOME/.bashrc" ;;
         fish)   ll_profile_line_perfix="set -gx LITELOADERQQNT_PROFILE "
                 shell_rc_file="$(fish -c 'printf $__fish_config_dir')/config.fish" ;;
-        *)  echo "非bash、zsh、fish，将尝试修改 ~/.profile"
-            echo "若不生效，请自行根据 ~/.profile 内新增内容修改 shell 配置" ;;
+        *)  log_info "非bash、zsh、fish，将尝试修改 ~/.profile"
+            log_info "若不生效，请自行根据 ~/.profile 内新增内容修改 shell 配置" ;;
     esac
 
-    echo "尝试从 shell(${SHELL##*/}: $shell_rc_file) 获取环境变量: LITELOADERQQNT_PROFILE"
-    local _tmp=$(sed -n "s/^$ll_profile_line_perfix//gp" "$shell_rc_file" | awk 'END { print }')
+    log_info "尝试从 shell(${SHELL##*/}: $shell_rc_file) 获取环境变量: LITELOADERQQNT_PROFILE"
+    _tmp=$(sed -n "s/^$ll_profile_line_perfix//gp" "$shell_rc_file" | awk 'END { print }')
     if [ -n "$_tmp" ]; then
         _tmp=$(echo "${_tmp}" | sed 's/^\"//;s/\"$//;s/^'\''//;s/'\''$//')
         existing_ll_profile_value=$(echo "$_tmp"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
-        echo "当前 ${SHELL##*/} 配置中变量 $var_name 值为 \"$existing_ll_profile_value\""
+        log_info "获取 ${SHELL##*/} 配置中变量 $var_name 成功：\"$existing_ll_profile_value\""
     fi
 }
 
 function set_liteloaderqqnt_profile_to_shell_rc() {
-    local var_value=$(echo "$liteloaderqqnt_config"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
+    local var_value
+    var_value=$(echo "$liteloaderqqnt_config"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
     local var_name="LITELOADERQQNT_PROFILE"
     local MARKER_START="# BEGIN LITELOADERQQNT"
     local MARKER_END="# END LITELOADERQQNT"
 
     local context="$ll_profile_line_perfix\"$var_value\""
     if grep -q "^$MARKER_START$" "$shell_rc_file" && grep -q "^$MARKER_END$" "$shell_rc_file"; then
-        [ "$existing_ll_profile_value" = "$var_value" ] && { echo "shell 配置内的变量 '$var_name' 值与当前值一致，跳过更新"; return 0; }
+        [ "$existing_ll_profile_value" = "$var_value" ] && \
+            { log_info "shell ${SHELL##*/} 配置中变量 $var_name 值与当前值一致，跳过更新"; return 0; }
+
         sed -i "/$MARKER_START/,/$MARKER_END/ {
             /$ll_profile_line_perfix/ s|.*|$context|;
         }" "$shell_rc_file" && \
-        echo "使用运行值更新 $var_name，值为 \"$var_value\""
+        log_info "使用运行值更新 $var_name: \"$var_value\""
     else
         context="$MARKER_START\n# 请勿在行内填写任何其他配置\n$context\n$MARKER_END"
         sed -i "/^$ll_profile_line_perfix/d" "$shell_rc_file"
-        echo -e "\n$context" >> "$shell_rc_file" || { echo "变量 $var_name 写出失败" >&2; return 1; }
-        echo "已更新变量 $var_name 至 $shell_rc_file：\"$var_value\""
+        echo -e "\n$context" >> "$shell_rc_file" || { log_error "变量 $var_name 写出失败"; return 1; }
+        log_info "已更新变量 $var_name 至 $shell_rc_file：\"$var_value\""
     fi
 }
 
@@ -393,18 +403,18 @@ function install_liteloaderqqnt_with_aur() {
     if [ -f /usr/bin/pacman ]; then
         # AUR 中的代码本身就需要对 GitHub 进行访问，故不添加网络判断了
         if grep -Eq "Arch Linux|ID_LIKE=\"arch\"" /etc/os-release; then
-            echo "检测到系统是 Arch Linux"
-            echo "3 秒后将使用 aur 中的 liteloader-qqnt-bin 进行安装"
-            echo "或按任意键切换传统安装方式"
+            log_info "检测到系统是 Arch Linux"
+            log_info "3 秒后将使用 aur 中的 liteloader-qqnt-bin 进行安装"
+            log_info "或按任意键切换传统安装方式"
             read -r -t 3 -n 1 response
             # 检查用户输入是否为空（3 秒内无输入）
             if [[ -z "$response" ]]; then
-                echo "开始使用 aur 安装..."
+                log_info "开始使用 aur 安装..."
                 if git clone https://aur.archlinux.org/liteloader-qqnt-bin.git; then
-                    { cd liteloader-qqnt-bin && makepkg -si; } || { echo "安装失败" >&2; return 1; }
+                    { cd liteloader-qqnt-bin && makepkg -si; } || { log_error "安装失败"; return 1; }
                 fi
             else
-                echo "切换使用传统方式安装"
+                log_info "切换使用传统方式安装"
             fi
         fi
     fi
@@ -415,10 +425,10 @@ function install_for_flatpak_qq() {
     if command -v flatpak &> /dev/null; then
         # 检查是否安装了 Flatpak 版的 QQ
         if flatpak list --app --columns=application | grep -xq "com.qq.QQ"; then
-            echo "检测到 Flatpak 版 QQ 已安装"
+            log_info "检测到 Flatpak 版 QQ 已安装"
 
             liteloaderqqnt_path=$(get_liteloaderqqnt_path "$qq_res_path") || {
-                echo "获取 LiteLoaderQQNT 本体路径失败" >&1
+                log_error "获取 LiteLoaderQQNT 本体路径失败"
                 return 1
             }
 
@@ -426,14 +436,14 @@ function install_for_flatpak_qq() {
             install_liteloaderqqnt || return 1
 
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
-            echo "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
+            log_info "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
             $sudo_cmd flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_config"
             $sudo_cmd flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_path"
 
             # 将 LITELOADERQQNT_PROFILE 作为环境变量传递给 Flatpak 版 QQ
             $sudo_cmd flatpak override --user com.qq.QQ --env=LITELOADERQQNT_PROFILE="$liteloaderqqnt_config"
 
-            echo "设置完成！LiteLoaderQQNT 数据目录：$liteloaderqqnt_config"
+            log_info "设置完成！LiteLoaderQQNT 数据目录：$liteloaderqqnt_config"
         fi
     fi
 }
@@ -444,7 +454,7 @@ function get_qqnt_appimage_url() {
     check_url="$(download_url https://im.qq.com/linuxqq/index.shtml -| grep -o 'https://.*linuxQQDownload.js?[^"]*')"
     [ "$check_url" ] && appimage_url=$(download_url "$check_url" -| grep -o 'https://[^,]*AppImage' | grep "$_arch")
 
-    [ -z "$appimage_url" ] && { echo "获取qq下载链接失败"; return 1; }
+    [ -z "$appimage_url" ] && { log_error "获取qq下载链接失败"; return 1; }
     echo "$appimage_url"
 }
 
@@ -453,11 +463,11 @@ function calc_appimage_offset() {
     local appimage_file="$1"
     local magic_number="68 73 71 73" #hsqs
 
-    [ ! -f "$appimage_file" ] && { echo "Error: '$appimage_file' not found!" >&2; return 1; }
+    [ ! -f "$appimage_file" ] && { log_error "'$appimage_file' not found!"; return 1; }
 
     # 查找魔数并计算偏移值
     lineno=$(od -A n -t x1 -v -w4 "$appimage_file" | awk "/^ $magic_number/ {print NR; exit}")
-    [ -z "$lineno" ] && { echo "Error: 未找到 squashfs"; return 1; }
+    [ -z "$lineno" ] && { log_error "未找到 squashfs"; return 1; }
 
     echo "$(( (lineno-1)*4 ))"
 }
@@ -466,23 +476,23 @@ function calc_appimage_offset() {
 function extract_appimage() {
     local appimage_file="$1"
     offset=$(calc_appimage_offset "$appimage_file") || return 1
-    echo "squashfs偏移值：$offset"
+    log_info "squashfs偏移值：$offset"
     output="out.squashfs"
     rm -rf squashfs-root runtime
 
-    echo "正在写出 runtime 文件：runtime"
+    log_info "正在写出 runtime 文件：runtime"
     head -c "$offset" "$appimage_file" > runtime || return 1
-    echo "写出成功：runtime"
+    log_info "写出成功：runtime"
 
-    echo "正在写出 squashfs 文件：$output"
+    log_info "正在写出 squashfs 文件：$output"
     tail -c +"$((offset+1))" "$appimage_file" > "$output" || return 1
-    echo "写出成功：$output"
+    log_info "写出成功：$output"
 
-    echo "开始提取 squashfs 内容"
+    log_info "开始提取 squashfs 内容"
     unsquashfs "$output" >/dev/null
-    [ ! -d "squashfs-root" ] && { echo "文件提取失败: $output" >&2; return 1; }
-    echo "文件提取成功：squashfs-root"
-    rm "$output" && echo "临时文件 $output 已移除"
+    [ ! -d "squashfs-root" ] && { log_error "文件提取失败: $output"; return 1; }
+    log_info "文件提取成功：squashfs-root"
+    rm "$output" && log_info "临时文件 $output 已移除"
 }
 
 # 修改 AppRun 文件以支持变量 LITELOADERQQNT_PROFILE
@@ -496,7 +506,7 @@ function patch_appimage_apprun() {
     else
         # 如果不存在，则添加新的行
         echo "export LITELOADERQQNT_PROFILE=\${LITELOADERQQNT_PROFILE:=$profile_dir}" >> "$apprun_file"
-        echo "已添加 LITELOADERQQNT_PROFILE: \"$profile_dir\""
+        log_info "已添加 LITELOADERQQNT_PROFILE: \"$profile_dir\""
     fi
 }
 
@@ -504,14 +514,14 @@ function patch_appimage_apprun() {
 function repack_appimage() {
     local appdir="$1"
     local output="$2"
-    echo "正在重新打包"
+    log_info "正在重新打包"
     mksquashfs "$appdir" tmp.squashfs -root-owned -noappend >/dev/null
     cat "runtime" >> "$output"
     cat "tmp.squashfs" >> "$output"
     rm -rf "tmp.squashfs"
     rm -f "runtime"
     chmod a+x "$output"
-    echo "打包完成：$output"
+    log_info "打包完成：$output"
 }
 
 function download_qq_appimage() {
@@ -525,10 +535,10 @@ function download_qq_appimage() {
 function patch_appimage() {
     # APPIMAGE_MODE=0
     LITELOADERQQNT_DIR="${LITELOADERQQNT_DIR:-appimage}"
-    echo "正在获取 LiteLoaderQQNT 版本..."
+    log_info "正在获取 LiteLoaderQQNT 版本..."
     liteloaderqqnt_check_url="https://github.com/LiteLoaderQQNT/LiteLoaderQQNT/releases/latest"
     liteloaderqqnt_version=$(basename "$(wget -t3 -T3 --spider "$liteloaderqqnt_check_url" 2>&1 | grep -m1 -o 'https://.*releases/tag[^ ]*')")
-    echo "最新 LiteLoaderQQNT 版本：$liteloaderqqnt_version"
+    log_info "最新 LiteLoaderQQNT 版本：$liteloaderqqnt_version"
 
     if [ -z "$APPIMAGE_PATH" ]; then
         download_qq_appimage || return 1
@@ -538,7 +548,7 @@ function patch_appimage() {
     _tmp=${APPIMAGE_PATH##*/}
     new_qq_filename="$WORKDIR/${_tmp%%AppImage}_patch-${liteloaderqqnt_version}.AppImage"
 
-    echo "正在对 AppImage 文件进行补丁操作: $APPIMAGE_PATH"
+    log_info "正在对 AppImage 文件进行补丁操作: $APPIMAGE_PATH"
     extract_appimage "$APPIMAGE_PATH" || return 1
     patch_appimage_apprun "squashfs-root" || return 1
 
@@ -556,7 +566,7 @@ _tmp=$(echo "${PLATFORM:-$(uname)}" | tr '[:upper:]' '[:lower:]')
 case "$_tmp" in
     "linux")            PLATFORM="linux";;
     "darwin"|"macos")   PLATFORM="macos";;
-    *) echo "不支持的系统？请反馈，退出..."; exit 1 ;;
+    *) log_error "不支持的系统？请反馈，退出..."; exit 1 ;;
 esac
 
 readonly LITELOADERQQNT_NAME="LiteLoaderQQNT"
@@ -577,7 +587,7 @@ fi
 
 # 解析参数
 OPTIONS=$(getopt -o h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help -n "$0" -- "$@") || \
-    { echo "Error: 参数处理失败."; exit 1; }
+    { log_error "参数处理失败."; exit 1; }
 eval set -- "$OPTIONS"
 unset OPTIONS
 
@@ -597,24 +607,23 @@ while true; do
         -k|--skip-sudo) SKIP_SUDO=0; shift 1 ;;
         -u|--update)    echo "TODO"; exit 0 ;; #TODO
         --) shift; break ;;
-        *)  echo "Error: 未知选项 '$1'."; show_help; exit 1 ;;
+        *)  log_error "未知选项 '$1'."; show_help; exit 1 ;;
     esac
 done
 
 _tmp="${LITELOADERQQNT_PROFILE:-$DEFAULT_LITELOADERQQNT_CONFIG}"
-mkdir -p "$_tmp" || { echo "目录创建失败：$_tmp" >&2; exit 1; }
-echo "目录创建成功：$_tmp"
+mkdir -p "$_tmp" || { log_error "LiteLoaderQQNT 数据目录创建失败：$_tmp"; exit 1; }
+log_info "LiteLoaderQQNT 数据目录创建成功：$_tmp"
 liteloaderqqnt_config=$(realpath "$_tmp")
 
 # 创建并切换至临时目录
 temp_dir=$(mktemp -d)
-echo "临时目录创建成功: $temp_dir"
+log_info "临时目录创建成功: $temp_dir"
 cd "$temp_dir" || exit 1
 
 # 检查是否为 root 用户
 if [ "$(id -u)" -eq 0 ]; then
-    echo "错误：禁止以 root 用户执行此脚本。"
-    echo "请使用普通用户执行"
+    log_error "禁止以 root 用户执行此脚本，请使用普通用户执行"
     exit 1
 fi
 
@@ -645,12 +654,12 @@ qq_res_path=$(get_qq_resources_path) && {
 
 install_plugin_store
 
-echo "如果安装过程中没有提示发生错误"
-echo "但 QQ 设置界面没有 LiteLoaderQQNT"
-echo "请检查已安装过的插件"
-echo "插件错误会导致 LiteLoaderQQNT 无法正常启动"
+log_info "如果安装过程中没有提示发生错误
+         但 QQ 设置界面没有 LiteLoaderQQNT
+         请检查已安装过的插件
+         插件错误会导致 LiteLoaderQQNT 无法正常启动
 
-echo "打开QQ后会弹出初始化失败，此为正常现象，请按照说明完成后续操作"
+         打开QQ后会弹出初始化失败，此为正常现象，请按照说明完成后续操作"
 
-echo "脚本将在 3 秒后退出..."
+log_info "脚本将在 3 秒后退出..."
 sleep 3
