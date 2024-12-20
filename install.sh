@@ -585,7 +585,7 @@ function patch_appimage() {
     fi
 
     _tmp=${APPIMAGE_PATH##*/}
-    new_qq_filename="$WORKDIR/${_tmp%%AppImage}_patch-${LITELOADERQQNT_LASTEST_VERSION}.AppImage"
+    new_qq_filename="$WORKDIR/${_tmp%%.AppImage}_patch-${LITELOADERQQNT_LASTEST_VERSION}.AppImage"
 
     log_info "正在对 AppImage 文件进行补丁操作: $APPIMAGE_PATH"
     extract_appimage "$APPIMAGE_PATH" || return 1
