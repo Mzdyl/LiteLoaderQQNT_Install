@@ -692,23 +692,19 @@ if [ "$PLATFORM" = "linux" ]; then
 fi
 
 qq_res_path=$(get_qq_resources_path) && {
-    liteloaderqqnt_path=$(get_liteloaderqqnt_path)
+    liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
     install_liteloaderqqnt || exit 1
 }
+
+install_plugin_store
 
 [ "$PLATFORM" = "linux" ] && {
     get_liteloaderqqnt_profile_from_shell_rc
     set_liteloaderqqnt_profile_to_shell_rc
 }
 
-install_plugin_store
-
 log_info "如果安装过程中没有提示发生错误
          但 QQ 设置界面没有 LiteLoaderQQNT
          请检查已安装过的插件
          插件错误会导致 LiteLoaderQQNT 无法正常启动
-
          打开QQ后会弹出初始化失败，此为正常现象，请按照说明完成后续操作"
-
-log_info "脚本将在 3 秒后退出..."
-sleep 3
