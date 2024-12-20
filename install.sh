@@ -446,13 +446,13 @@ function install_for_flatpak_qq() {
         if flatpak list --app --columns=application | grep -xq "com.qq.QQ"; then
             log_info "检测到 Flatpak 版 QQ 已安装"
 
+            qq_res_path=$(flatpak info --show-location com.qq.QQ)/files/extra/QQ/resources
             liteloaderqqnt_path=$(get_liteloaderqqnt_path "$qq_res_path") || {
                 log_error "获取 LiteLoaderQQNT 本体路径失败"
                 return 1
             }
-
-            qq_res_path=$(flatpak info --show-location com.qq.QQ)/files/extra/QQ/resources
             install_liteloaderqqnt || return 1
+
 
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
             log_info "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
