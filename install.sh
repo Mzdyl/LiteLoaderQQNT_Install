@@ -20,6 +20,7 @@ Usage: $0 [options]...
 
 Options:
   --appimage[=<path>]     操作 AppImage，未指定路径时自动从官网下载
+  --with-plugin           patch AppImage 后继续安装插件、写入环境变量
   --ll-dir <options|path>         指定 LiteLoaderQQNT 本体存放路径，可选值
                             - 'xdg' 默认，位于 '\$HOME/.local/share/LiteLoaderQQNT'
                             - 'qq' 位于 qq 安装目录的 app 文件夹内
@@ -593,7 +594,7 @@ function patch_appimage() {
     repack_appimage "squashfs-root" "$new_qq_filename" || return 1
 }
 
-unset INSTALL_FORCE
+unset INSTALL_FORCE APPIMAGE_WITH_PLUGIN
 
 # 检查平台
 _tmp=$(echo "${PLATFORM:-$(uname)}" | tr '[:upper:]' '[:lower:]')
@@ -620,7 +621,7 @@ fi
 # [ -d "$QQ_PATH" ] || { echo "指定的 QQ 路径不存在：'$QQ_PATH'" >&2; exit 1; }
 
 # 解析参数
-OPTIONS=$(getopt -o f,h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help,force -n "$0" -- "$@") || \
+OPTIONS=$(getopt -o f,h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help,force,with-plugin -n "$0" -- "$@") || \
     { log_error "参数处理失败."; exit 1; }
 eval set -- "$OPTIONS"
 unset OPTIONS
@@ -636,6 +637,7 @@ while true; do
             [ -f "$_tmp" ] && APPIMAGE_PATH=$(realpath "$_tmp")
             [ -f "$_tmp" ] || unset APPIMAGE_PATH
             shift 2 ;;
+        --with-plugin)  APPIMAGE_WITH_PLUGIN=0; shift 1 ;;
         --ll-dir)       LITELOADERQQNT_DIR="${2:-LITELOADERQQNT_DIR}"; shift 2 ;;
         --ll-profile)   LITELOADERQQNT_PROFILE="${2:-$LITELOADERQQNT_PROFILE}"; shift 2 ;;
         -k|--skip-sudo) SKIP_SUDO=0; shift 1 ;;
@@ -673,22 +675,22 @@ log_info "最新 LiteLoaderQQNT: $LITELOADERQQNT_LASTEST_VERSION"
 log_info "最新 list-viewer 插件: $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
 
 # patch appimage
-[ "$APPIMAGE_MODE" = 0 ] && {
+if [ "$APPIMAGE_MODE" = 0 ]; then
     patch_appimage "$APPIMAGE_PATH" || exit 1
-    exit 0
-}
+    [ "$APPIMAGE_WITH_PLUGIN" != 0 ] && exit 0 # -f 强制安装插件、写入变量
+else
+    elevate_permissions || exit
 
-elevate_permissions || exit
+    if [ "$PLATFORM" = "linux" ]; then
+        install_liteloaderqqnt_with_aur || exit 1
+        install_for_flatpak_qq || exit 1
+    fi
 
-if [ "$PLATFORM" = "linux" ]; then
-    install_liteloaderqqnt_with_aur || exit 1
-    install_for_flatpak_qq || exit 1
+    qq_res_path=$(get_qq_resources_path) && {
+        liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
+        install_liteloaderqqnt || exit 1
+    }
 fi
-
-qq_res_path=$(get_qq_resources_path) && {
-    liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
-    install_liteloaderqqnt || exit 1
-}
 
 install_plugin_store
 
