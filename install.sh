@@ -43,11 +43,11 @@ EOF
 }
 
 log_info() {
-    printf "\e[32m[INFO]\e[0m : $1\n"
+    printf "\e[32m[INFO]\e[0m : %s\n" "$1"
 }
 
 log_error() {
-    printf "\e[31m[ERROR]\e[0m: $1\n" >&2
+    printf "\e[31m[ERROR]\e[0m: %s\n" "$1" >&2
 }
 
 # 依赖检查
@@ -336,7 +336,7 @@ function patch_resources() {
     [[ "$LITELOADERQQNT_DIR" =~ ^(qq|appimage)$ ]] && ll_path="./LiteLoaderQQNT"
 
     # 写入 require(String.raw`*`) 到 *.js 文件
-    log_info "正在将创建/覆写文件：'$jsfile_path'"
+    log_info "正在创建/覆写文件：'$jsfile_path'"
     echo "require(\"${ll_path%/}\");" | $sudo_cmd tee "$jsfile_path" > /dev/null
     log_info "写入成功：'require(\"${ll_path%/}\");'"
 
@@ -672,7 +672,7 @@ log_info "最新 list-viewer 插件: $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
     exit 0
 }
 
-elevate_permissions
+elevate_permissions || exit
 
 if [ "$PLATFORM" = "linux" ]; then
     install_liteloaderqqnt_with_aur || exit 1
