@@ -83,8 +83,7 @@ function check_url_connectivity() {
 
 # 定义代理 URL 列表
 github_download_proxies=(
-    "$PROXY_URL"
-    "https://mirror.ghproxy.com"
+    "${PROXY_URL:=https://mirror.ghproxy.com}"
     "https://gh.h233.eu.org"
     "https://gh.ddlc.top"
     "https://slink.ltd"
