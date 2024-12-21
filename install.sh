@@ -20,15 +20,16 @@ Usage: $0 [options]...
 
 Options:
   --appimage[=<path>]     操作 AppImage，未指定路径时自动从官网下载
+  --with-plugin           patch AppImage 后继续安装插件、写入环境变量
   --ll-dir <options|path>         指定 LiteLoaderQQNT 本体存放路径，可选值
                             - 'xdg' 默认，位于 '\$HOME/.local/share/LiteLoaderQQNT'
                             - 'qq' 位于 qq 安装目录的 app 文件夹内
                             - 'opt' 位于 /opt/LiteLoaderQQNT
                             - 其他值则为相对/绝对路径
-  --ll-profile <path>     指定 LiteLoaderQQNT 数据存放路径
+  --ll-profile <path>     指定 LiteLoaderQQNT 数据存放路径(Linux only)
   -k, --skip-sudo         强制跳过 sudo 提权
   -h, --help              显示帮助信息
-  -u, --update            尝试更新 LiteLoaderQQNT
+  -f, --force             强制更新 LiteLoaderQQNT 及插件商店
 
 默认会自动检测系统，尝试可能的 QQ 安装方式，提供如下变量供自定义：
 - 'LITELOADERQQNT_DIR' LiteLoaderQQNT 本体位置，默认值：
@@ -36,9 +37,13 @@ Options:
     macOS: '\$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoaderQQNT'
 - 'LITELOADERQQNT_PROFILE' LiteLoaderQQNT 数据目录，默认值：
     Linux: 'HOME/.config/LiteLoaderQQNT'
-    macOS: 则与本体位于同一目录
+    macOS: 与本体位于同一目录
+
 - 'QQ_PATH' 自定义 QQ 位置（其 app 文件夹所在的父目录）
 - 'PLATFORM' 强制指定系统，非必要勿使用，为可能的系统检测失败预留，值必须为 'linux' 或 'macos'
+- 'ARCH' 为 AppImage 打包指定系统架构，默认自动检测，仅支持 'x86_64' 和 'arm64'
+- 'APPIMAGE_PATH' AppImage 文件路径
+- 'PROXY_URL' 自定义 Github 下载代理，会在预置的代理中优先使用该变量
 EOF
 }
 
@@ -78,8 +83,7 @@ function check_url_connectivity() {
 
 # 定义代理 URL 列表
 github_download_proxies=(
-    "$REPROXY_URL"
-    "https://mirror.ghproxy.com"
+    "${PROXY_URL:=https://mirror.ghproxy.com}"
     "https://gh.h233.eu.org"
     "https://gh.ddlc.top"
     "https://slink.ltd"
@@ -164,7 +168,7 @@ function download_url() {
 }
 
 # 获取最新版本号(release tag)
-get_github_latest_release() {
+function get_github_latest_release() {
     local url="$1"
     if ! [[ "$url" =~ ^(https?:\/\/)?github\.com/ ]]; then
         log_error "非 GitHub 仓库 URL：'$url'"
@@ -304,22 +308,6 @@ function install_liteloaderqqnt() {
     fi
     rm -rf "${ll_path}_bak"
     log_info "LiteLoaderQQNT 安装/更新成功"
-
-    # 修补 resources
-    patch_resources || return 1
-
-    local qq_update_dir=(
-        "$HOME/Library/Containers/com.tencent.qq/Data/Library/Application Support/QQ/versions"
-        "$HOME/Library/Application Support/QQ/versions")
-
-    if [ "$PLATFORM" = "macos" ]; then
-        log_info "尝试处理 QQ 热更新"
-        for _tmp in "${qq_update_dir[@]}"; do
-            qq_res_path=$(get_qq_resources_path "$_tmp") || { log_info "无热更新."; continue; }
-            patch_resources
-        done
-        return 0 # TODO 无论是否成功都返回 true，待优化？
-    fi
 }
 
 # 修补 resources，创建 *.js 文件，并修改 package.json
@@ -348,6 +336,18 @@ function patch_resources() {
         log_error "修改失败：$package_json"; return 1
     fi
     log_info "修改文件 main 字段成功：'./app_launcher/$jsfile_name'"
+}
+
+function patch_macos_qq_hot_update() {
+    local qq_update_dir=(
+        "$HOME/Library/Containers/com.tencent.qq/Data/Library/Application Support/QQ/versions"
+        "$HOME/Library/Application Support/QQ/versions")
+    log_info "尝试处理 QQ 热更新"
+    for _tmp in "${qq_update_dir[@]}"; do
+        qq_res_path=$(get_qq_resources_path "$_tmp") || { log_info "无热更新."; continue; }
+        patch_resources
+    done
+    return 0 # TODO 无论是否成功都返回 true，待优化？
 }
 
 function install_plugin_store() {
@@ -471,7 +471,7 @@ function install_for_flatpak_qq() {
                 return 1
             }
             install_liteloaderqqnt || return 1
-
+            patch_resources || return 1
 
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
             log_info "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
@@ -580,7 +580,7 @@ function patch_appimage() {
     fi
 
     _tmp=${APPIMAGE_PATH##*/}
-    new_qq_filename="$WORKDIR/${_tmp%%AppImage}_patch-${LITELOADERQQNT_LASTEST_VERSION}.AppImage"
+    new_qq_filename="$WORKDIR/${_tmp%%.AppImage}_patch-${LITELOADERQQNT_LASTEST_VERSION}.AppImage"
 
     log_info "正在对 AppImage 文件进行补丁操作: $APPIMAGE_PATH"
     extract_appimage "$APPIMAGE_PATH" || return 1
@@ -590,10 +590,12 @@ function patch_appimage() {
     liteloaderqqnt_path=$(get_liteloaderqqnt_path) || return 1
 
     install_liteloaderqqnt || return 1
+    patch_resources || return 1
+
     repack_appimage "squashfs-root" "$new_qq_filename" || return 1
 }
 
-unset INSTALL_FORCE
+unset INSTALL_FORCE APPIMAGE_WITH_PLUGIN SKIP_SUDO APPIMAGE_MODE
 
 # 检查平台
 _tmp=$(echo "${PLATFORM:-$(uname)}" | tr '[:upper:]' '[:lower:]')
@@ -620,7 +622,7 @@ fi
 # [ -d "$QQ_PATH" ] || { echo "指定的 QQ 路径不存在：'$QQ_PATH'" >&2; exit 1; }
 
 # 解析参数
-OPTIONS=$(getopt -o f,h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help,force -n "$0" -- "$@") || \
+OPTIONS=$(getopt -o f,h,k --long appimage::,ll-dir:,ll-profile:,skip-sudo,help,force,with-plugin -n "$0" -- "$@") || \
     { log_error "参数处理失败."; exit 1; }
 eval set -- "$OPTIONS"
 unset OPTIONS
@@ -636,10 +638,11 @@ while true; do
             [ -f "$_tmp" ] && APPIMAGE_PATH=$(realpath "$_tmp")
             [ -f "$_tmp" ] || unset APPIMAGE_PATH
             shift 2 ;;
+        --with-plugin)  APPIMAGE_WITH_PLUGIN=0; shift 1 ;;
         --ll-dir)       LITELOADERQQNT_DIR="${2:-LITELOADERQQNT_DIR}"; shift 2 ;;
         --ll-profile)   LITELOADERQQNT_PROFILE="${2:-$LITELOADERQQNT_PROFILE}"; shift 2 ;;
         -k|--skip-sudo) SKIP_SUDO=0; shift 1 ;;
-        -f|--force)    INSTALL_FORCE=0; shift 1 ;; #TODO
+        -f|--force)    INSTALL_FORCE=0; shift 1 ;;
         --) shift; break ;;
         *)  log_error "未知选项 '$1'."; show_help; exit 1 ;;
     esac
@@ -673,22 +676,25 @@ log_info "最新 LiteLoaderQQNT: $LITELOADERQQNT_LASTEST_VERSION"
 log_info "最新 list-viewer 插件: $PLUGIN_LIST_VIEWER_LASTEST_VERSION"
 
 # patch appimage
-[ "$APPIMAGE_MODE" = 0 ] && {
+if [ "$APPIMAGE_MODE" = 0 ]; then
     patch_appimage "$APPIMAGE_PATH" || exit 1
-    exit 0
-}
+    [ "$APPIMAGE_WITH_PLUGIN" != 0 ] && exit 0 # -f 强制安装插件、写入变量
+else
+    elevate_permissions || exit
 
-elevate_permissions || exit
+    if [ "$PLATFORM" = "linux" ]; then
+        install_liteloaderqqnt_with_aur || exit 1
+        install_for_flatpak_qq || exit 1
+    fi
 
-if [ "$PLATFORM" = "linux" ]; then
-    install_liteloaderqqnt_with_aur || exit 1
-    install_for_flatpak_qq || exit 1
+    [ "$PLATFORM" = "macos" ] && patch_macos_qq_hot_update
+
+    qq_res_path=$(get_qq_resources_path) && {
+        liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
+        install_liteloaderqqnt || exit 1
+        patch_resources || exit 1
+    }
 fi
-
-qq_res_path=$(get_qq_resources_path) && {
-    liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
-    install_liteloaderqqnt || exit 1
-}
 
 install_plugin_store
 
