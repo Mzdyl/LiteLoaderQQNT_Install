@@ -168,7 +168,7 @@ function download_url() {
 }
 
 # 获取最新版本号(release tag)
-get_github_latest_release() {
+function get_github_latest_release() {
     local url="$1"
     if ! [[ "$url" =~ ^(https?:\/\/)?github\.com/ ]]; then
         log_error "非 GitHub 仓库 URL：'$url'"
@@ -308,22 +308,6 @@ function install_liteloaderqqnt() {
     fi
     rm -rf "${ll_path}_bak"
     log_info "LiteLoaderQQNT 安装/更新成功"
-
-    # 修补 resources
-    patch_resources || return 1
-
-    local qq_update_dir=(
-        "$HOME/Library/Containers/com.tencent.qq/Data/Library/Application Support/QQ/versions"
-        "$HOME/Library/Application Support/QQ/versions")
-
-    if [ "$PLATFORM" = "macos" ]; then
-        log_info "尝试处理 QQ 热更新"
-        for _tmp in "${qq_update_dir[@]}"; do
-            qq_res_path=$(get_qq_resources_path "$_tmp") || { log_info "无热更新."; continue; }
-            patch_resources
-        done
-        return 0 # TODO 无论是否成功都返回 true，待优化？
-    fi
 }
 
 # 修补 resources，创建 *.js 文件，并修改 package.json
@@ -352,6 +336,18 @@ function patch_resources() {
         log_error "修改失败：$package_json"; return 1
     fi
     log_info "修改文件 main 字段成功：'./app_launcher/$jsfile_name'"
+}
+
+function patch_macos_qq_hot_update() {
+    local qq_update_dir=(
+        "$HOME/Library/Containers/com.tencent.qq/Data/Library/Application Support/QQ/versions"
+        "$HOME/Library/Application Support/QQ/versions")
+    log_info "尝试处理 QQ 热更新"
+    for _tmp in "${qq_update_dir[@]}"; do
+        qq_res_path=$(get_qq_resources_path "$_tmp") || { log_info "无热更新."; continue; }
+        patch_resources
+    done
+    return 0 # TODO 无论是否成功都返回 true，待优化？
 }
 
 function install_plugin_store() {
@@ -475,7 +471,7 @@ function install_for_flatpak_qq() {
                 return 1
             }
             install_liteloaderqqnt || return 1
-
+            patch_resources || return 1
 
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
             log_info "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
@@ -594,6 +590,8 @@ function patch_appimage() {
     liteloaderqqnt_path=$(get_liteloaderqqnt_path) || return 1
 
     install_liteloaderqqnt || return 1
+    patch_resources || return 1
+
     repack_appimage "squashfs-root" "$new_qq_filename" || return 1
 }
 
@@ -689,9 +687,12 @@ else
         install_for_flatpak_qq || exit 1
     fi
 
+    [ "$PLATFORM" = "macos" ] && patch_macos_qq_hot_update
+
     qq_res_path=$(get_qq_resources_path) && {
         liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
         install_liteloaderqqnt || exit 1
+        patch_resources || exit 1
     }
 fi
 
