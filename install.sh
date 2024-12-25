@@ -312,12 +312,17 @@ function install_liteloaderqqnt() {
 
 # 为 patch_resources 函数生成 js 内容
 function generate_js_context() {
-    local input_path="$1"
-    if [[ "$input_path" =~ (^"$HOME"$|^"$HOME/") ]]; then
-        echo -e "const path = require('node:path');\nconst home_path = process.env.HOME;\nrequire(path.join(home_path, \"${input_path#"$HOME"/}\"));"
-    else
-        echo -e "require(\"$input_path\");"
+    local input_path="${1%/}"
+    local context="require(\`$input_path\`);"
+
+    _tmp="$HOME"
+    [ "$PLATFORM" = "macos" ] && _tmp="$HOME/Library/Containers/com.tencent.qq/Data"
+
+    if [[ "$input_path" =~ (^"$_tmp"$|^"$_tmp/") ]]; then
+        _tmp=${input_path#"$_tmp"}
+        context="const path = require('node:path');\nconst home_path = process.env.HOME;\nrequire(path.join(home_path, \`$_tmp\`));"
     fi
+    echo -e "$context"
 }
 
 # 修补 resources，创建 *.js 文件，并修改 package.json
@@ -330,7 +335,6 @@ function patch_resources() {
 
     [[ "$LITELOADERQQNT_DIR" =~ ^(qq|appimage)$ ]] && ll_path="./LiteLoaderQQNT"
 
-    # local context="require(\"${ll_path%/}\");"
     local context
     context=$(generate_js_context "$ll_path")
 
