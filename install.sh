@@ -340,7 +340,9 @@ function patch_resources() {
 
     # 写入 require(String.raw`*`) 到 *.js 文件
     log_info "正在创建/覆写文件：'$jsfile_path'"
-    echo "$context" | $sudo_cmd tee "$jsfile_path" > /dev/null
+    if ! echo "$context" | $sudo_cmd tee "$jsfile_path" > /dev/null; then
+        log_error "文件写入失败"; return 1
+    fi
     log_info "创建成功：'$context'"
 
     # 检查 package.json 文件是否存在
@@ -351,7 +353,7 @@ function patch_resources() {
     log_info "正在修改文件：$package_json"
     _tmp="$(cat "$package_json")"
     if ! echo "$_tmp" | sed '/"main"/ s#"[^"]*",$#"./app_launcher/'"$jsfile_name"'",#' | $sudo_cmd tee "$package_json" >/dev/null; then
-        log_error "修改失败：$package_json"; return 1
+        log_error "修改失败"; return 1
     fi
     log_info "修改文件 main 字段成功：'./app_launcher/$jsfile_name'"
 }
