@@ -407,6 +407,7 @@ function get_liteloaderqqnt_profile_from_shell_rc() {
 }
 
 function set_liteloaderqqnt_profile_to_shell_rc() {
+    get_liteloaderqqnt_profile_from_shell_rc
     local var_value
     var_value=$(echo "$liteloaderqqnt_config"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
     local var_name="LITELOADERQQNT_PROFILE"
@@ -553,7 +554,9 @@ function install_liteloaderqqnt_with_aur() {
                 if git clone https://aur.archlinux.org/liteloader-qqnt-bin.git; then
                     { cd liteloader-qqnt-bin && makepkg -si; } || { log_error "安装失败"; return 1; }
                     patched_paths+="/opt/QQ/resources"
-                    install_plugin_store || return 0
+                    install_plugin_store
+                    set_liteloaderqqnt_profile_to_shell_rc
+                    return 0
                 fi
             else
                 log_info "切换使用传统方式安装"
@@ -720,16 +723,12 @@ else
             install_liteloaderqqnt || exit 1
             patch_resources || exit 1
             install_plugin_store
+            [ "$PLATFORM" = "linux" ] && set_liteloaderqqnt_profile_to_shell_rc
         else
             log_info "已修改，跳过：'$qq_res_path'"
         fi
     }
 fi
-
-[ "$PLATFORM" = "linux" ] && {
-    get_liteloaderqqnt_profile_from_shell_rc
-    set_liteloaderqqnt_profile_to_shell_rc
-}
 
 log_info "如果安装过程中没有提示发生错误
          但 QQ 设置界面没有 LiteLoaderQQNT
