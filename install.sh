@@ -212,9 +212,12 @@ function get_github_latest_release() {
 
 # 获取 LiteLoaderQQNT 本体安装位置
 function get_liteloaderqqnt_path() {
-    local _dir="${LITELOADERQQNT_DIR:-$DEFAULT_LITELOADERQQNT_DIR}"
+    local _dir="${LITELOADERQQNT_DIR}"
     case "$_dir" in
-        "xdg")  _dir="$HOME/.local/share/$LITELOADERQQNT_NAME" ;;
+        "xdg")
+            local _tmp=".local"
+            [ "$qq_install_method" = "linglong" ] && _tmp=".linglong/linux.qq.com.linyaps"
+            _dir="$HOME/$_tmp/share/$LITELOADERQQNT_NAME" ;;
         "qq"|"appimage")
             local _tmp=${1:-$qq_res_path}
             _tmp=${_tmp:-$(get_qq_resources_path "$QQ_PATH")} || return 1
@@ -247,6 +250,13 @@ function get_qq_resources_path() {
     _tmp=$(find "$qq_path" -type d -iname 'app_launcher' 2>/dev/null | grep 'app_launcher$')
     [ -n "$_tmp" ] && { echo "${_tmp%/app/app_launcher}"; return 0; }
     log_error "未在 '$qq_path' 找到可用 resources 路径"; return 1;
+}
+
+function check_path_is_patched() {
+    for _tmp in "${patched_paths[@]}"; do
+        [ "$_tmp" = "$1" ] && return 0
+    done
+    return 1
 }
 
 function check_for_update() {
@@ -293,7 +303,7 @@ function install_liteloaderqqnt() {
     ! download_and_extract "$url" "$ll_path" && {
         mv "$backup_data_dir" "$ll_path"
         log_error "安装失败，退出"; return 1; }
-    log_info "插件安装成功"
+    log_info "LiteLoaderQQNT 安装成功"
 
     # 恢复数据
     local _tmp=0
@@ -397,6 +407,7 @@ function get_liteloaderqqnt_profile_from_shell_rc() {
 }
 
 function set_liteloaderqqnt_profile_to_shell_rc() {
+    get_liteloaderqqnt_profile_from_shell_rc
     local var_value
     var_value=$(echo "$liteloaderqqnt_config"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
     local var_name="LITELOADERQQNT_PROFILE"
@@ -542,6 +553,10 @@ function install_liteloaderqqnt_with_aur() {
                 log_info "开始使用 aur 安装..."
                 if git clone https://aur.archlinux.org/liteloader-qqnt-bin.git; then
                     { cd liteloader-qqnt-bin && makepkg -si; } || { log_error "安装失败"; return 1; }
+                    patched_paths+="/opt/QQ/resources"
+                    install_plugin_store
+                    set_liteloaderqqnt_profile_to_shell_rc
+                    return 0
                 fi
             else
                 log_info "切换使用传统方式安装"
@@ -564,6 +579,7 @@ function install_for_flatpak_qq() {
             }
             install_liteloaderqqnt || return 1
             patch_resources || return 1
+            patched_paths+="$qq_res_path"
 
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
             log_info "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
@@ -574,11 +590,38 @@ function install_for_flatpak_qq() {
             $sudo_cmd flatpak override --user com.qq.QQ --env=LITELOADERQQNT_PROFILE="$liteloaderqqnt_config"
 
             log_info "设置完成！LiteLoaderQQNT 数据目录：$liteloaderqqnt_config"
+
+            install_plugin_store || return 0
         fi
     fi
 }
 
-unset INSTALL_FORCE APPIMAGE_WITH_PLUGIN SKIP_SUDO APPIMAGE_MODE
+function install_for_linglong_qq() {
+    # 检查 linglong 是否安装
+    if command -v ll-cli &> /dev/null; then
+        # 检查是否安装了 linglong 版的 QQ
+        _version=$(ll-cli info linux.qq.com.linyaps | awk -F\" '/"version"/ {print $4}')
+        [ -z "$_version" ] && return 1
+
+        SEPARATE_DATA_MODE=1 # 暂不支持数据分离
+        QQ_PATH="/var/lib/linglong/layers/main/linux.qq.com.linyaps/$_version"
+        qq_res_path=$(get_qq_resources_path) || {
+            log_error "linglong QQ 已安装但获取 resources 路径失败，退出"; return 1; }
+
+        qq_install_method="linglong"
+        liteloaderqqnt_path=$(get_liteloaderqqnt_path "$qq_res_path") || {
+                log_error "获取 LiteLoaderQQNT 本体路径失败"; return 1; }
+        unset qq_install_method
+
+        install_liteloaderqqnt || return 1
+        patch_resources || return 1
+        patched_paths+="$qq_res_path"
+        install_plugin_store || return 0
+    fi
+}
+
+unset INSTALL_FORCE APPIMAGE_WITH_PLUGIN SKIP_SUDO APPIMAGE_MODE patched_paths
+patched_paths=()
 
 # 检查平台
 _tmp=$(echo "${PLATFORM:-$(uname)}" | tr '[:upper:]' '[:lower:]')
@@ -591,12 +634,12 @@ esac
 readonly LITELOADERQQNT_NAME="LiteLoaderQQNT"
 if [ "$PLATFORM" = "linux" ]; then
     QQ_PATH="$(realpath "${QQ_PATH:-/opt/QQ}")"
-    readonly SEPARATE_DATA_MODE=0 # 分离本体与数据
-    readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/.local/share/$LITELOADERQQNT_NAME"
+    SEPARATE_DATA_MODE=0 # 分离本体与数据
+    readonly DEFAULT_LITELOADERQQNT_DIR="xdg"
     readonly DEFAULT_LITELOADERQQNT_CONFIG="$HOME/.config/$LITELOADERQQNT_NAME"
 elif [ "$PLATFORM" = "macos" ]; then
     QQ_PATH="${QQ_PATH:-/Applications/QQ.app}"
-    readonly SEPARATE_DATA_MODE=1 # macOS 暂不支持
+    SEPARATE_DATA_MODE=1 # macOS 暂不支持
     readonly DEFAULT_LITELOADERQQNT_DIR="$HOME/Library/Containers/com.tencent.qq/Data/Documents/$LITELOADERQQNT_NAME"
     readonly DEFAULT_LITELOADERQQNT_CONFIG="$DEFAULT_LITELOADERQQNT_DIR"
 fi
@@ -630,6 +673,8 @@ while true; do
         *)  log_error "未知选项 '$1'."; show_help; exit 1 ;;
     esac
 done
+
+LITELOADERQQNT_DIR=${LITELOADERQQNT_DIR:-$DEFAULT_LITELOADERQQNT_DIR}
 
 _tmp="${LITELOADERQQNT_PROFILE:-$DEFAULT_LITELOADERQQNT_CONFIG}"
 mkdir -p "$_tmp" || { log_error "LiteLoaderQQNT 数据目录创建失败：$_tmp"; exit 1; }
@@ -667,23 +712,23 @@ else
     if [ "$PLATFORM" = "linux" ]; then
         install_liteloaderqqnt_with_aur || exit 1
         install_for_flatpak_qq || exit 1
+        install_for_linglong_qq || exit 1
     fi
 
     [ "$PLATFORM" = "macos" ] && patch_macos_qq_hot_update
 
     qq_res_path=$(get_qq_resources_path) && {
-        liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
-        install_liteloaderqqnt || exit 1
-        patch_resources || exit 1
+        if ! check_path_is_patched "$qq_res_path"; then
+            liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
+            install_liteloaderqqnt || exit 1
+            patch_resources || exit 1
+            install_plugin_store
+            [ "$PLATFORM" = "linux" ] && set_liteloaderqqnt_profile_to_shell_rc
+        else
+            log_info "已修改，跳过：'$qq_res_path'"
+        fi
     }
 fi
-
-install_plugin_store
-
-[ "$PLATFORM" = "linux" ] && {
-    get_liteloaderqqnt_profile_from_shell_rc
-    set_liteloaderqqnt_profile_to_shell_rc
-}
 
 log_info "如果安装过程中没有提示发生错误
          但 QQ 设置界面没有 LiteLoaderQQNT
