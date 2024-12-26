@@ -252,6 +252,13 @@ function get_qq_resources_path() {
     log_error "未在 '$qq_path' 找到可用 resources 路径"; return 1;
 }
 
+function check_path_is_patched() {
+    for _tmp in "${patched_paths[@]}"; do
+        [ "$_tmp" = "$1" ] && return 0
+    done
+    return 1
+}
+
 function check_for_update() {
     local file_path="$1"
     local _name
@@ -545,6 +552,7 @@ function install_liteloaderqqnt_with_aur() {
                 log_info "开始使用 aur 安装..."
                 if git clone https://aur.archlinux.org/liteloader-qqnt-bin.git; then
                     { cd liteloader-qqnt-bin && makepkg -si; } || { log_error "安装失败"; return 1; }
+                    patched_paths+="/opt/QQ/resources"
                 fi
             else
                 log_info "切换使用传统方式安装"
@@ -567,6 +575,7 @@ function install_for_flatpak_qq() {
             }
             install_liteloaderqqnt || return 1
             patch_resources || return 1
+            patched_paths+="$qq_res_path"
 
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
             log_info "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
@@ -600,10 +609,12 @@ function install_for_linglong_qq() {
 
         install_liteloaderqqnt || return 1
         patch_resources || return 1
+        patched_paths+="$qq_res_path"
     fi
 }
 
-unset INSTALL_FORCE APPIMAGE_WITH_PLUGIN SKIP_SUDO APPIMAGE_MODE
+unset INSTALL_FORCE APPIMAGE_WITH_PLUGIN SKIP_SUDO APPIMAGE_MODE patched_paths
+patched_paths=()
 
 # 检查平台
 _tmp=$(echo "${PLATFORM:-$(uname)}" | tr '[:upper:]' '[:lower:]')
@@ -700,9 +711,13 @@ else
     [ "$PLATFORM" = "macos" ] && patch_macos_qq_hot_update
 
     qq_res_path=$(get_qq_resources_path) && {
-        liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
-        install_liteloaderqqnt || exit 1
-        patch_resources || exit 1
+        if ! check_path_is_patched "$qq_res_path"; then
+            liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
+            install_liteloaderqqnt || exit 1
+            patch_resources || exit 1
+        else
+            log_info "已修改，跳过：'$qq_res_path'"
+        fi
     }
 fi
 
