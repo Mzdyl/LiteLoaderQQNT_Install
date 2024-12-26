@@ -17,28 +17,20 @@
 
 ## 使用方法
 
-Windows 运行对应 exe 即可 [Releases 下载链接](https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_windows.exe) 
+### Windows
 
-mac/linux 下载运行 [Releases](https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases) 中对应脚本或者终端输入下方指令运行
+运行对应 exe 即可：[Releases 下载链接](https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install_windows.exe)
+或从 [Github Action](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions/workflows/windows.yml) 获取测试版
 
-```shell
-# Stable通道(mac/linux) 
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest/download/install.sh" | bash 
-```
+### Linux/macOS
 
-
-### 测试版
-
-Windows 用户可以通过 [Github Action](https://github.com/Mzdyl/LiteLoaderQQNT_Install/actions) 下载最新测试版本
-
-
-macOS/Linux 可以在终端中复制运行
+下载运行 [Releases](https://github.com/Mzdyl/LiteLoaderQQNT_Install/releases/latest) 中对应脚本或者终端输入下方指令运行
 
 ```shell
-# Git通道(mac/linux)
-curl -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install.sh"| bash
+bash <(curl -s -L "https://github.com/Mzdyl/LiteLoaderQQNT_Install/raw/main/install.sh")
 ```
-使用最新测试版本
+
+更多自定义支持见 `install.sh --help`
 
 ## 版本支持
 

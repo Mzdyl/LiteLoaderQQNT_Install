@@ -16,34 +16,41 @@ trap cleanup EXIT
 # 显示帮助信息的函数
 function show_help() {
     cat << EOF
-Usage: $0 [options]...
+Usage: cmd [options]...
 
 Options:
-  --appimage[=<path>]     操作 AppImage，未指定路径时自动从官网下载
-  --with-plugin           patch AppImage 后继续安装插件、写入环境变量
-  --ll-dir <options|path>         指定 LiteLoaderQQNT 本体存放路径，可选值
-                            - 'xdg' 默认，位于 '\$HOME/.local/share/LiteLoaderQQNT'
-                            - 'qq' 位于 qq 安装目录的 app 文件夹内
-                            - 'opt' 位于 /opt/LiteLoaderQQNT
-                            - 其他值则为相对/绝对路径
-  --ll-profile <path>     指定 LiteLoaderQQNT 数据存放路径(Linux only)
-  -k, --skip-sudo         强制跳过 sudo 提权
-  -h, --help              显示帮助信息
-  -f, --force             强制更新 LiteLoaderQQNT 及插件商店
+  --appimage[=<path>]       操作 AppImage，未指定路径时自动从官网下载
+  --with-plugin             patch AppImage 后继续安装插件、写入环境变量
+  --ll-dir <options|path>   指定 LiteLoaderQQNT 本体存放路径
+  --ll-profile <path>       指定 LiteLoaderQQNT 数据存放路径(Linux only)
+                                若 QQ 的安装方式支持，默认为
+                                '\$HOME/.config/LiteLoaderQQNT'
+  -k, --skip-sudo           强制跳过 sudo 提权
+  -h, --help                显示帮助信息
+  -f, --force               强制更新 LiteLoaderQQNT 及插件商店
 
-默认会自动检测系统，尝试可能的 QQ 安装方式，提供如下变量供自定义：
-- 'LITELOADERQQNT_DIR' LiteLoaderQQNT 本体位置，默认值：
-    Linux: '\$HOME/.local/share/LiteLoaderQQNT'
-    macOS: '\$HOME/Library/Containers/com.tencent.qq/Data/Documents/LiteLoaderQQNT'
-- 'LITELOADERQQNT_PROFILE' LiteLoaderQQNT 数据目录，默认值：
-    Linux: 'HOME/.config/LiteLoaderQQNT'
-    macOS: 与本体位于同一目录
+默认会自动检测系统，尝试可能的 QQ 安装方式，除默认安装方式外，现已支持：
+AppImage，linglong(玲珑)，flatpak
 
-- 'QQ_PATH' 自定义 QQ 位置（其 app 文件夹所在的父目录）
-- 'PLATFORM' 强制指定系统，非必要勿使用，为可能的系统检测失败预留，值必须为 'linux' 或 'macos'
-- 'ARCH' 为 AppImage 打包指定系统架构，默认自动检测，仅支持 'x86_64' 和 'arm64'
-- 'APPIMAGE_PATH' AppImage 文件路径
-- 'PROXY_URL' 自定义 Github 下载代理，会在预置的代理中优先使用该变量
+为 Arch Linux 用户优先使用 liteloader-qqnt-bin 方式，
+
+参数 --ll-dir 支持如下预设：
+    - xdg   默认，位于 '\$HOME/.local/share/LiteLoaderQQNT'
+                linglong(玲珑) 为 '\$HOME/.linglong/<appid>/share/LiteLoaderQQNT'
+    - qq    位于 qq 安装目录的 app 文件夹内
+    - opt   位于 /opt/LiteLoaderQQNT
+
+
+提供如下变量供自定义：
+    LITELOADERQQNT_DIR        LiteLoaderQQNT 本体安装位置，支持预设见 --ll-dir
+    LITELOADERQQNT_PROFILE    LiteLoaderQQNT 数据目录，见 --ll-profile
+    QQ_PATH         自定义 QQ 位置（安装位置的顶层目录，如 /opt/QQ）
+    PLATFORM        强制指定系统，非必要勿使用，为可能的系统检测失败预留，
+                        其值必须为 'linux' 或 'macos'
+    APPIMAGE_PATH   AppImage 文件路径
+    ARCH            为 AppImage 打包指定系统架构，默认自动检测，
+                        仅支持 'x86_64' 和 'arm64'
+    PROXY_URL       自定义 Github 下载代理，若存在，会在预置的代理中优先使用该变量
 EOF
 }
 
