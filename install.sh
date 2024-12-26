@@ -553,6 +553,7 @@ function install_liteloaderqqnt_with_aur() {
                 if git clone https://aur.archlinux.org/liteloader-qqnt-bin.git; then
                     { cd liteloader-qqnt-bin && makepkg -si; } || { log_error "安装失败"; return 1; }
                     patched_paths+="/opt/QQ/resources"
+                    install_plugin_store || return 0
                 fi
             else
                 log_info "切换使用传统方式安装"
@@ -586,6 +587,8 @@ function install_for_flatpak_qq() {
             $sudo_cmd flatpak override --user com.qq.QQ --env=LITELOADERQQNT_PROFILE="$liteloaderqqnt_config"
 
             log_info "设置完成！LiteLoaderQQNT 数据目录：$liteloaderqqnt_config"
+
+            install_plugin_store || return 0
         fi
     fi
 }
@@ -610,6 +613,7 @@ function install_for_linglong_qq() {
         install_liteloaderqqnt || return 1
         patch_resources || return 1
         patched_paths+="$qq_res_path"
+        install_plugin_store || return 0
     fi
 }
 
@@ -715,13 +719,12 @@ else
             liteloaderqqnt_path=$(get_liteloaderqqnt_path) || exit 1
             install_liteloaderqqnt || exit 1
             patch_resources || exit 1
+            install_plugin_store
         else
             log_info "已修改，跳过：'$qq_res_path'"
         fi
     }
 fi
-
-install_plugin_store
 
 [ "$PLATFORM" = "linux" ] && {
     get_liteloaderqqnt_profile_from_shell_rc
