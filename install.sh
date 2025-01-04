@@ -399,7 +399,11 @@ function patch_macos_qq_hot_update() {
     log_info "尝试处理 QQ 热更新"
     for _tmp in "${qq_update_dir[@]}"; do
         qq_res_path=$(get_qq_resources_path "$_tmp") || { log_info "无热更新."; continue; }
-        patch_resources
+#       patch_resources
+        log_error "检测到版本存在热更新"
+        log_error "目前 LiteLoaderQQNT 无法对 macOS 上热更新处理"
+        log_error "请更新到手动最新版本或者使用 App Store 版本QQ"
+        # 后续可能临时在脚本添加自动更新为最新版本，再重新安装LL作为过渡
     done
     return 0 # TODO 无论是否成功都返回 true，待优化？
 }
