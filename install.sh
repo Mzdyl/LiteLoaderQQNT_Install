@@ -86,7 +86,22 @@ function elevate_permissions() {
             log_info "请输入您的密码以提升权限："
             sudo -v || { log_error "提权失败，请重试或添加 '-k' 参数以跳过提权，退出"; return 1; }
             sudo_cmd="sudo" ;;
-        macos)  sudo_cmd="" ;;
+        macos)  
+            # 检测是否有完全磁盘访问权限
+            testfile="/Applications/test_permission_file"
+            if touch "$testfile" 2>/dev/null; then
+              log_info "终端具有对 /Applications 的管理权限。"
+              log_info "无需额外申请 sudo 权限"
+              rm "$testfile"
+              sudo_cmd="" 
+
+            else
+              log_info "终端没有对 /Applications 的管理权限。"
+              log_info "推荐赋予终端 完全磁盘访问权限 App管理权限。"
+              log_info "接下来将使用sudo 提权"
+              sudo -v || { log_error "提权失败，请重试或添加 '-k' 参数以跳过提权，退出"; return 1; }
+              sudo_cmd="sudo" 
+            fi;;
     esac
 }
 
