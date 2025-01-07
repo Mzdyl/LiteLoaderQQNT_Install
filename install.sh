@@ -86,7 +86,17 @@ function elevate_permissions() {
             log_info "请输入您的密码以提升权限："
             sudo -v || { log_error "提权失败，请重试或添加 '-k' 参数以跳过提权，退出"; return 1; }
             sudo_cmd="sudo" ;;
-        macos)  sudo_cmd="" ;;
+        macos)  
+            testfile="/Applications/test_permission_file"
+            if touch "$testfile" 2>/dev/null; then
+              log_info "终端具有对 /Applications 的管理权限。"
+              rm "$testfile"              
+            else
+              log_info "终端没有对 /Applications 的管理权限。"
+              log_info "推荐赋予终端 完全磁盘访问权限 App管理权限。"
+            fi
+          
+            sudo_cmd="" ;;
     esac
 }
 
@@ -108,7 +118,6 @@ github_download_proxies=(
     "https://gh.h233.eu.org"
     "https://gh.ddlc.top"
     "https://slink.ltd"
-    "https://gh.con.sh"
     "https://cors.isteed.cc"
     "https://hub.gitmirror.com"
     "https://sciproxy.com"
@@ -361,7 +370,7 @@ function patch_resources() {
 
     # 写入 require(String.raw`*`) 到 *.js 文件
     log_info "正在创建/覆写文件：'$jsfile_path'"
-    echo "require(\"${ll_path%/}\");" | $sudo_cmd tee "$jsfile_path" > /dev/null
+    echo "require(\"${ll_path%/}\");" | sudo tee "$jsfile_path" > /dev/null
     log_info "写入成功：'require(\"${ll_path%/}\");'"
 
     # 检查 package.json 文件是否存在
@@ -371,7 +380,7 @@ function patch_resources() {
     # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
     log_info "正在修改文件：$package_json"
     _tmp="$(cat "$package_json")"
-    if ! echo "$_tmp" | sed '/"main"/ s#"[^"]*",$#"./app_launcher/'"$jsfile_name"'",#' | $sudo_cmd tee "$package_json" >/dev/null; then
+    if ! echo "$_tmp" | sed '/"main"/ s#"[^"]*",$#"./app_launcher/'"$jsfile_name"'",#' | sudo tee "$package_json" >/dev/null; then
         log_error "修改失败：$package_json"; return 1
     fi
     log_info "修改文件 main 字段成功：'./app_launcher/$jsfile_name'"
@@ -384,7 +393,11 @@ function patch_macos_qq_hot_update() {
     log_info "尝试处理 QQ 热更新"
     for _tmp in "${qq_update_dir[@]}"; do
         qq_res_path=$(get_qq_resources_path "$_tmp") || { log_info "无热更新."; continue; }
-        patch_resources
+#       patch_resources
+        log_error "检测到版本存在热更新"
+        log_error "目前 LiteLoaderQQNT 无法对 macOS 上热更新处理"
+        log_error "请更新到手动最新版本或者使用 App Store 版本QQ"
+        # 后续可能临时在脚本添加自动更新为最新版本，再重新安装LL作为过渡
     done
     return 0 # TODO 无论是否成功都返回 true，待优化？
 }
