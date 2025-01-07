@@ -86,22 +86,7 @@ function elevate_permissions() {
             log_info "请输入您的密码以提升权限："
             sudo -v || { log_error "提权失败，请重试或添加 '-k' 参数以跳过提权，退出"; return 1; }
             sudo_cmd="sudo" ;;
-        macos)  
-            # 检测是否有完全磁盘访问权限
-            testfile="/Applications/test_permission_file"
-            if touch "$testfile" 2>/dev/null; then
-              log_info "终端具有对 /Applications 的管理权限。"
-              log_info "无需额外申请 sudo 权限"
-              rm "$testfile"
-              sudo_cmd="" 
-
-            else
-              log_info "终端没有对 /Applications 的管理权限。"
-              log_info "推荐赋予终端 完全磁盘访问权限 App管理权限。"
-              log_info "接下来将使用sudo 提权"
-              sudo -v || { log_error "提权失败，请重试或添加 '-k' 参数以跳过提权，退出"; return 1; }
-              sudo_cmd="sudo" 
-            fi;;
+        macos)  sudo_cmd="" ;;
     esac
 }
 
@@ -376,7 +361,7 @@ function patch_resources() {
 
     # 写入 require(String.raw`*`) 到 *.js 文件
     log_info "正在创建/覆写文件：'$jsfile_path'"
-    echo "require(\"${ll_path%/}\");" | $sudo_cmd tee "$jsfile_path" > /dev/null
+    echo "require(\"${ll_path%/}\");" | sudo tee "$jsfile_path" > /dev/null
     log_info "写入成功：'require(\"${ll_path%/}\");'"
 
     # 检查 package.json 文件是否存在
@@ -386,7 +371,7 @@ function patch_resources() {
     # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
     log_info "正在修改文件：$package_json"
     _tmp="$(cat "$package_json")"
-    if ! echo "$_tmp" | sed '/"main"/ s#"[^"]*",$#"./app_launcher/'"$jsfile_name"'",#' | $sudo_cmd tee "$package_json" >/dev/null; then
+    if ! echo "$_tmp" | sed '/"main"/ s#"[^"]*",$#"./app_launcher/'"$jsfile_name"'",#' | sudo tee "$package_json" >/dev/null; then
         log_error "修改失败：$package_json"; return 1
     fi
     log_info "修改文件 main 字段成功：'./app_launcher/$jsfile_name'"
