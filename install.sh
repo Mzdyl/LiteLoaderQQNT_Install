@@ -118,7 +118,6 @@ github_download_proxies=(
     "https://gh.h233.eu.org"
     "https://gh.ddlc.top"
     "https://slink.ltd"
-    "https://gh.con.sh"
     "https://cors.isteed.cc"
     "https://hub.gitmirror.com"
     "https://sciproxy.com"
