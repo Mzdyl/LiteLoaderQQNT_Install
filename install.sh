@@ -358,7 +358,9 @@ function patch_resources() {
 
     # 写入 require(String.raw`*`) 到 *.js 文件
     log_info "正在创建/覆写文件：'$jsfile_path'"
-    echo "require(\"${ll_path%/}\");" | $sudo_cmd tee "$jsfile_path" > /dev/null
+    if ! echo "require(\"${ll_path%/}\");" | $sudo_cmd tee "$jsfile_path" > /dev/null; then
+        log_error "写入失败，退出" && return 1
+    fi
     log_info "写入成功：'require(\"${ll_path%/}\");'"
 
     # 检查 package.json 文件是否存在
