@@ -78,26 +78,13 @@ function check_dependencies() {
 
 # 提升权限
 function elevate_permissions() {
+    user=$(id -u)
     [ "$SKIP_SUDO" = 0 ] && { log_info "跳过提权"; return 0; }
     command -v sudo >/dev/null 2>&1 || { log_info "未找到 sudo 命令"; return 0; }
 
-    case "$PLATFORM" in
-        linux)
-            log_info "请输入您的密码以提升权限："
-            sudo -v || { log_error "提权失败，请重试或添加 '-k' 参数以跳过提权，退出"; return 1; }
-            sudo_cmd="sudo" ;;
-        macos)  
-            testfile="/Applications/test_permission_file"
-            if touch "$testfile" 2>/dev/null; then
-              log_info "终端具有对 /Applications 的管理权限。"
-              rm "$testfile"              
-            else
-              log_info "终端没有对 /Applications 的管理权限。"
-              log_info "推荐赋予终端 完全磁盘访问权限 App管理权限。"
-            fi
-          
-            sudo_cmd="" ;;
-    esac
+    log_info "请输入您的密码以提升权限："
+    sudo -v || { log_error "提权失败，请重试或添加 '-k' 参数以跳过提权，退出"; return 1; }
+    sudo_cmd="sudo"
 }
 
 function sync_files() {
@@ -198,7 +185,8 @@ function download_and_extract() {
 
     if download_url "$url"; then
         [ -d "$extract_dir" ] && mv "$extract_dir" "${extract_dir}_bak"
-        if unzip -q "${url##*/}" -d "$extract_dir"; then
+        if $sudo_cmd unzip -q "${url##*/}" -d "$extract_dir"; then
+            $sudo_cmd chown -R "$user":"$user" "$extract_dir"
             rm -rf "${extract_dir}_bak"
             return 0
         fi
@@ -370,7 +358,7 @@ function patch_resources() {
 
     # 写入 require(String.raw`*`) 到 *.js 文件
     log_info "正在创建/覆写文件：'$jsfile_path'"
-    echo "require(\"${ll_path%/}\");" | sudo tee "$jsfile_path" > /dev/null
+    echo "require(\"${ll_path%/}\");" | $sudo_cmd tee "$jsfile_path" > /dev/null
     log_info "写入成功：'require(\"${ll_path%/}\");'"
 
     # 检查 package.json 文件是否存在
@@ -380,7 +368,7 @@ function patch_resources() {
     # 修改 package.json 中的 main 字段为 ./app_launcher/launcher.js
     log_info "正在修改文件：$package_json"
     _tmp="$(cat "$package_json")"
-    if ! echo "$_tmp" | sed '/"main"/ s#"[^"]*",$#"./app_launcher/'"$jsfile_name"'",#' | sudo tee "$package_json" >/dev/null; then
+    if ! echo "$_tmp" | sed '/"main"/ s#"[^"]*",$#"./app_launcher/'"$jsfile_name"'",#' | $sudo_cmd tee "$package_json" >/dev/null; then
         log_error "修改失败：$package_json"; return 1
     fi
     log_info "修改文件 main 字段成功：'./app_launcher/$jsfile_name'"
