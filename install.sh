@@ -15,7 +15,6 @@ trap cleanup EXIT
 
 # 显示帮助信息的函数
 function show_help() {
-    [ "$PLATFORM" = "macos" ]
     cat << EOF
 Usage: cmd [options]...
 

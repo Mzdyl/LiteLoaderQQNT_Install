@@ -54,7 +54,8 @@ jobs:
     - name: Run install.sh
       run: |
         chmod +x install.sh
-        ./install.sh
+          [[ "$RUNNER_OS" != "Linux" ]] && param='-k'
+        ./install.sh $param
 
     - name: Check LiteLoaderQQNT
       run: |
@@ -91,7 +92,8 @@ jobs:
 
     - name: ReRun install.sh
       run: |
-        ./install.sh
+        [[ "$RUNNER_OS" != "Linux" ]] && param='-k'
+        ./install.sh $param
 
   
   check_flatpak_qq:

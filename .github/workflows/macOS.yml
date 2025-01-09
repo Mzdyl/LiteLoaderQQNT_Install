@@ -40,7 +40,7 @@ jobs:
     - name: Run install.sh
       run: |
         chmod +x install.sh
-        ./install.sh
+        ./install.sh -k
         
     - name: Run QQ on macOS, wait, and check LiteLoaderQQNT
       run: |
@@ -76,7 +76,7 @@ jobs:
 
     - name: ReRun install.sh
       run: |
-        ./install.sh
+        ./install.sh -k
 
     - name: Check LiteLoader
       run: |
