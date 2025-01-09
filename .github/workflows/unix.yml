@@ -49,7 +49,7 @@ jobs:
       uses: actions/cache/restore@v4
       with:
         path: QQ
-        key: QQ-${{ runner.os }}
+        key: QQ
         
     - name: Download and Install QQ Software
       run: |
@@ -69,7 +69,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         path: QQ
-        key: QQ-${{ runner.os }}
+        key: QQ
 
     - name: Run install.sh
       run: |
