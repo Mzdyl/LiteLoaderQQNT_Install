@@ -15,19 +15,23 @@ trap cleanup EXIT
 
 # 显示帮助信息的函数
 function show_help() {
+    [ "$PLATFORM" = "macos" ]
     cat << EOF
 Usage: cmd [options]...
 
 Options:
+  -k, --skip-sudo           强制跳过 sudo 提权
+  -h, --help                显示帮助信息
+  -f, --force               强制更新 LiteLoaderQQNT 及插件商店
+EOF
+
+    [ "$PLATFORM" != "macos" ] && cat << EOF
   --appimage[=<path>]       操作 AppImage，未指定路径时自动从官网下载
   --with-plugin             patch AppImage 后继续安装插件、写入环境变量
   --ll-dir <options|path>   指定 LiteLoaderQQNT 本体存放路径
   --ll-profile <path>       指定 LiteLoaderQQNT 数据存放路径(Linux only)
                                 若 QQ 的安装方式支持，默认为
                                 '\$HOME/.config/LiteLoaderQQNT'
-  -k, --skip-sudo           强制跳过 sudo 提权
-  -h, --help                显示帮助信息
-  -f, --force               强制更新 LiteLoaderQQNT 及插件商店
 
 默认会自动检测系统，尝试可能的 QQ 安装方式，除默认安装方式外，现已支持：
 AppImage，linglong(玲珑)，flatpak
@@ -664,6 +668,8 @@ eval set -- "$OPTIONS"
 unset OPTIONS
 
 echo "$@" | grep -q -wE '(-h|--help)' && { show_help; exit 0; } # 优先显示帮助信息
+echo "$@" | grep -q -wE '(-k|--skip-sudo)' && { SKIP_SUDO=0; } # 跳过 sudo
+echo "$@" | grep -q -wE '(-f|--force)' && { INSTALL_FORCE=0; } # 覆盖安装
 
 # 处理每个参数
 while true; do
@@ -677,8 +683,7 @@ while true; do
         --with-plugin)  APPIMAGE_WITH_PLUGIN=0; shift 1 ;;
         --ll-dir)       LITELOADERQQNT_DIR="${2:-LITELOADERQQNT_DIR}"; shift 2 ;;
         --ll-profile)   LITELOADERQQNT_PROFILE="${2:-$LITELOADERQQNT_PROFILE}"; shift 2 ;;
-        -k|--skip-sudo) SKIP_SUDO=0; shift 1 ;;
-        -f|--force)    INSTALL_FORCE=0; shift 1 ;;
+        -k|--skip-sudo|-f|--force) shift 1 ;;
         --) shift; break ;;
         *)  log_error "未知选项 '$1'."; show_help; exit 1 ;;
     esac
