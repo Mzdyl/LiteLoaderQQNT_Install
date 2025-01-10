@@ -1,5 +1,6 @@
 from requests import get
 from sys import exit, argv
+from os import mkdir
 from os.path import join as pjoin,isfile
 from shutil import copyfile
 
@@ -55,6 +56,7 @@ print("url:%s" % r)
 # download
 p=pjoin("QQ",name)
 if not isfile(p):
+    mkdir("QQ")
     with open(p, "wb") as QQ:
         for chunk in get(r, stream=True).iter_content(chunk_size=4096):
             QQ.write(chunk)
