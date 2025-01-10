@@ -2,7 +2,7 @@ from requests import get
 from sys import exit, argv
 from os import mkdir
 from os.path import join as pjoin,isfile,isdir
-from shutil import copy as fcopy
+from shutil import copyfile
 
 # index2cdnjs
 def get1(r):
@@ -61,4 +61,4 @@ if not isfile(p):
     with open(p, "wb") as QQ:
         for chunk in get(r, stream=True).iter_content(chunk_size=4096):
             QQ.write(chunk)
-fcopy(p,'.')
+copyfile(p,name)
