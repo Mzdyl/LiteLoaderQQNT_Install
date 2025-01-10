@@ -1,6 +1,8 @@
 from requests import get
 from sys import exit, argv
-
+from os import mkdir
+from os.path import join as pjoin,isfile,isdir
+from shutil import copyfile
 
 # index2cdnjs
 def get1(r):
@@ -52,6 +54,11 @@ else:
 print("url:%s" % r)
 
 # download
-with open(name, "wb") as QQ:
-    for chunk in get(r, stream=True).iter_content(chunk_size=4096):
-        QQ.write(chunk)
+p=pjoin("QQ",name)
+if not isfile(p):
+    if not isdir("QQ"):
+        mkdir("QQ")
+    with open(p, "wb") as QQ:
+        for chunk in get(r, stream=True).iter_content(chunk_size=4096):
+            QQ.write(chunk)
+copyfile(p,name)

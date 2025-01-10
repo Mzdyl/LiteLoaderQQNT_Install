@@ -11,6 +11,10 @@ on:
       - '.github/workflows/unix.yml'
   workflow_dispatch:
 
+concurrency:
+  group: unix
+  cancel-in-progress: false
+
 jobs:
   install_and_test:
     runs-on: ${{ matrix.os }}
@@ -27,16 +31,30 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: 3.9  # 指定 Python 3 版本
+        cache: 'pip'
 
-    - name: Install dependencies
+    - name: Install dependencies (Python)
       run: |
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
-        if [[ "$RUNNER_OS" == "Linux" ]]; then
-          sudo apt-get install -f
-          sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
-        fi
+        
+    - name: Cache (apt)
+      if: runner.os == 'Linux'
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
+        version: ${{ runner.os }}
 
+    - name: Install dependencies (apt)
+      if: runner.os == 'Linux'
+      run: sudo apt-get install xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 -y
+
+    - name: Restore Cache (QQ)
+      uses: actions/cache/restore@v4
+      with:
+        path: QQ
+        key: QQ-${{ runner.os }}-${{ runner.arch }}
+        
     - name: Download and Install QQ Software
       run: |
         echo "当前 RUNNER_OS: $RUNNER_OS"
@@ -50,6 +68,12 @@ jobs:
           hdiutil detach /Volumes/QQ
           open /Applications/QQ.app/ & # 运行 QQ 以创建沙盒内文件夹
         fi
+
+    - name: Save Cache (QQ)
+      uses: actions/cache/save@v4
+      with:
+        path: QQ
+        key: QQ-${{ runner.os }}-${{ runner.arch }}
 
     - name: Run install.sh
       run: |
@@ -102,15 +126,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install Flatpak
-      run: |
-        sudo apt-get install -y xvfb # 虚拟显示
-        sudo apt-get update
-        sudo apt-get install -y flatpak
-        sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    - name: Cache (apt)
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: xvfb flatpak
+        version: flatpak
 
+    - name: Install dependencies (apt)
+      run: sudo apt-get install xvfb flatpak -y
+        
     - name: Install Flatpak QQ
       run: |
+        sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
         sudo flatpak install -y flathub com.qq.QQ
 
     - name: Run install.sh
