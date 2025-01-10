@@ -44,12 +44,13 @@ jobs:
       with:
         packages: xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
         version: ${{ runner.os }}
+        execute_install_scripts: true
 
     - name: Restore Cache(QQ)
       uses: actions/cache/restore@v4
       with:
         path: QQ
-        key: QQ
+        key: QQ-${{ runner.os }}-${{ runner.arch }}
         
     - name: Download and Install QQ Software
       run: |
@@ -69,7 +70,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         path: QQ
-        key: QQ
+        key: QQ-${{ runner.os }}-${{ runner.arch }}
 
     - name: Run install.sh
       run: |
