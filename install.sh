@@ -414,7 +414,12 @@ function get_liteloaderqqnt_profile_from_shell_rc() {
     _tmp=$(sed -n "s/^$ll_profile_line_perfix//gp" "$shell_rc_file" | awk 'END { print }')
     if [ -n "$_tmp" ]; then
         _tmp=$(echo "${_tmp}" | sed 's/^\"//;s/\"$//;s/^'\''//;s/'\''$//')
-        existing_ll_profile_value=$(echo "$_tmp"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
+        # For fish shell, don't use ${HOME}
+        if [ "${SHELL##*/}" = "fish" ]; then
+            existing_ll_profile_value=$(echo "$_tmp"| sed "s#$HOME/#\$HOME/#")
+        else
+            existing_ll_profile_value=$(echo "$_tmp"| sed "s#HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
+        fi
         log_info "获取 ${SHELL##*/} 配置中变量 $var_name 成功：\"$existing_ll_profile_value\""
     fi
 }
@@ -422,7 +427,11 @@ function get_liteloaderqqnt_profile_from_shell_rc() {
 function set_liteloaderqqnt_profile_to_shell_rc() {
     get_liteloaderqqnt_profile_from_shell_rc
     local var_value
-    var_value=$(echo "$liteloaderqqnt_config"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
+    if [ "${SHELL##*/}" = "fish" ]; then
+        var_value=$(echo "$liteloaderqqnt_config"| sed "s#$HOME/#\$HOME/#")
+    else
+        var_value=$(echo "$liteloaderqqnt_config"| sed "s#$HOME/#\${HOME}/#;s#^\$HOME/#\${HOME}/#")
+    fi
     local var_name="LITELOADERQQNT_PROFILE"
     local MARKER_START="# BEGIN LITELOADERQQNT"
     local MARKER_END="# END LITELOADERQQNT"
