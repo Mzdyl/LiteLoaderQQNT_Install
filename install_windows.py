@@ -30,42 +30,20 @@ config = Config()
 # 存储反代服务器的URL
 def get_github_proxy_urls():
     return [
-        "https://gh.h233.eu.org",
+        "https://ghfast.top"
         "https://gh.ddlc.top",
         "https://slink.ltd",
         "https://cors.isteed.cc",
         "https://hub.gitmirror.com",
         "https://sciproxy.com",
-        "https://ghproxy.cc",
-        "https://cf.ghproxy.cc",
-        "https://www.ghproxy.cc",
-        "https://ghproxy.cn",
-        "https://www.ghproxy.cn",
-        "https://gh.jiasu.in",
-        "https://dgithub.xyz",
-        "https://download.ixnic.net",
-        "https://download.nuaa.cf",
-        "https://download.scholar.rr.nu",
-        "https://download.yzuu.cf",
-        "https://mirror.ghproxy.com",
         "https://ghproxy.net",
-        "https://kkgithub.com",
         "https://gitclone.com",
         "https://hub.incept.pw",
         "https://github.moeyy.xyz",
-        "https://gh.xiu2.us.kg",
         "https://dl.ghpig.top",
         "https://gh-proxy.com",
-        "https://cors.isteed.cc",
-        "https://sciproxy.com",
-        "https://github.site",
-        "https://github.store",
-        "https://github.tmby.shop",
         "https://hub.whtrys.space",
         "https://gh-proxy.ygxz.in",
-        "https://gitdl.cn",
-        "https://ghp.ci",
-        "https://githubfast.com",
         "https://ghproxy.net"
     ]
 
