@@ -585,11 +585,11 @@ function install_for_flatpak_qq() {
 
             # 授予 Flatpak 访问 LiteLoaderQQNT 数据目录的权限
             log_info "授予 Flatpak 版 QQ 对数据目录 $liteloaderqqnt_config 和本体目录 $liteloaderqqnt_path 的访问权限"
-            $sudo_cmd flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_config"
-            $sudo_cmd flatpak override --user com.qq.QQ --filesystem="$liteloaderqqnt_path"
+            $sudo_cmd flatpak override com.qq.QQ --filesystem="$liteloaderqqnt_config"
+            $sudo_cmd flatpak override com.qq.QQ --filesystem="$liteloaderqqnt_path"
 
             # 将 LITELOADERQQNT_PROFILE 作为环境变量传递给 Flatpak 版 QQ
-            $sudo_cmd flatpak override --user com.qq.QQ --env=LITELOADERQQNT_PROFILE="$liteloaderqqnt_config"
+            $sudo_cmd flatpak override com.qq.QQ --env=LITELOADERQQNT_PROFILE="$liteloaderqqnt_config"
 
             log_info "设置完成！LiteLoaderQQNT 数据目录：$liteloaderqqnt_config"
 
