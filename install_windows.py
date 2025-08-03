@@ -17,21 +17,24 @@ import subprocess
 import tkinter as tk
 from tkinter import filedialog
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from importlib.resources import files
 
 # 当前版本号
 current_version = "1.18.1"
 
+
 class Config:
     def __init__(self, timeout=5):
         self.timeout = timeout
-        
+
+
 config = Config()
+
 
 # 存储反代服务器的URL
 def get_github_proxy_urls():
     return [
-        "https://ghfast.top"
-        "https://gh.ddlc.top",
+        "https://ghfast.top" "https://gh.ddlc.top",
         "https://slink.ltd",
         "https://cors.isteed.cc",
         "https://hub.gitmirror.com",
@@ -44,13 +47,14 @@ def get_github_proxy_urls():
         "https://gh-proxy.com",
         "https://hub.whtrys.space",
         "https://gh-proxy.ygxz.in",
-        "https://ghproxy.net"
+        "https://ghproxy.net",
     ]
 
 
 # 设置标准输出编码为UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
 subprocess.run("chcp 65001", shell=True)
+
 
 def get_qq_exe_path():
     root = tk.Tk()
@@ -77,11 +81,17 @@ def read_registry_key(hive, subkey, value_name):
 
 def get_qq_path():
     try:
-        hive, subkey, value = winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\QQ", "UninstallString"
+        hive, subkey, value = (
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\QQ",
+            "UninstallString",
+        )
         uninstall_string = read_registry_key(hive, subkey, value)
 
         if not uninstall_string or not os.path.exists(uninstall_string):
-            raise FileNotFoundError("无法通过注册表读取 QQNT 的安装目录或路径不存在")
+            raise FileNotFoundError(
+                "无法通过注册表读取 QQNT 的安装目录或路径不存在"
+            )
 
         qq_exe_path = uninstall_string.replace("Uninstall.exe", "QQ.exe")
         print(f"QQNT 的安装目录为: {qq_exe_path}")
@@ -100,7 +110,9 @@ def get_document_path() -> str:
         registry_subkey = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
         registry_value_name = "Personal"
 
-        path = read_registry_key(registry_hive, registry_subkey, registry_value_name)
+        path = read_registry_key(
+            registry_hive, registry_subkey, registry_value_name
+        )
 
         if path is None:
             path = os.path.expanduser("~/Documents")
@@ -127,11 +139,15 @@ def install_liteloader(file_path):
     try:
         temp_dir = tempfile.gettempdir()
         download_and_extract_form_release("LiteLoaderQQNT/LiteLoaderQQNT")
-#       download_and_extract_from_git("LiteLoaderQQNT/LiteLoaderQQNT")
+        #       download_and_extract_from_git("LiteLoaderQQNT/LiteLoaderQQNT")
         print("下载完成，开始安装 LiteLoaderQQNT")
 
-        source_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT")
-        destination_dir = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")
+        source_dir = os.path.join(
+            file_path, "resources", "app", "LiteLoaderQQNT"
+        )
+        destination_dir = os.path.join(
+            file_path, "resources", "app", "LiteLoaderQQNT_bak"
+        )
 
         if os.path.exists(source_dir):
             try:
@@ -146,8 +162,8 @@ def install_liteloader(file_path):
                 except Exception as e2:
                     print(f"使用 shutil.move() 重命名失败: {e2}")
 
-#       print(f"移动自: {os.path.join(temp_dir, 'LiteLoaderQQNT')}")
-#       print(f"移动到: {source_dir}")
+        #       print(f"移动自: {os.path.join(temp_dir, 'LiteLoaderQQNT')}")
+        #       print(f"移动到: {source_dir}")
 
         try:
             shutil.move(os.path.join(temp_dir, "LiteLoaderQQNT"), source_dir)
@@ -155,7 +171,9 @@ def install_liteloader(file_path):
             print(f"移动 LiteLoaderQQNT 失败, 尝试再次移动: {e1}")
             time.sleep(1)  # 等待一秒，防止文件被锁定
             try:
-                shutil.move(os.path.join(temp_dir, "LiteLoaderQQNT"), source_dir)
+                shutil.move(
+                    os.path.join(temp_dir, "LiteLoaderQQNT"), source_dir
+                )
             except Exception as e2:
                 print(f"再次尝试移动失败: {e2}")
 
@@ -163,9 +181,9 @@ def install_liteloader(file_path):
         print(f"安装LL过程发生错误: {e}")
 
 
-def countdown_input(prompt, default='y'):
+def countdown_input(prompt, default="y"):
     print(prompt)
-    
+
     start_time = time.time()
     user_input = None
     while (time.time() - start_time) < config.timeout:
@@ -179,43 +197,63 @@ def setup_environment_and_move_files(qq_exe_path):
     try:
         lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
         if lite_loader_profile:
-            modify_change = countdown_input(f"检测到数据目录为 {lite_loader_profile}，是否修改(y/N): ", 'n')
+            modify_change = countdown_input(
+                f"检测到数据目录为 {lite_loader_profile}，是否修改(y/N): ", "n"
+            )
         else:
-            modify_change = countdown_input("检测到未设置 LITELOADERQQNT_PROFILE 环境变量，是否设置环境变量？(Y/n): ")
+            modify_change = countdown_input(
+                "检测到未设置 LITELOADERQQNT_PROFILE 环境变量，是否设置环境变量？(Y/n): "
+            )
 
-        if modify_change == 'y':
+        if modify_change == "y":
             print("默认将为你修改为用户目录下 Documents 文件夹内")
-            custom_path_choice = countdown_input("是否使用自定义路径？(y/N): ", 'n')
-            if custom_path_choice == 'y':
+            custom_path_choice = countdown_input(
+                "是否使用自定义路径？(y/N): ", "n"
+            )
+            if custom_path_choice == "y":
                 root = tk.Tk()
                 root.withdraw()
-                custom_path = filedialog.askdirectory(title="请选择你要设定的 LiteLoaderQQNT 数据文件")
+                custom_path = filedialog.askdirectory(
+                    title="请选择你要设定的 LiteLoaderQQNT 数据文件"
+                )
                 custom_path = os.path.normpath(custom_path)  # 路径转换
-                command = ('setx LITELOADERQQNT_PROFILE "' + custom_path + '"')
+                command = 'setx LITELOADERQQNT_PROFILE "' + custom_path + '"'
             else:
-                default_path = get_document_path() + '\\LiteloaderQQNT'
-                command = ('setx LITELOADERQQNT_PROFILE "' + default_path + '"')
+                default_path = get_document_path() + "\\LiteloaderQQNT"
+                command = 'setx LITELOADERQQNT_PROFILE "' + default_path + '"'
             os.system(command)
             print("注意，目前版本修改环境变量后需重启电脑 Python 才能检测到")
             print("但不影响 LiteloaderQQNT 正常使用")
             print("接下来尝试检查是否存在旧数据并尝试移动")
-            if custom_path_choice == 'y':
+            if custom_path_choice == "y":
                 lite_loader_profile = custom_path
             else:
                 lite_loader_profile = default_path
-            os.environ['ML_LITELOADERQQNT_TEMP'] = lite_loader_profile
+            os.environ["ML_LITELOADERQQNT_TEMP"] = lite_loader_profile
 
-            source_dir = os.path.join(os.path.dirname(qq_exe_path), "resources", "app", "LiteLoaderQQNT")
+            source_dir = os.path.join(
+                os.path.dirname(qq_exe_path),
+                "resources",
+                "app",
+                "LiteLoaderQQNT",
+            )
             folders = ["plugins", "data"]
-            if all(os.path.exists(os.path.join(source_dir, folder)) for folder in folders):
+            if all(
+                os.path.exists(os.path.join(source_dir, folder))
+                for folder in folders
+            ):
                 for folder in folders:
                     source_folder = os.path.join(source_dir, folder)
                     target_folder = os.path.join(lite_loader_profile, folder)
                     if os.path.exists(target_folder):
-                        print(f"目标文件夹 {target_folder} 已存在，跳过移动操作。")
+                        print(
+                            f"目标文件夹 {target_folder} 已存在，跳过移动操作。"
+                        )
                     else:
                         shutil.move(source_folder, target_folder)
-                        print(f"成功移动 {folder} 文件夹至 {lite_loader_profile}")
+                        print(
+                            f"成功移动 {folder} 文件夹至 {lite_loader_profile}"
+                        )
             print(f"你的 LiteloaderQQNT 插件数据目录在 {lite_loader_profile}")
         else:
             print("已取消修改环境变量操作。")
@@ -230,7 +268,7 @@ def cleanup_old_bak(qq_exe_path):
         # 访问LiteLoaderQQNT目录并更改目录和文件权限
         lite_loader_qqnt_paths = [
             os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak"),
-            os.path.join(file_path, "resources", "app", "LiteLoaderQQNT")
+            os.path.join(file_path, "resources", "app", "LiteLoaderQQNT"),
         ]
 
         for path in lite_loader_qqnt_paths:
@@ -241,64 +279,76 @@ def cleanup_old_bak(qq_exe_path):
         if os.path.exists(bak_file_path):
             os.remove(bak_file_path)
             print(f"已删除备份文件: {bak_file_path}")
-#       else:
-#           print("备份文件不存在，无需删除。")
+        #       else:
+        #           print("备份文件不存在，无需删除。")
 
         # 移除旧版备份文件夹
         try:
-            shutil.rmtree(os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak"), ignore_errors=True)
+            shutil.rmtree(
+                os.path.join(
+                    file_path, "resources", "app", "LiteLoaderQQNT_bak"
+                ),
+                ignore_errors=True,
+            )
         except Exception as e:
             print(f"移除旧版备份失败，尝试再次移除: {e}")
-            os.system(f'del "{os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")}" /F')
+            os.system(
+                f'del "{os.path.join(file_path, "resources", "app", "LiteLoaderQQNT_bak")}" /F'
+            )
 
     except Exception as e:
         print(f"移除旧版备份时发生错误: {e}")
 
-        
+
 def create_launcher_js(file_path, version_path, launcher_name="ml_install.js"):
     try:
         # 设置 app_launcher 目录路径
-        app_launcher_path = os.path.join(version_path, 'resources', 'app', 'app_launcher')
+        app_launcher_path = os.path.join(
+            version_path, "resources", "app", "app_launcher"
+        )
         os.makedirs(app_launcher_path, exist_ok=True)  # 确保目录存在
-        
+
         # 新建 launcher 文件
         launcher_js_path = os.path.join(app_launcher_path, launcher_name)
         print(f"开始创建 {launcher_js_path}...")
-        
+
         with open(launcher_js_path, "w", encoding="utf-8") as f:
-            f.write(f"require(String.raw`{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT').replace(os.sep, '/')}`);\n")
-            
+            f.write(
+                f"require(String.raw`{os.path.join(file_path, 'resources', 'app', 'LiteLoaderQQNT').replace(os.sep, '/')}`);\n"
+            )
+
         print(f"已创建 {launcher_name} 文件")
         return launcher_js_path
-    
+
     except Exception as e:
         print(f"创建 launcher 文件时发生错误: {e}")
         return None
-    
+
+
 def patch_package_json(version_path, launcher_name="ml_install.js"):
     try:
-        app_launcher_path = os.path.join(version_path, 'resources', 'app')
+        app_launcher_path = os.path.join(version_path, "resources", "app")
         print("开始修补 package.json…")
-        
+
         package_path = os.path.join(app_launcher_path, "package.json")
         # 备份原文件
         print("已将旧版文件备份为 package.json.bak ")
         bak_package_path = package_path + ".bak"
         shutil.copyfile(package_path, bak_package_path)
-        
+
         # 读取并修改 package.json
-        with open(package_path, 'r', encoding='utf-8') as file:
+        with open(package_path, "r", encoding="utf-8") as file:
             data = json.load(file)
-            
+
         # 修改 main 字段的值为新创建的 launcher 文件路径
         data["main"] = f"./app_launcher/{launcher_name}"
-        
+
         # 将修改后的内容写回 package.json 文件
-        with open(package_path, 'w', encoding='utf-8') as file:
+        with open(package_path, "w", encoding="utf-8") as file:
             json.dump(data, file, indent=4, ensure_ascii=False)
-            
+
         print(f'"main" 字段已修改为: {data["main"]}')
-        
+
     except Exception as e:
         print(f"修补 package.json 时发生错误: {e}")
 
@@ -310,12 +360,15 @@ def patch(file_path):
         lite_loader_temp = os.getenv("ML_LITELOADERQQNT_TEMP")
 
         # 如果环境变量不存在，则使用默认路径
-        default_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT", "plugins")
+        default_path = os.path.join(
+            file_path, "resources", "app", "LiteLoaderQQNT", "plugins"
+        )
         if lite_loader_profile:
             plugin_path = os.path.join(lite_loader_profile, "plugins")
         elif lite_loader_temp:
             print(
-                "未能检测到LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量")
+                "未能检测到LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量"
+            )
             plugin_path = os.path.join(lite_loader_temp, "plugins")
         else:
             print("未能检测到LITELOADERQQNT_PROFILE，使用默认路径")
@@ -355,7 +408,7 @@ def change_folder_permissions(folder_path, user, permissions):
     try:
         cmd = ["icacls", folder_path, "/grant", f"{user}:{permissions}", "/t"]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
-#       print(f"成功修改文件夹 {folder_path} 的权限。")
+    #       print(f"成功修改文件夹 {folder_path} 的权限。")
     except subprocess.CalledProcessError as e:
         print(f"修改文件夹权限时出错: {e}")
 
@@ -363,40 +416,46 @@ def change_folder_permissions(folder_path, user, permissions):
 def install_plugin_store(file_path):
     try:
         # 获取LITELOADERQQNT_PROFILE环境变量的值
-        lite_loader_profile = os.getenv('LITELOADERQQNT_PROFILE')
+        lite_loader_profile = os.getenv("LITELOADERQQNT_PROFILE")
         lite_loader_temp = os.getenv("ML_LITELOADERQQNT_TEMP")
-        
+
         if not lite_loader_profile:
             if lite_loader_temp:
-                print("未检测到环境变量 LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量")
-                plugin_path = os.path.join(lite_loader_temp, 'plugins')
+                print(
+                    "未检测到环境变量 LITELOADERQQNT_PROFILE，但检测到安装器临时环境变量，猜测你已设置环境变量，使用安装器临时环境变量"
+                )
+                plugin_path = os.path.join(lite_loader_temp, "plugins")
             else:
                 print("环境变量 LITELOADERQQNT_PROFILE 未设置，使用默认路径")
-                plugin_path = os.path.join(file_path, "resources", "app", "LiteLoaderQQNT", "plugins")
+                plugin_path = os.path.join(
+                    file_path, "resources", "app", "LiteLoaderQQNT", "plugins"
+                )
         else:
-            plugin_path = os.path.join(lite_loader_profile, 'plugins')
-            
-        existing_destination_path = os.path.join(plugin_path, 'list-viewer')
-        
+            plugin_path = os.path.join(lite_loader_profile, "plugins")
+
+        existing_destination_path = os.path.join(plugin_path, "list-viewer")
+
         temp_dir = tempfile.gettempdir()
-        
-        if not os.path.exists(existing_destination_path) or not os.path.exists(os.path.join(existing_destination_path, 'main', 'index.js')):
+
+        if not os.path.exists(existing_destination_path) or not os.path.exists(
+            os.path.join(existing_destination_path, "main", "index.js")
+        ):
             if not os.path.exists(existing_destination_path):
                 os.makedirs(plugin_path, exist_ok=True)
             else:
                 print("检测到已安装插件商店可能存在问题，即将重装")
-                shutil.rmtree(existing_destination_path)                
+                shutil.rmtree(existing_destination_path)
             print("更新和安装插件请使用 release 版本")
             print("非 release 版本可能导致 QQ 无法正常启动")
-            
+
             # 下载并解压插件
             download_and_extract_form_release("ltxhhz/LL-plugin-list-viewer")
-#           print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
-#           print(f"移动到: {existing_destination_path}")
+            #           print(f"移动自: {os.path.join(temp_dir, 'list-viewer')}")
+            #           print(f"移动到: {existing_destination_path}")
             shutil.move(os.path.join(temp_dir, "list-viewer"), plugin_path)
         else:
             print("检测到已安装插件商店，不再重新安装")
-                
+
     except Exception as e:
         print(f"安装插件商店发生错误: {e}\n请尝试手动安装")
 
@@ -415,12 +474,15 @@ def check_proxy(proxy):
 def get_working_proxy():
     proxies = get_github_proxy_urls()
     with ThreadPoolExecutor(max_workers=len(proxies)) as executor:
-        future_to_proxy = {executor.submit(check_proxy, proxy): proxy for proxy in proxies}
+        future_to_proxy = {
+            executor.submit(check_proxy, proxy): proxy for proxy in proxies
+        }
         for future in as_completed(future_to_proxy):
             result = future.result()
             if result is not None:
                 return result
     return None
+
 
 def get_download_url(url: str) -> str:
     if can_connect(url):
@@ -430,6 +492,7 @@ def get_download_url(url: str) -> str:
         raise ValueError("无可用代理")
     return f"{proxy}/{url}"
 
+
 def download_file(url_or_path: str, filepath: str, timeout: int = 10):
     try:
         # 检查是否为本地文件路径
@@ -437,16 +500,18 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
             print(f"使用本地文件路径: {url_or_path}")
             shutil.copy(url_or_path, filepath)
             return
-        if not url_or_path.startswith(('http://', 'https://')):
+        if not url_or_path.startswith(("http://", "https://")):
             raise ValueError(f"无效的路径或 URL: {url_or_path}")
-            
+
         download_url = get_download_url(url_or_path)
         print(f"当前使用的下载链接: {download_url}")
-        
+
         try:
             # 使用 urlopen 方法来设置超时
-            with urllib.request.urlopen(download_url, timeout=timeout) as response:
-                with open(filepath, 'wb') as out_file:
+            with urllib.request.urlopen(
+                download_url, timeout=timeout
+            ) as response:
+                with open(filepath, "wb") as out_file:
                     out_file.write(response.read())
             return
         except urllib.error.URLError as e:
@@ -455,25 +520,29 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
             print(f"当前使用的下载链接: {download_url}")
 
             # 再次尝试下载文件
-            with urllib.request.urlopen(download_url, timeout=timeout) as response:
-                with open(filepath, 'wb') as out_file:
+            with urllib.request.urlopen(
+                download_url, timeout=timeout
+            ) as response:
+                with open(filepath, "wb") as out_file:
                     out_file.write(response.read())
-                
+
     except Exception as e:
         print(f"下载过程中发生错误: {e}")
         external_data_path = get_external_data_path()
         if external_data_path:
-#           print(f"使用内嵌版本，路径{external_data_path}")
+            #           print(f"使用内嵌版本，路径{external_data_path}")
             print(f"使用内嵌版本")
-            
+
             filename = os.path.basename(filepath)
             filename = os.path.splitext(filename)[0]
-            
+
             found = False
             for file in os.listdir(external_data_path):
                 if file.startswith(f"{filename}-") and file.endswith(".zip"):
                     # 找到符合条件的内嵌文件
-                    fallback_path = os.path.join(external_data_path, file)  # 更新路径为实际文件
+                    fallback_path = os.path.join(
+                        external_data_path, file
+                    )  # 更新路径为实际文件
                     found = True
                     break
             if found:
@@ -482,9 +551,11 @@ def download_file(url_or_path: str, filepath: str, timeout: int = 10):
             else:
                 raise ValueError(f"内嵌文件未找到: {fallback_path}")
         else:
-            download_url = input("无法访问 GitHub 且无可用代理，请手动输入下载地址或本地文件路径（如 "
-                            "https://mirror.ghproxy.com/https://github.com/Mzdyl/LiteLoaderQQNT_Install"
-                            "/archive/master.zip 或 C:\\path\\to\\file.zip ）：")
+            download_url = input(
+                "无法访问 GitHub 且无可用代理，请手动输入下载地址或本地文件路径（如 "
+                "https://mirror.ghproxy.com/https://github.com/Mzdyl/LiteLoaderQQNT_Install"
+                "/archive/master.zip 或 C:\\path\\to\\file.zip ）："
+            )
             if not download_url:
                 raise ValueError("未提供有效的下载地址或本地文件路径")
             download_file(download_url, filepath)
@@ -498,29 +569,33 @@ def get_latest_version(file_path):
     :return: 最新版本目录名称
     :raises FileNotFoundError: 如果无法找到 versions 目录或版本文件夹
     """
-    versions_dir = os.path.join(file_path, 'versions')
+    versions_dir = os.path.join(file_path, "versions")
     if not os.path.isdir(versions_dir):
         raise FileNotFoundError(f"无法找到 versions 目录: {versions_dir}")
-        
+
     # 获取所有版本目录名称
-    version_names = [d for d in os.listdir(versions_dir) if os.path.isdir(os.path.join(versions_dir, d))]
+    version_names = [
+        d
+        for d in os.listdir(versions_dir)
+        if os.path.isdir(os.path.join(versions_dir, d))
+    ]
     if not version_names:
         raise FileNotFoundError("在 versions 目录下未找到任何版本文件夹")
-        
+
     # 假设版本号格式为 'x.x.x-xxxxx'，通过排序选择最新版本
     latest_version = sorted(version_names, reverse=True)[0]
     print(f"检测到最新版本目录: {latest_version}")
-    
+
     return latest_version
 
 
 def download_and_extract_form_release(repos: str):
     temp_dir = tempfile.gettempdir()
-#   print(f"临时目录：{temp_dir}")
+    #   print(f"临时目录：{temp_dir}")
 
     cached_names = {
         "ltxhhz/LL-plugin-list-viewer": "list-viewer.zip",
-        "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip"
+        "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip",
     }
 
     if repos not in cached_names:
@@ -534,45 +609,53 @@ def download_and_extract_form_release(repos: str):
         # 获取网站上的最新版本号
         latest_version = get_latest_tag(repos)
         print(f"网站上的最新版本: {latest_version}")
-        
+
         # 获取内置版本号
-        
+
         internal_version = get_internal_version(filename)
         print(f"内置版本: {internal_version}")
-        
+
         if latest_version == internal_version:
             print(f"内置版本与最新版本一致，使用内置版本")
             filename = os.path.splitext(filename)[0]
             extract_dir = os.path.join(temp_dir, filename.split(".")[0])
-            shutil.unpack_archive(os.path.join(get_external_data_path(), f"{filename}-{internal_version}.zip"), extract_dir)
+            shutil.unpack_archive(
+                os.path.join(
+                    get_external_data_path(),
+                    f"{filename}-{internal_version}.zip",
+                ),
+                extract_dir,
+            )
             return
     except Exception as e:
         print(f"从GitHub获取版本信息 {repos} 时发生错误: {e}")
-        
+
     print(f"下载最新版本")
-    download_url = f"https://github.com/{repos}/releases/latest/download/{filename}"
+    download_url = (
+        f"https://github.com/{repos}/releases/latest/download/{filename}"
+    )
     download_file(download_url, zip_path)
     extract_dir = os.path.join(temp_dir, filename.split(".")[0])
     shutil.unpack_archive(zip_path, extract_dir)
-        
-        
+
+
 def download_and_extract_from_git(repos: str):
     temp_dir = tempfile.gettempdir()
     print(f"临时目录：{temp_dir}")
-    
+
     cached_names = {
         "ltxhhz/LL-plugin-list-viewer": "list-viewer.zip",
-        "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip"
+        "LiteLoaderQQNT/LiteLoaderQQNT": "LiteLoaderQQNT.zip",
     }
-    
+
     if repos not in cached_names:
         print("仓库名称无效")
         return
-    
+
     filename = cached_names[repos]
     git_url = f"https://github.com/{repos}/archive/refs/heads/main.zip"
     zip_path = os.path.join(temp_dir, filename)
-    
+
     try:
         print(f"下载最新 Git 版本的 {repos}")
         download_file(git_url, zip_path)
@@ -587,19 +670,13 @@ def download_and_extract_from_git(repos: str):
     except Exception as e:
         print(f"Git 版下载并解压 {repos} 时发生错误: {e}")
         raise
-    
-        
+
+
 def get_external_data_path():
-    # 兼容 PyInstaller
-    if hasattr(sys, '_MEIPASS'):
-        return sys._MEIPASS  # PyInstaller 打包后的临时文件路径
-    # 兼容 Nuitka
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    # 查找以 "LiteLoaderQQNT-" 开头，".zip" 结尾的文件
-    for file in os.listdir(base_dir):
-        if file.startswith("LiteLoaderQQNT-") and file.endswith(".zip"):
-            return base_dir  # 如果找到符合条件的文件，返回当前路径
-    return None
+    try:
+        return str(files("data"))
+    except:
+        return None
 
 
 def get_latest_tag(repo):
@@ -608,36 +685,35 @@ def get_latest_tag(repo):
     response.raise_for_status()  # 检查请求是否成功
     releases = response.json()
     if releases:
-        return releases[0]['tag_name']
+        return releases[0]["tag_name"]
     return None
 
 
 def get_internal_version(filename):
-    """ 获取内置版本号，假设内置版本文件命名为 {filename}-{version}.zip """
+    """获取内置版本号，假设内置版本文件命名为 {filename}-{version}.zip"""
     filename = os.path.splitext(filename)[0]
     external_data_path = get_external_data_path()
-    
+
     # 检查路径是否存在
     if not external_data_path:
         raise FileNotFoundError("无法找到外部数据路径。")
-        
+
         # 查找符合命名格式的文件
     for file in os.listdir(external_data_path):
         if file.startswith(f"{filename}-") and file.endswith(".zip"):
             # 从文件名中提取版本号
-            version = file.split('-')[-1].replace('.zip', '')
+            version = file.split("-")[-1].replace(".zip", "")
             return version
-        
-    return None  # 如果没有找到匹配的内置版本文件，则返回 None
 
+    return None  # 如果没有找到匹配的内置版本文件，则返回 None
 
 
 def main():
     try:
         # 检查命令行参数，决定是否启用静默安装
-        if '--silent' in sys.argv:
+        if "--silent" in sys.argv:
             config.timeout = 0  # 静默安装时将超时时间设置为 0
-            
+
         # 检测是否在 GitHub Actions 中运行
         github_actions = os.getenv("GITHUB_ACTIONS", False)
 
@@ -654,13 +730,11 @@ def main():
         else:
             cleanup_old_bak(qq_exe_path)
 
-    
         latest_version = get_latest_version(file_path)
         version_path = os.path.join(file_path, "versions", latest_version)
         create_launcher_js(file_path, version_path)
         patch_package_json(version_path)
-    
-            
+
         if os.path.exists(os.path.join(file_path, "dbghelp.dll")):
             print("检测到dbghelp.dll，推测你已修补QQ，跳过修补")
         else:
@@ -669,7 +743,7 @@ def main():
             print("频道 http://t.me/LiteLoaderQQNT_Channel ")
             input("按 回车键 退出。")
             exit()
-            
+
         install_liteloader(file_path)
         patch(file_path)
 
@@ -693,4 +767,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
