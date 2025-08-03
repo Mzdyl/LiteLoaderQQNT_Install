@@ -34,7 +34,8 @@ config = Config()
 # 存储反代服务器的URL
 def get_github_proxy_urls():
     return [
-        "https://ghfast.top" "https://gh.ddlc.top",
+        "https://ghfast.top",
+        "https://gh.ddlc.top",
         "https://slink.ltd",
         "https://cors.isteed.cc",
         "https://hub.gitmirror.com",
