@@ -65,7 +65,6 @@ jobs:
           key: ${{ matrix.builder }}-cache-${{ github.run_number }}
           restore-keys: ${{ matrix.builder }}-cache-
 
-
       - name: Build by ${{ matrix.builder }}
         env:
           LLtag: ${{ env.LLtag }}
@@ -104,7 +103,7 @@ jobs:
 
       - name: Run install_windows_${{ matrix.builder }}.exe
         run: |
-          .\dist\install_windows_${{ matrix.builder }}.exe
+          echo "\n" | .\dist\install_windows_${{ matrix.builder }}.exe
 
       - name: Check QQNT Process
         run: |
