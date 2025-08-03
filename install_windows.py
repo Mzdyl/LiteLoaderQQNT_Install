@@ -741,8 +741,9 @@ def main():
             print("请进频道内下载 dbghelp.dll 并放到")
             print(f"{qq_exe_path}\n内后再再次运行本程序")
             print("频道 http://t.me/LiteLoaderQQNT_Channel ")
-            input("按 回车键 退出。")
-            exit()
+            if not github_actions:
+                input("按 回车 退出。")
+            sys.exit()
 
         install_liteloader(file_path)
         patch(file_path)

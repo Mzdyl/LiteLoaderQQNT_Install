@@ -20,6 +20,8 @@ jobs:
     strategy:
       matrix:
         builder: [pyinstaller, nuitka]
+    env:
+      PYTHONOPTIMIZATION: 2
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -33,8 +35,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
 
       - name: Download External Data Release
         id: download_data
@@ -70,11 +72,11 @@ jobs:
           LLtag: ${{ env.LLtag }}
           LVtag: ${{ env.LVtag }}
         run: |
-          python -m pip install ${{ matrix.builder }}
+          # python3 -m pip install ${{ matrix.builder }}
 
           if ('${{ matrix.builder }}' -eq 'nuitka') {
             $env:NUITKA_CACHE_DIR = "nuitka_cache"
-            nuitka --onefile --windows-uac-admin --include-data-dir="data/"="data/" install_windows.py --output-dir="dist" --output-file="install_windows_nuitka" --assume-yes-for-downloads --enable-plugins="tk-inter" --enable-console --mingw64
+            nuitka --onefile --windows-uac-admin --include-raw-dir="data/"="data/" install_windows.py --output-dir="dist" --output-file="install_windows_nuitka" --assume-yes-for-downloads --enable-plugins="tk-inter" --windows-console-mode=force --mingw64 --lto=yes
           } else {
             pyinstaller --onefile --uac-admin --add-data "data/:data/" install_windows.py --distpath dist --name install_windows_pyinstaller
           }
@@ -96,14 +98,14 @@ jobs:
       - name: Download and Install QQ Software
         run: |
           # Download QQ software
-          python3 -m pip install requests
+          # python3 -m pip install requests
           python3 get_qqnt.py QQInstaller.exe windows ntDownloadX64Url
           # Install QQ silently
           Start-Process -FilePath QQInstaller.exe -ArgumentList '/S' -Wait
 
       - name: Run install_windows_${{ matrix.builder }}.exe
         run: |
-          echo "\n" | .\dist\install_windows_${{ matrix.builder }}.exe
+          .\dist\install_windows_${{ matrix.builder }}.exe
 
       - name: Check QQNT Process
         run: |
