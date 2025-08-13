@@ -128,11 +128,10 @@ def get_document_path() -> str:
     return path
 
 
-def can_connect(url, timeout=2):
+def can_connect(url: str, timeout: float = 2) -> bool:
     try:
-        response = requests.head(url, timeout=timeout)
-        return response.status_code >= 200 and response.status_code < 400
-    except requests.exceptions.RequestException:
+        return requests.head(url, timeout=timeout).ok
+    except requests.RequestException:
         return False
 
 
@@ -461,28 +460,26 @@ def install_plugin_store(file_path):
         print(f"安装插件商店发生错误: {e}\n请尝试手动安装")
 
 
-def check_proxy(proxy):
-    try:
-        proxy_url = f"{proxy}/https://github.com"
-        response = requests.head(proxy_url, timeout=5)
-        if response.ok:
-            return proxy
-    except requests.exceptions.RequestException:
-        pass
-    return None
+def check_proxy(url: str, timeout: float = 5) -> tuple[str, bool]:
+    return url, can_connect(
+        f"{url}/https://github.com/Mzdyl/LiteLoaderQQNT_Install/archive/refs/heads/main.zip",
+        timeout,
+    )
 
 
-def get_working_proxy():
+def get_working_proxy() -> str:
     proxies = get_github_proxy_urls()
-    with ThreadPoolExecutor(max_workers=len(proxies)) as executor:
-        future_to_proxy = {
-            executor.submit(check_proxy, proxy): proxy for proxy in proxies
-        }
-        for future in as_completed(future_to_proxy):
-            result = future.result()
-            if result is not None:
-                return result
-    return None
+    executor = ThreadPoolExecutor()
+    try:
+        for future in as_completed(
+            [executor.submit(check_proxy, proxy) for proxy in proxies]
+        ):
+            proxy, result = future.result()
+            if result:
+                return proxy
+        return ""
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
 
 
 def get_download_url(url: str) -> str:
